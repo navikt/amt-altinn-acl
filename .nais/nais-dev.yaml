@@ -29,6 +29,8 @@ spec:
       cpu: 250m
       memory: 512Mi
   env:
+    - name: ALTINN_KOORDINATOR_RETTIGHET_ID
+      value: "9999999"
     - name: ALTINN_URL
       value: https://tt02.altinn.no
     - name: MASKINPORTEN_URL

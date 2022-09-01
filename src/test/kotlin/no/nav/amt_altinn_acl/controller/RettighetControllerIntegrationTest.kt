@@ -3,9 +3,11 @@ package no.nav.amt_altinn_acl.controller
 import io.kotest.matchers.shouldBe
 import no.nav.amt_altinn_acl.test_util.IntegrationTest
 import no.nav.amt_altinn_acl.utils.RestUtils.toJsonRequestBody
+import org.junit.Ignore
 import org.junit.jupiter.api.Test
 
-class RettigheterControllerIntegrationTest : IntegrationTest() {
+@Ignore
+class RettighetControllerIntegrationTest : IntegrationTest() {
 
 	@Test
 	fun `hentRettigheter - should return 401 when not authenticated`() {
@@ -59,7 +61,7 @@ class RettigheterControllerIntegrationTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `hentRettigheter - should return cache response from altinn`() {
+	fun `hentRettigheter - should return cached response from altinn`() {
 		val orgnr = "1234567"
 		val rettighetId1 = 1234L
 		val rettighetId2 = 5678L

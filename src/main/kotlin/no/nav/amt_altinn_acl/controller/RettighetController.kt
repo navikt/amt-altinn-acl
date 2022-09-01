@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/v1/rettighet")
-class RettigheterController(
+class RettighetController(
 	private val authService: AuthService,
 	private val rettigheterService: RettigheterService
 ) {

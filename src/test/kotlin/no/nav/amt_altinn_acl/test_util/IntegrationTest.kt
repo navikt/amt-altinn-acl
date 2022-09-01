@@ -16,6 +16,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.junit.jupiter.SpringExtension
+import java.time.Duration
 
 @ActiveProfiles("test")
 @Import(TestConfig::class)
@@ -26,7 +27,9 @@ class IntegrationTest {
 	@LocalServerPort
 	private var port: Int = 0
 
-	private val client = OkHttpClient()
+	private val client = OkHttpClient.Builder()
+		.callTimeout(Duration.ofMinutes(5))
+		.build()
 
 	@AfterEach
 	fun cleanDatabase() {
@@ -51,6 +54,7 @@ class IntegrationTest {
 			registry.add("no.nav.security.jwt.issuer.azuread.discovery-url", oAuthServer::getDiscoveryUrl)
 			registry.add("no.nav.security.jwt.issuer.azuread.accepted-audience") { "test-aud" }
 
+			registry.add("altinn.koordinator-rettighet-id") { "99999" }
 			registry.add("altinn.url", mockAltinnHttpClient::serverUrl)
 			registry.add("altinn.api-key") { "test-altinn-api-key" }
 

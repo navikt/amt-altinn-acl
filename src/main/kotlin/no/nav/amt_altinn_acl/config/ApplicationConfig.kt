@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 @EnableJwtTokenValidation
-@EnableConfigurationProperties(EnvironmentProperties::class)
 class ApplicationConfig {
 
 	@Bean

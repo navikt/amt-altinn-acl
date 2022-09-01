@@ -2,8 +2,8 @@ package no.nav.amt_altinn_acl.repository
 
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import no.nav.amt_altinn_acl.domain.Rettighet
-import no.nav.amt_altinn_acl.service.RettigheterCacheService
+import no.nav.amt_altinn_acl.domain.AltinnRettighet
+import no.nav.amt_altinn_acl.service.RettigheterService
 import no.nav.amt_altinn_acl.test_util.DbTestDataUtils
 import no.nav.amt_altinn_acl.test_util.DbTestDataUtils.shouldBeEqualTo
 import no.nav.amt_altinn_acl.test_util.SingletonPostgresContainer
@@ -28,9 +28,9 @@ class RettigheterCacheRepositoryTest {
 	fun `skal upserte og hente rettigheter`() {
 		val norskIdent = "1243234"
 
-		val data = RettigheterCacheService.CachetRettigheter(
+		val data = RettigheterService.CachetRettigheter(
 			1,
-			listOf(Rettighet("123", "4367842"))
+			listOf(AltinnRettighet("123", "4367842"))
 		)
 
 		val expiration = ZonedDateTime.now().plusHours(12)
@@ -40,7 +40,7 @@ class RettigheterCacheRepositoryTest {
 		val cachetRettighet = repository.hentRettigheter(norskIdent)
 
 		val expectedJson = """
-			{"version":1,"rettigheter":[{"rettighetId":"123","organisasjonsnummmer":"4367842"}]}
+			{"version":1,"rettigheter":[{"organisasjonsnummmer":"123","rettighetId":"4367842"}]}
 		""".trimIndent()
 
 		cachetRettighet shouldNotBe null
@@ -51,14 +51,14 @@ class RettigheterCacheRepositoryTest {
 	fun `upsert skal oppdatere rettigheter og expiration`() {
 		val norskIdent = "1243234"
 
-		val oldData = RettigheterCacheService.CachetRettigheter(
+		val oldData = RettigheterService.CachetRettigheter(
 			1,
-			listOf(Rettighet("123", "4367842"))
+			listOf(AltinnRettighet("123", "4367842"))
 		)
 
-		val newData = RettigheterCacheService.CachetRettigheter(
+		val newData = RettigheterService.CachetRettigheter(
 			1,
-			listOf(Rettighet("784932", "11111111"))
+			listOf(AltinnRettighet("784932", "11111111"))
 		)
 
 		val oldExpiration = ZonedDateTime.now().plusHours(1)
@@ -70,7 +70,7 @@ class RettigheterCacheRepositoryTest {
 		val cachetRettighet = repository.hentRettigheter(norskIdent)
 
 		val expectedJson = """
-			{"version":1,"rettigheter":[{"rettighetId":"784932","organisasjonsnummmer":"11111111"}]}
+			{"version":1,"rettigheter":[{"organisasjonsnummmer":"784932","rettighetId":"11111111"}]}
 		""".trimIndent()
 
 		cachetRettighet shouldNotBe null
@@ -82,9 +82,9 @@ class RettigheterCacheRepositoryTest {
 	fun `slettRettigheter - skal slette rettigheter`() {
 		val norskIdent = "1243234"
 
-		val data = RettigheterCacheService.CachetRettigheter(
+		val data = RettigheterService.CachetRettigheter(
 			1,
-			listOf(Rettighet("123", "4367842"))
+			listOf(AltinnRettighet("123", "4367842"))
 		)
 
 		val expiration = ZonedDateTime.now().plusHours(12)

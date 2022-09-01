@@ -1,5 +1,6 @@
 package no.nav.amt_altinn_acl.repository
 
+import no.nav.amt_altinn_acl.domain.AltinnRettighet
 import no.nav.amt_altinn_acl.repository.dbo.RettigheterCacheDbo
 import no.nav.amt_altinn_acl.utils.getZonedDateTime
 import org.springframework.jdbc.core.RowMapper
