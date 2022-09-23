@@ -35,15 +35,15 @@ class RettighetControllerIntegrationTest : IntegrationTest() {
 	@Test
 	fun `hentRettigheter - should return 200 with correct response`() {
 		val orgnr = "1234567"
-		val rettighetId1 = 1234L
-		val rettighetId2 = 5678L
-		val rettighetId3 = 34872L
+		val serviceCode1 = "1234"
+		val serviceCode2 = "5678"
+		val serviceCode3 = "34872"
 
 		mockMaskinportenHttpClient.enqueueTokenResponse()
 
 		mockAltinnHttpClient.enqueueHentTilknyttedeEnheterResponse(listOf(orgnr))
 
-		mockAltinnHttpClient.enqueueHentRettigheterResponse(listOf(rettighetId1, rettighetId2, rettighetId3))
+		mockAltinnHttpClient.enqueueHentRettigheterResponse(listOf(serviceCode1, serviceCode2, serviceCode3))
 
 		val response = sendRequest(
 			method = "POST",
@@ -63,15 +63,15 @@ class RettighetControllerIntegrationTest : IntegrationTest() {
 	@Test
 	fun `hentRettigheter - should return cached response from altinn`() {
 		val orgnr = "1234567"
-		val rettighetId1 = 1234L
-		val rettighetId2 = 5678L
-		val rettighetId3 = 34872L
+		val serviceCode1 = "1234"
+		val serviceCode2 = "5678"
+		val serviceCode3 = "34872"
 
 		mockMaskinportenHttpClient.enqueueTokenResponse()
 
 		mockAltinnHttpClient.enqueueHentTilknyttedeEnheterResponse(listOf(orgnr))
 
-		mockAltinnHttpClient.enqueueHentRettigheterResponse(listOf(rettighetId1, rettighetId2, rettighetId3))
+		mockAltinnHttpClient.enqueueHentRettigheterResponse(listOf(serviceCode1, serviceCode2, serviceCode3))
 
 		val response1 = sendRequest(
 			method = "POST",

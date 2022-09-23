@@ -46,8 +46,10 @@ spec:
           - name: amt-altinn-acl
             envVarPrefix: DB
   env:
-    - name: ALTINN_KOORDINATOR_RETTIGHET_ID
+    - name: ALTINN_KOORDINATOR_SERVICE_CODE
       value: "9999999"
+    - name: ALTINN_VEILEDER_SERVICE_CODE
+      value: "8888888"
     - name: ALTINN_URL
       value: https://www.altinn.no
     - name: MASKINPORTEN_URL

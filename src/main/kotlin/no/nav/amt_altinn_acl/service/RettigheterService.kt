@@ -14,6 +14,7 @@ class RettigheterService(
 ) {
 
 	companion object {
+		const val CACHE_VERSION = 2
 		const val CACHE_EXPIRATION_HOURS = 12L
 	}
 
@@ -39,7 +40,7 @@ class RettigheterService(
 				altinnClient.hentRettigheter(norskIdent, it.organisasjonsnummer)
 					.map { r -> AltinnRettighet(
 						organisasjonsnummer = it.organisasjonsnummer,
-						rettighetId = r.rettighetId.toString()
+						serviceCode = r.serviceCode
 					) }
 					.stream()
 			}
@@ -50,26 +51,25 @@ class RettigheterService(
 		val json = JsonUtils.toJsonString(CachetRettigheter(rettigheter = rettigheter))
 		val expiration = ZonedDateTime.now().plusHours(CACHE_EXPIRATION_HOURS)
 
-		rettigheterCacheRepository.upsertRettigheter(norskIdent, json, expiration)
+		rettigheterCacheRepository.upsertData(norskIdent, CACHE_VERSION, json, expiration)
 	}
 
 	private fun hentAlleCachedeRettigheter(norskIdent: String): List<AltinnRettighet>? {
-		val cachetRettigheterDbo = rettigheterCacheRepository.hentRettigheter(norskIdent) ?: return null
+		val cachetRettigheterDbo = rettigheterCacheRepository.hentCachetData(norskIdent, CACHE_VERSION) ?: return null
 
 		val hasExpired = ZonedDateTime.now().isAfter(cachetRettigheterDbo.expiresAfter)
 
 		if (hasExpired) {
-			rettigheterCacheRepository.slettRettigheter(norskIdent)
+			rettigheterCacheRepository.slettCachetData(norskIdent)
 			return null
 		}
 
-		val cachetRettigheter = JsonUtils.fromJsonString<CachetRettigheter>(cachetRettigheterDbo.rettigheterJson)
+		val cachetRettigheter = JsonUtils.fromJsonString<CachetRettigheter>(cachetRettigheterDbo.dataJson)
 
 		return cachetRettigheter.rettigheter
 	}
 
 	data class CachetRettigheter(
-		val version: Int = 1,
 		val rettigheter: List<AltinnRettighet>,
 	)
 

@@ -19,5 +19,5 @@ data class Organisasjon(
 }
 
 data class AltinnRettighet(
-	val rettighetId: Long
+	val serviceCode: String
 )

@@ -54,7 +54,8 @@ class IntegrationTest {
 			registry.add("no.nav.security.jwt.issuer.azuread.discovery-url", oAuthServer::getDiscoveryUrl)
 			registry.add("no.nav.security.jwt.issuer.azuread.accepted-audience") { "test-aud" }
 
-			registry.add("altinn.koordinator-rettighet-id") { "99999" }
+			registry.add("altinn.koordinator-service-code") { "99999" }
+			registry.add("altinn.veileder-service-code") { "88888" }
 			registry.add("altinn.url", mockAltinnHttpClient::serverUrl)
 			registry.add("altinn.api-key") { "test-altinn-api-key" }
 

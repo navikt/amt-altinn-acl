@@ -61,7 +61,7 @@ class AltinnClientImpl(
 			val data = fromJsonString<HentRettigheter.Response>(body)
 
 			return data.rights
-				.map { AltinnRettighet(it.rightId) }
+				.map { AltinnRettighet(it.serviceCode) }
 		}
 	}
 
@@ -89,8 +89,8 @@ class AltinnClientImpl(
 			val rights: List<Right>,
 		) {
 			data class Right(
-				@JsonAlias("RightID")
-				val rightId: Long
+				@JsonAlias("ServiceCode")
+				val serviceCode: String
 			)
 		}
 	}

@@ -1,6 +1,5 @@
 package no.nav.amt_altinn_acl.repository
 
-import no.nav.amt_altinn_acl.domain.AltinnRettighet
 import no.nav.amt_altinn_acl.repository.dbo.RettigheterCacheDbo
 import no.nav.amt_altinn_acl.utils.getZonedDateTime
 import org.springframework.jdbc.core.RowMapper
@@ -19,40 +18,45 @@ class RettigheterCacheRepository(
 			RettigheterCacheDbo(
 				id = rs.getLong("id"),
 				norskIdent = rs.getString("norsk_ident"),
-				rettigheterJson = rs.getString("rettigheter_json"),
+				dataVersion = rs.getInt("data_version"),
+				dataJson = rs.getString("data_json"),
 				expiresAfter = rs.getZonedDateTime("expires_after"),
 				createdAt = rs.getZonedDateTime("created_at")
 			)
 		}
 
-	fun upsertRettigheter(norskIdent: String, rettigheterJson: String, expiresAfter: ZonedDateTime) {
+	fun upsertData(norskIdent: String, dataVersion: Int, dataJson: String, expiresAfter: ZonedDateTime) {
 		val sql = """
-			INSERT INTO rettigheter_cache(norsk_ident, rettigheter_json, expires_after)
-			VALUES (:norsk_ident, cast(:rettigheter_json as json), :expires_after)
+			INSERT INTO rettigheter_cache(norsk_ident, data_version, data_json, expires_after)
+			VALUES (:norsk_ident, :data_version, cast(:data_json as json), :expires_after)
 			ON CONFLICT (norsk_ident) DO UPDATE
-			SET rettigheter_json = cast(:rettigheter_json as json), expires_after = :expires_after
+			SET data_json = cast(:data_json as json), data_version = :data_version, expires_after = :expires_after
 		""".trimIndent()
 
 		val parameters = MapSqlParameterSource()
 			.addValue("norsk_ident", norskIdent)
-			.addValue("rettigheter_json", rettigheterJson)
+			.addValue("data_version", dataVersion)
+			.addValue("data_json", dataJson)
 			.addValue("expires_after", expiresAfter.toOffsetDateTime())
 
 		template.update(sql, parameters)
 	}
 
-	fun hentRettigheter(norskIdent: String): RettigheterCacheDbo? {
+	fun hentCachetData(norskIdent: String, dataVersion: Int): RettigheterCacheDbo? {
 		val sql = """
-			SELECT * FROM rettigheter_cache WHERE norsk_ident = :norsk_ident
+			SELECT * FROM rettigheter_cache WHERE norsk_ident = :norsk_ident AND data_version = :data_version
 		""".trimIndent()
 
-		val parameters = MapSqlParameterSource("norsk_ident", norskIdent)
+		val parameters = MapSqlParameterSource(mapOf(
+			"norsk_ident" to norskIdent,
+			"data_version" to dataVersion,
+		))
 
 		return template.query(sql, parameters, rowMapper)
 			.firstOrNull()
 	}
 
-	fun slettRettigheter(norskIdent: String) {
+	fun slettCachetData(norskIdent: String) {
 		val sql = """
 			DELETE FROM rettigheter_cache WHERE norsk_ident = :norsk_ident
 		""".trimIndent()

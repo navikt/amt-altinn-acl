@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class RolleService(
-	@Value("\${altinn.koordinator-rettighet-id}") private val altinnKoordinatorRettighetId: String,
+	@Value("\${altinn.koordinator-service-code}") private val altinnKoordinatorServiceCode: String,
 	private val rettigheterService: RettigheterService
 ) {
 
@@ -22,7 +22,7 @@ class RolleService(
 		val altinnRollerMap = mutableMapOf<String, MutableList<TiltaksarrangorRolleType>>()
 
 		rettigheter.forEach {
-			val rolle = mapAltinnRettighetTilRolle(it.rettighetId) ?: return@forEach
+			val rolle = mapAltinnRettighetTilRolle(it.serviceCode) ?: return@forEach
 
 			val roller = altinnRollerMap.computeIfAbsent(it.organisasjonsnummer) { mutableListOf() }
 
@@ -36,7 +36,7 @@ class RolleService(
 
 	private fun mapAltinnRettighetTilRolle(rettighetId: String): TiltaksarrangorRolleType? {
 		return when(rettighetId) {
-			altinnKoordinatorRettighetId -> TiltaksarrangorRolleType.KOORDINATOR
+			altinnKoordinatorServiceCode -> TiltaksarrangorRolleType.KOORDINATOR
 			else -> null
 		}
 	}

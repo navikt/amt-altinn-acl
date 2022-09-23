@@ -22,8 +22,8 @@ class RettighetController(
 		authService.verifyRequestIsMachineToMachine()
 
 		val rettigheter = rettigheterService.hentAlleRettigheter(request.norskIdent)
-			.filter { request.rettighetIder.contains(it.rettighetId) }
-			.map { HentRettigheter.Response.Rettighet(it.rettighetId, it.organisasjonsnummer) }
+			.filter { request.rettighetIder.contains(it.serviceCode) }
+			.map { HentRettigheter.Response.Rettighet(it.serviceCode, it.organisasjonsnummer) }
 
 		return HentRettigheter.Response(rettigheter)
 	}

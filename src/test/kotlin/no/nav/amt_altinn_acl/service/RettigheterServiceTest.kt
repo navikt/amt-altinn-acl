@@ -31,17 +31,16 @@ class RettigheterServiceTest {
 	fun `hentAlleRettigheter - skal hente rettigheter fra cache`() {
 		val norskIdent = "21313"
 		val organisasjonsnummer = "34532534"
-		val rettighetId = "432438"
+		val serviceCode = "432438"
 
 		every {
-			rettigheterCacheRepository.hentRettigheter(norskIdent)
+			rettigheterCacheRepository.hentCachetData(norskIdent, 2)
 		} returns RettigheterCacheDbo(
-			1, norskIdent, """
+			1, norskIdent, 1, """
 			{
-			  "version": 1,
 			  "rettigheter": [
 				{
-				  "rettighetId": "$rettighetId",
+				  "serviceCode": "$serviceCode",
 				  "organisasjonsnummer": "$organisasjonsnummer"
 				}
 			  ]
@@ -52,7 +51,7 @@ class RettigheterServiceTest {
 		val rettigheter = rettigheterService.hentAlleRettigheter(norskIdent)
 
 		rettigheter shouldHaveSize 1
-		rettigheter.first().rettighetId shouldBe rettighetId
+		rettigheter.first().serviceCode shouldBe serviceCode
 		rettigheter.first().organisasjonsnummer shouldBe organisasjonsnummer
 
 		verify(exactly = 0) {

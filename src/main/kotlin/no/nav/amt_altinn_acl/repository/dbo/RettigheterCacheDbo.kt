@@ -5,7 +5,8 @@ import java.time.ZonedDateTime
 data class RettigheterCacheDbo(
 	val id: Long,
 	val norskIdent: String,
-	val rettigheterJson: String,
+	val dataVersion: Int,
+	val dataJson: String,
 	val expiresAfter: ZonedDateTime,
 	val createdAt: ZonedDateTime
 )

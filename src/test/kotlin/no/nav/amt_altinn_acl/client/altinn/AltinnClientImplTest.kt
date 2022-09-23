@@ -171,9 +171,9 @@ class AltinnClientImplTest {
 
 		rettigheter shouldHaveSize 3
 
-		rettigheter.any { it.rettighetId == 123456L } shouldBe true
-		rettigheter.any { it.rettighetId == 9061224L } shouldBe true
-		rettigheter.any { it.rettighetId == 9062625L } shouldBe true
+		rettigheter.any { it.serviceCode == "3234" } shouldBe true
+		rettigheter.any { it.serviceCode == "5678" } shouldBe true
+		rettigheter.any { it.serviceCode == "1234" } shouldBe true
 	}
 
 }

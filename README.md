@@ -6,19 +6,19 @@ For å legge til permanent testdata i cachen for å ikke gjøre oppslag mot Alti
 kan man kjøre følgende SQL:
 
 ```sql
-insert into rettigheter_cache(norsk_ident, rettigheter_json, expires_after)
-values ('<fnr>',
+insert into rettigheter_cache(norsk_ident, data_version, expires_after, data_json)
+values ('<fnr>', 2, to_timestamp('3000-01-01', 'YYYY-MM-DD'),
         '{
           "version": 1,
           "rettigheter": [
             {
-              "rettighetId": "9999999",
+              "serviceCode": "9999999",
               "organisasjonsnummer": "<orgnr>"
             }
           ]
-        }',
-        to_timestamp('3000-01-01', 'YYYY-MM-DD'))
+        }')
 on conflict (norsk_ident)
-    DO UPDATE SET rettigheter_json = EXCLUDED.rettigheter_json,
-                  expires_after    = EXCLUDED.expires_after;
+    DO UPDATE SET data_json = EXCLUDED.data_json,
+                  data_version = EXCLUDED.data_version,
+                  expires_after = EXCLUDED.expires_after;
 ```

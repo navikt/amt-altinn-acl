@@ -1,6 +1,7 @@
 package no.nav.amt_altinn_acl.test_util.mock_clients
 
 import no.nav.amt_altinn_acl.test_util.MockHttpClient
+import kotlin.random.Random
 
 class MockAltinnHttpClient : MockHttpClient() {
 
@@ -36,13 +37,13 @@ class MockAltinnHttpClient : MockHttpClient() {
 		)
 	}
 
-	fun enqueueHentRettigheterResponse(rettighetIder: List<Long>) {
-		val rettigheterJson = rettighetIder.joinToString(",") {
+	fun enqueueHentRettigheterResponse(serviceCodes: List<String>) {
+		val rettigheterJson = serviceCodes.joinToString(",") {
 			"""
 				{
-					"ServiceCode": "3234",
+					"ServiceCode": "$it",
 					"Action": "Read",
-					"RightID": $it,
+					"RightID": ${Random.nextInt()},
 					"RightType": "Service",
 					"ServiceEditionCode": 1,
 					"RightSourceType": "RoleTypeRights",

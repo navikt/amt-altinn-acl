@@ -29,22 +29,22 @@ class RettigheterCacheRepositoryTest {
 		val norskIdent = "1243234"
 
 		val data = RettigheterService.CachetRettigheter(
-			1,
 			listOf(AltinnRettighet("123", "4367842"))
 		)
 
 		val expiration = ZonedDateTime.now().plusHours(12)
 
-		repository.upsertRettigheter(norskIdent, toJsonString(data), expiration)
+		repository.upsertData(norskIdent, 1, toJsonString(data), expiration)
 
-		val cachetRettighet = repository.hentRettigheter(norskIdent)
+		val cachetRettighet = repository.hentCachetData(norskIdent, 1)
 
 		val expectedJson = """
-			{"version":1,"rettigheter":[{"organisasjonsnummer":"123","rettighetId":"4367842"}]}
+			{"rettigheter":[{"organisasjonsnummer":"123","serviceCode":"4367842"}]}
 		""".trimIndent()
 
 		cachetRettighet shouldNotBe null
-		cachetRettighet?.rettigheterJson shouldBe expectedJson
+		cachetRettighet?.dataVersion shouldBe 1
+		cachetRettighet?.dataJson shouldBe expectedJson
 	}
 
 	@Test
@@ -52,29 +52,27 @@ class RettigheterCacheRepositoryTest {
 		val norskIdent = "1243234"
 
 		val oldData = RettigheterService.CachetRettigheter(
-			1,
 			listOf(AltinnRettighet("123", "4367842"))
 		)
 
 		val newData = RettigheterService.CachetRettigheter(
-			1,
 			listOf(AltinnRettighet("784932", "11111111"))
 		)
 
 		val oldExpiration = ZonedDateTime.now().plusHours(1)
 		val newExpiration = ZonedDateTime.now().plusHours(12)
 
-		repository.upsertRettigheter(norskIdent, toJsonString(oldData), oldExpiration)
-		repository.upsertRettigheter(norskIdent, toJsonString(newData), newExpiration)
+		repository.upsertData(norskIdent, 1, toJsonString(oldData), oldExpiration)
+		repository.upsertData(norskIdent, 1, toJsonString(newData), newExpiration)
 
-		val cachetRettighet = repository.hentRettigheter(norskIdent)
+		val cachetRettighet = repository.hentCachetData(norskIdent, 1)
 
 		val expectedJson = """
-			{"version":1,"rettigheter":[{"organisasjonsnummer":"784932","rettighetId":"11111111"}]}
+			{"rettigheter":[{"organisasjonsnummer":"784932","serviceCode":"11111111"}]}
 		""".trimIndent()
 
 		cachetRettighet shouldNotBe null
-		cachetRettighet!!.rettigheterJson shouldBe expectedJson
+		cachetRettighet!!.dataJson shouldBe expectedJson
 		cachetRettighet.expiresAfter shouldBeEqualTo newExpiration
 	}
 
@@ -83,17 +81,16 @@ class RettigheterCacheRepositoryTest {
 		val norskIdent = "1243234"
 
 		val data = RettigheterService.CachetRettigheter(
-			1,
 			listOf(AltinnRettighet("123", "4367842"))
 		)
 
 		val expiration = ZonedDateTime.now().plusHours(12)
 
-		repository.upsertRettigheter(norskIdent, toJsonString(data), expiration)
+		repository.upsertData(norskIdent, 1, toJsonString(data), expiration)
 
-		repository.slettRettigheter(norskIdent)
+		repository.slettCachetData(norskIdent)
 
-		val cachetRettighet = repository.hentRettigheter(norskIdent)
+		val cachetRettighet = repository.hentCachetData(norskIdent, 1)
 
 		cachetRettighet shouldBe null
 	}
