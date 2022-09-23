@@ -11,7 +11,9 @@ import org.junit.jupiter.api.Test
 
 class RolleServiceTest {
 
-	val altinnKoordinatorRettighetId = "99999"
+	val koordinatorServiceKode = "1234"
+
+	val veilederServiceKode = "5678"
 
 	lateinit var rettigheterService: RettigheterService
 
@@ -20,7 +22,11 @@ class RolleServiceTest {
 	@BeforeEach
 	fun setup() {
 		rettigheterService = mockk()
-		rolleService = RolleService(altinnKoordinatorRettighetId, rettigheterService)
+		rolleService = RolleService(
+			altinnKoordinatorServiceCode = koordinatorServiceKode,
+			altinnVeilederServiceCode = veilederServiceKode,
+			rettigheterService
+		)
 	}
 
 	@Test
@@ -31,7 +37,7 @@ class RolleServiceTest {
 		every {
 			rettigheterService.hentAlleRettigheter(norskIdent)
 		} returns listOf(
-			AltinnRettighet(organisasjonsnummer, altinnKoordinatorRettighetId),
+			AltinnRettighet(organisasjonsnummer, koordinatorServiceKode),
 			AltinnRettighet("42378943", "374892")
 		)
 

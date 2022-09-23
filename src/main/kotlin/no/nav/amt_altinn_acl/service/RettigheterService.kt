@@ -4,14 +4,19 @@ import no.nav.amt_altinn_acl.client.altinn.AltinnClient
 import no.nav.amt_altinn_acl.domain.AltinnRettighet
 import no.nav.amt_altinn_acl.repository.RettigheterCacheRepository
 import no.nav.amt_altinn_acl.utils.JsonUtils
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.ZonedDateTime
 
 @Service
 class RettigheterService(
+	@Value("\${altinn.koordinator-service-code}") altinnKoordinatorServiceCode: String,
+	@Value("\${altinn.veileder-service-code}") altinnVeilederServiceCode: String,
 	private val altinnClient: AltinnClient,
 	private val rettigheterCacheRepository: RettigheterCacheRepository
 ) {
+
+	private val relevanteServiceKoder = listOf(altinnKoordinatorServiceCode, altinnVeilederServiceCode)
 
 	companion object {
 		const val CACHE_VERSION = 2
@@ -26,6 +31,7 @@ class RettigheterService(
 		}
 
 		val rettigheter = hentAlleRettigheterFraAltinn(norskIdent)
+			.filter { relevanteServiceKoder.contains(it.serviceCode) }
 
 		cacheRettigheter(norskIdent, rettigheter)
 

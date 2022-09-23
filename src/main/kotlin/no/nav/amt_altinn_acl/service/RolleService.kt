@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service
 @Service
 class RolleService(
 	@Value("\${altinn.koordinator-service-code}") private val altinnKoordinatorServiceCode: String,
+	@Value("\${altinn.veileder-service-code}") private val altinnVeilederServiceCode: String,
 	private val rettigheterService: RettigheterService
 ) {
 
@@ -37,6 +38,7 @@ class RolleService(
 	private fun mapAltinnRettighetTilRolle(rettighetId: String): TiltaksarrangorRolleType? {
 		return when(rettighetId) {
 			altinnKoordinatorServiceCode -> TiltaksarrangorRolleType.KOORDINATOR
+			altinnVeilederServiceCode -> TiltaksarrangorRolleType.VEILEDER
 			else -> null
 		}
 	}

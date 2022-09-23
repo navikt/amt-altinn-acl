@@ -6,6 +6,8 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import no.nav.amt_altinn_acl.client.altinn.AltinnClient
+import no.nav.amt_altinn_acl.client.altinn.AltinnRettighet
+import no.nav.amt_altinn_acl.client.altinn.Organisasjon
 import no.nav.amt_altinn_acl.repository.RettigheterCacheRepository
 import no.nav.amt_altinn_acl.repository.dbo.RettigheterCacheDbo
 import org.junit.jupiter.api.BeforeEach
@@ -13,6 +15,10 @@ import org.junit.jupiter.api.Test
 import java.time.ZonedDateTime
 
 class RettigheterServiceTest {
+
+	val koordinatorServiceKode = "1234"
+
+	val veilederServiceKode = "5678"
 
 	lateinit var altinnClient: AltinnClient
 
@@ -24,7 +30,12 @@ class RettigheterServiceTest {
 	fun setup() {
 		altinnClient = mockk()
 		rettigheterCacheRepository = mockk()
-		rettigheterService = RettigheterService(altinnClient, rettigheterCacheRepository)
+		rettigheterService = RettigheterService(
+			altinnKoordinatorServiceCode = koordinatorServiceKode,
+			altinnVeilederServiceCode = veilederServiceKode,
+			altinnClient,
+			rettigheterCacheRepository
+		)
 	}
 
 	@Test
@@ -56,6 +67,42 @@ class RettigheterServiceTest {
 
 		verify(exactly = 0) {
 			altinnClient.hentRettigheter(any(), any())
+		}
+	}
+
+	@Test
+	fun `skal ikke lagre unødvendige rettigheter`() {
+		val norskIdent = "21313"
+		val organisasjonsnummer = "34532534"
+		val serviceCode = "432438"
+
+		every {
+			altinnClient.hentTilknyttedeOrganisasjoner(norskIdent)
+		} returns listOf(Organisasjon(organisasjonsnummer, Organisasjon.Type.UNDERENHET))
+
+		every {
+			altinnClient.hentRettigheter(norskIdent, organisasjonsnummer)
+		} returns listOf(
+			AltinnRettighet(serviceCode),
+			AltinnRettighet(koordinatorServiceKode)
+		)
+
+		every {
+			rettigheterCacheRepository.hentCachetData(norskIdent, 2)
+		} returns null
+
+		every {
+			rettigheterCacheRepository.upsertData(norskIdent, 2, any(), any())
+		} returns Unit
+
+		rettigheterService.hentAlleRettigheter(norskIdent)
+
+		val expectedJson = """
+			{"rettigheter":[{"organisasjonsnummer":"34532534","serviceCode":"1234"}]}
+		""".trimIndent()
+
+		verify(exactly = 1) {
+			rettigheterCacheRepository.upsertData(norskIdent, 2, expectedJson, any())
 		}
 	}
 

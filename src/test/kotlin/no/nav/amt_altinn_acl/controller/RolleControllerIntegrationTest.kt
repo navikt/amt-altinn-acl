@@ -30,14 +30,13 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 	@Test
 	fun `hentTiltaksarrangorRoller - should return 200 with correct response`() {
 		val orgnr = "1234567"
-		val serviceCode1 = "99999"
-		val serviceCode2 = "5678"
+		val serviceCode1 = "787687"
 
 		mockMaskinportenHttpClient.enqueueTokenResponse()
 
 		mockAltinnHttpClient.enqueueHentTilknyttedeEnheterResponse(listOf(orgnr))
 
-		mockAltinnHttpClient.enqueueHentRettigheterResponse(listOf(serviceCode1, serviceCode2))
+		mockAltinnHttpClient.enqueueHentRettigheterResponse(listOf(altinnKoordinatorServiceKode, altinnVeilederServiceKode, serviceCode1))
 
 		val response = sendRequest(
 			method = "GET",
@@ -46,7 +45,7 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 		)
 
 		val expectedJson = """
-			{"roller":[{"organisasjonsnummer":"1234567","roller":["KOORDINATOR"]}]}
+			{"roller":[{"organisasjonsnummer":"1234567","roller":["KOORDINATOR","VEILEDER"]}]}
 		""".trimIndent()
 
 		response.code shouldBe 200
@@ -56,14 +55,13 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 	@Test
 	fun `hentTiltaksarrangorRoller - should return cached response from altinn`() {
 		val orgnr = "1234567"
-		val serviceCode1 = "99999"
-		val serviceCode2 = "5678"
+		val serviceCode1 = "85403"
 
 		mockMaskinportenHttpClient.enqueueTokenResponse()
 
 		mockAltinnHttpClient.enqueueHentTilknyttedeEnheterResponse(listOf(orgnr))
 
-		mockAltinnHttpClient.enqueueHentRettigheterResponse(listOf(serviceCode1, serviceCode2))
+		mockAltinnHttpClient.enqueueHentRettigheterResponse(listOf(altinnKoordinatorServiceKode, serviceCode1))
 
 		val response1 = sendRequest(
 			method = "GET",
