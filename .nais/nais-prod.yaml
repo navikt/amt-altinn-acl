@@ -47,7 +47,7 @@ spec:
             envVarPrefix: DB
   env:
     - name: ALTINN_KOORDINATOR_SERVICE_CODE
-      value: "9999999"
+      value: "5858"
     - name: ALTINN_VEILEDER_SERVICE_CODE
       value: "8888888"
     - name: ALTINN_URL
