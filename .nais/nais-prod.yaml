@@ -8,6 +8,8 @@ metadata:
 spec:
   image: ghcr.io/navikt/amt-altinn-acl/amt-altinn-acl:{{version}}
   port: 8080
+  ingresses:
+    - https://amt-altinn-acl.intern.nav.no
   prometheus:
     enabled: true
     path: /internal/prometheus
