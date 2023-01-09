@@ -14,13 +14,13 @@ spec:
     - alert: applikasjon nede
       expr: kube_deployment_status_replicas_available{deployment="amt-altinn-acl"} == 0
       for: 2m
-      description: "App {{ $labels.app }} er nede i namespace {{ $labels.kubernetes_namespace }}"
+      description: "App amt-altinn-acl er nede i namespace amt"
       action: "`kubectl describe pod {{ $labels.kubernetes_pod_name }} -n {{ $labels.kubernetes_namespace }}` for events, og `kubectl logs {{ $labels.kubernetes_pod_name }} -n {{ $labels.kubernetes_namespace }}` for logger"
     - alert: høy feilrate i logger
       expr: (100 * sum by (log_app, log_namespace) (rate(logd_messages_total{log_app="amt-altinn-acl",log_level=~"Warning|Error"}[3m])) / sum by (log_app, log_namespace) (rate(logd_messages_total{log_app="amt-altinn-acl"}[3m]))) > 10
       for: 3m
-      action: "Sjekk loggene til app {{ $labels.log_app }} i namespace {{ $labels.log_namespace }}, for å se hvorfor det er så mye feil"
+      action: "Sjekk loggene til amt-altinn-acl i namespace amt, for å se hvorfor det er så mye feil"
     - alert: feil logges
       expr: sum by(log_app, log_namespace) (increase(logd_messages_total{log_app="amt-altinn-acl",log_level=~"Error"}[5m])) > 0
       for: 5m
-      action: "Sjekk loggene til app {{ $labels.log_app }} i namespace {{ $labels.log_namespace }}, for å se hva som feiler"
+      action: "Sjekk loggene til amt-altinn-acl i namespace amt, for å se hva som feiler"
