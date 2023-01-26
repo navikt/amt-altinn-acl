@@ -20,7 +20,7 @@ class RettigheterService(
 
 	companion object {
 		const val CACHE_VERSION = 2
-		const val CACHE_EXPIRATION_HOURS = 12L
+		const val CACHE_EXPIRATION_MINUTES = 15L
 	}
 
 	fun hentAlleRettigheter(norskIdent: String): List<AltinnRettighet> {
@@ -55,7 +55,7 @@ class RettigheterService(
 
 	private fun cacheRettigheter(norskIdent: String, rettigheter: List<AltinnRettighet>) {
 		val json = JsonUtils.toJsonString(CachetRettigheter(rettigheter = rettigheter))
-		val expiration = ZonedDateTime.now().plusHours(CACHE_EXPIRATION_HOURS)
+		val expiration = ZonedDateTime.now().plusMinutes(CACHE_EXPIRATION_MINUTES)
 
 		rettigheterCacheRepository.upsertData(norskIdent, CACHE_VERSION, json, expiration)
 	}
