@@ -4,6 +4,8 @@ import no.nav.amt_altinn_acl.client.altinn.AltinnClient
 import no.nav.amt_altinn_acl.domain.AltinnRettighet
 import no.nav.amt_altinn_acl.repository.RettigheterCacheRepository
 import no.nav.amt_altinn_acl.utils.JsonUtils
+import no.nav.amt_altinn_acl.utils.SecureLog.secureLog
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.ZonedDateTime
@@ -16,6 +18,8 @@ class RettigheterService(
 	private val rettigheterCacheRepository: RettigheterCacheRepository
 ) {
 
+	private val log = LoggerFactory.getLogger(javaClass)
+
 	private val relevanteServiceKoder = listOf(altinnKoordinatorServiceCode, altinnVeilederServiceCode)
 
 	companion object {
@@ -24,21 +28,35 @@ class RettigheterService(
 	}
 
 	fun hentAlleRettigheter(norskIdent: String): List<AltinnRettighet> {
-		val cachetRettigheter = hentAlleCachedeRettigheter(norskIdent)
+		val cachetRettigheterDbo = rettigheterCacheRepository.hentCachetData(norskIdent, CACHE_VERSION)
 
-		if (cachetRettigheter != null) {
-			return cachetRettigheter
+		val hasExpired = cachetRettigheterDbo == null || ZonedDateTime.now().isAfter(cachetRettigheterDbo.expiresAfter)
+
+		val cachetRettigheter = cachetRettigheterDbo?.let { JsonUtils.fromJsonString<CachetRettigheter>(it.dataJson) }
+
+		if (!hasExpired && cachetRettigheter != null) {
+			return cachetRettigheter.rettigheter
 		}
 
-		val rettigheter = hentAlleRettigheterFraAltinn(norskIdent)
-			.filter { relevanteServiceKoder.contains(it.serviceCode) }
+		try {
+			val rettigheter = hentRettigheterFraAltinn(norskIdent)
+			oppdaterRettigheterCache(norskIdent, rettigheter)
+			return rettigheter
+		} catch (t: Throwable) {
+			log.error("Klarte ikke å hente rettigheter", t)
+			secureLog.error("Klarte ikke å hente rettigheter for ident $norskIdent", t)
 
-		cacheRettigheter(norskIdent, rettigheter)
+			if (cachetRettigheter != null) {
+				secureLog.warn("Bruker utdaterte rettigheter for ident $norskIdent")
+				return cachetRettigheter.rettigheter
+			}
 
-		return rettigheter
+			throw RuntimeException("Klarte ikke å hente Altinn rettigheter")
+		}
+
 	}
 
-	private fun hentAlleRettigheterFraAltinn(norskIdent: String): List<AltinnRettighet> {
+	private fun hentRettigheterFraAltinn(norskIdent: String): List<AltinnRettighet> {
 		val virksomheter = altinnClient.hentTilknyttedeOrganisasjoner(norskIdent)
 
 		return virksomheter.parallelStream()
@@ -50,29 +68,15 @@ class RettigheterService(
 					) }
 					.stream()
 			}
+			.filter { relevanteServiceKoder.contains(it.serviceCode) }
 			.toList()
 	}
 
-	private fun cacheRettigheter(norskIdent: String, rettigheter: List<AltinnRettighet>) {
+	private fun oppdaterRettigheterCache(norskIdent: String, rettigheter: List<AltinnRettighet>) {
 		val json = JsonUtils.toJsonString(CachetRettigheter(rettigheter = rettigheter))
 		val expiration = ZonedDateTime.now().plusMinutes(CACHE_EXPIRATION_MINUTES)
 
 		rettigheterCacheRepository.upsertData(norskIdent, CACHE_VERSION, json, expiration)
-	}
-
-	private fun hentAlleCachedeRettigheter(norskIdent: String): List<AltinnRettighet>? {
-		val cachetRettigheterDbo = rettigheterCacheRepository.hentCachetData(norskIdent, CACHE_VERSION) ?: return null
-
-		val hasExpired = ZonedDateTime.now().isAfter(cachetRettigheterDbo.expiresAfter)
-
-		if (hasExpired) {
-			rettigheterCacheRepository.slettCachetData(norskIdent)
-			return null
-		}
-
-		val cachetRettigheter = JsonUtils.fromJsonString<CachetRettigheter>(cachetRettigheterDbo.dataJson)
-
-		return cachetRettigheter.rettigheter
 	}
 
 	data class CachetRettigheter(

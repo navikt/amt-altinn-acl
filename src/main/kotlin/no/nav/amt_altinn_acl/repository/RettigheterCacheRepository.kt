@@ -30,7 +30,7 @@ class RettigheterCacheRepository(
 			INSERT INTO rettigheter_cache(norsk_ident, data_version, data_json, expires_after)
 			VALUES (:norsk_ident, :data_version, cast(:data_json as json), :expires_after)
 			ON CONFLICT (norsk_ident) DO UPDATE
-			SET data_json = cast(:data_json as json), data_version = :data_version, expires_after = :expires_after
+			SET data_json = cast(:data_json as json), data_version = :data_version, expires_after = :expires_after, modified_at = current_timestamp
 		""".trimIndent()
 
 		val parameters = MapSqlParameterSource()
@@ -54,16 +54,6 @@ class RettigheterCacheRepository(
 
 		return template.query(sql, parameters, rowMapper)
 			.firstOrNull()
-	}
-
-	fun slettCachetData(norskIdent: String) {
-		val sql = """
-			DELETE FROM rettigheter_cache WHERE norsk_ident = :norsk_ident
-		""".trimIndent()
-
-		val parameters = MapSqlParameterSource("norsk_ident", norskIdent)
-
-		template.update(sql, parameters)
 	}
 
 }

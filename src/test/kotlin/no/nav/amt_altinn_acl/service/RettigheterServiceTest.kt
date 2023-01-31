@@ -1,5 +1,6 @@
 package no.nav.amt_altinn_acl.service
 
+import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -69,6 +70,54 @@ class RettigheterServiceTest {
 			altinnClient.hentRettigheter(any(), any())
 		}
 	}
+
+	@Test
+	fun `hentAlleRettigheter - skal bruke expired data hvis kall til altinn feiler`() {
+		val norskIdent = "21313"
+		val organisasjonsnummer = "34532534"
+		val serviceCode = "432438"
+
+		every {
+			rettigheterCacheRepository.hentCachetData(norskIdent, 2)
+		} returns RettigheterCacheDbo(
+			1, norskIdent, 2, """
+			{
+			  "rettigheter": [
+				{
+				  "serviceCode": "$serviceCode",
+				  "organisasjonsnummer": "$organisasjonsnummer"
+				}
+			  ]
+       		 }
+		""".trimIndent(), ZonedDateTime.now().minusHours(1), ZonedDateTime.now()
+		)
+
+		every {
+			altinnClient.hentTilknyttedeOrganisasjoner(norskIdent)
+		} throws RuntimeException()
+
+		val rettigheter = rettigheterService.hentAlleRettigheter(norskIdent)
+
+		rettigheter shouldHaveSize 1
+		rettigheter.first().serviceCode shouldBe serviceCode
+		rettigheter.first().organisasjonsnummer shouldBe organisasjonsnummer
+	}
+
+	@Test
+	fun `hentAlleRettigheter - skal feile hvis ingen cachet data og kall til Altinn feiler`() {
+		val norskIdent = "21313"
+
+		every {
+			rettigheterCacheRepository.hentCachetData(norskIdent, 2)
+		} returns null
+
+		every {
+			altinnClient.hentTilknyttedeOrganisasjoner(norskIdent)
+		} throws RuntimeException()
+
+		shouldThrowExactly<RuntimeException> { rettigheterService.hentAlleRettigheter(norskIdent) }
+	}
+
 
 	@Test
 	fun `skal ikke lagre unødvendige rettigheter`() {

@@ -76,23 +76,4 @@ class RettigheterCacheRepositoryTest {
 		cachetRettighet.expiresAfter shouldBeEqualTo newExpiration
 	}
 
-	@Test
-	fun `slettRettigheter - skal slette rettigheter`() {
-		val norskIdent = "1243234"
-
-		val data = RettigheterService.CachetRettigheter(
-			listOf(AltinnRettighet("123", "4367842"))
-		)
-
-		val expiration = ZonedDateTime.now().plusHours(12)
-
-		repository.upsertData(norskIdent, 1, toJsonString(data), expiration)
-
-		repository.slettCachetData(norskIdent)
-
-		val cachetRettighet = repository.hentCachetData(norskIdent, 1)
-
-		cachetRettighet shouldBe null
-	}
-
 }
