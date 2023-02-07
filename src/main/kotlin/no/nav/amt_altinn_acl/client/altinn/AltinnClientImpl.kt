@@ -24,8 +24,8 @@ class AltinnClientImpl(
 
 		client.newCall(request).execute().use { response ->
 			if (!response.isSuccessful) {
-				secureLog.error("Klarte ikke å hente tilknyttede organisasjoner for norskIdent=$norskIdent")
-				throw RuntimeException("Klarte ikke å hente tilknyttede organisasjoner")
+				secureLog.error("Klarte ikke å hente tilknyttede organisasjoner for norskIdent=$norskIdent message=${response.message}, code=${response.code}, body=${response.body?.string()}")
+				throw RuntimeException("Klarte ikke å hente tilknyttede organisasjoner code=${response.code}")
 			}
 
 			val body = response.body?.string() ?: throw RuntimeException("Body is missing")
