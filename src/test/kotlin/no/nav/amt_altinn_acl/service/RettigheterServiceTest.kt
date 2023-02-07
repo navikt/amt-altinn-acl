@@ -156,7 +156,7 @@ class RettigheterServiceTest {
 	}
 
 	@Test
-	fun `hentAlleRettigheter - skal ikke cache manglende rettigheter`() {
+	fun `hentAlleRettigheter - mangler rettigheter - skal ikke caches`() {
 		val norskIdent = "21313"
 		val organisasjonsnummer = "34532534"
 
