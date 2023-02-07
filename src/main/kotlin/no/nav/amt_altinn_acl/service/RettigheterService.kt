@@ -34,13 +34,15 @@ class RettigheterService(
 
 		val cachetRettigheter = cachetRettigheterDbo?.let { JsonUtils.fromJsonString<CachetRettigheter>(it.dataJson) }
 
-		if (!hasExpired && cachetRettigheter != null) {
+		if (!hasExpired && cachetRettigheter != null && cachetRettigheter.rettigheter.isNotEmpty()) {
 			return cachetRettigheter.rettigheter
 		}
 
 		try {
 			val rettigheter = hentRettigheterFraAltinn(norskIdent)
-			oppdaterRettigheterCache(norskIdent, rettigheter)
+			if (rettigheter.isNotEmpty()) {
+				oppdaterRettigheterCache(norskIdent, rettigheter)
+			}
 			return rettigheter
 		} catch (t: Throwable) {
 			log.error("Klarte ikke å hente rettigheter", t)

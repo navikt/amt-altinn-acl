@@ -155,4 +155,30 @@ class RettigheterServiceTest {
 		}
 	}
 
+	@Test
+	fun `hentAlleRettigheter - skal ikke cache manglende rettigheter`() {
+		val norskIdent = "21313"
+		val organisasjonsnummer = "34532534"
+
+		every {
+			altinnClient.hentTilknyttedeOrganisasjoner(norskIdent)
+		} returns listOf(Organisasjon(organisasjonsnummer, Organisasjon.Type.UNDERENHET))
+
+		every {
+			rettigheterCacheRepository.hentCachetData(norskIdent, 2)
+		} returns null
+
+		every {
+			altinnClient.hentRettigheter(norskIdent, organisasjonsnummer)
+		} returns emptyList()
+
+		val rettigheter = rettigheterService.hentAlleRettigheter(norskIdent)
+
+		rettigheter shouldHaveSize 0
+
+		verify(exactly = 0) {
+			rettigheterCacheRepository.upsertData(any(), any(), any(), any())
+		}
+	}
+
 }
