@@ -14,9 +14,13 @@ class AltinnClientImpl(
 	private val client: OkHttpClient = RestClient.baseClient(),
 ) : AltinnClient {
 
-	override fun hentOrganisasjoner(norskIdent: String, serviceCode: String): String {
+	override fun hentOrganisasjoner(norskIdent: String, serviceCode: String?): String {
+		val requestUrl = serviceCode
+			?.let { "$baseUrl/api/serviceowner/reportees?subject=$norskIdent&serviceCode=$serviceCode"}
+				?: "$baseUrl/api/serviceowner/reportees?subject=$norskIdent"
+
 		val request = Request.Builder()
-			.url("$baseUrl/api/serviceowner/reportees?subject=$norskIdent&serviceCode=$serviceCode")
+			.url(requestUrl)
 			.addHeader("APIKEY", altinnApiKey)
 			.addHeader("Authorization", "Bearer ${maskinportenTokenProvider.invoke()}")
 			.get()

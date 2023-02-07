@@ -6,7 +6,7 @@ interface AltinnClient {
 
 	fun hentRettigheter(norskIdent: String, organisasjonsnummer: String): List<AltinnRettighet>
 
-	fun hentOrganisasjoner(norskIdent: String, serviceCode: String): String
+	fun hentOrganisasjoner(norskIdent: String, serviceCode: String?): String
 }
 
 data class Organisasjon(
