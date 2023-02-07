@@ -14,6 +14,25 @@ class AltinnClientImpl(
 	private val client: OkHttpClient = RestClient.baseClient(),
 ) : AltinnClient {
 
+	override fun hentOrganisasjoner(norskIdent: String, serviceCode: String): String {
+		val request = Request.Builder()
+			.url("$baseUrl/api/serviceowner/reportees?subject=$norskIdent&serviceCode=$serviceCode")
+			.addHeader("APIKEY", altinnApiKey)
+			.addHeader("Authorization", "Bearer ${maskinportenTokenProvider.invoke()}")
+			.get()
+			.build()
+
+		client.newCall(request).execute().use { response ->
+			if (!response.isSuccessful) {
+				secureLog.error("Klarte ikke å hente tilknyttede organisasjoner for norskIdent=$norskIdent message=${response.message}, code=${response.code}, body=${response.body?.string()}")
+				throw RuntimeException("Klarte ikke å hente tilknyttede organisasjoner code=${response.code}")
+			}
+
+			val body = response.body?.string() ?: throw RuntimeException("Body is missing")
+			return body
+		}
+	}
+
 	override fun hentTilknyttedeOrganisasjoner(norskIdent: String): List<Organisasjon> {
 		val request = Request.Builder()
 			.url("$baseUrl/api/serviceowner/reportees?subject=$norskIdent")
