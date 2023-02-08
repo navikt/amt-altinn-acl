@@ -19,33 +19,21 @@ class InternalController (
 	@Unprotected
 	@GetMapping("/altinn/organisasjoner")
 	fun hentOrganisasjoner(
-		servlet: HttpServletRequest,
 		@RequestParam("fnr") fnr: String,
 		@RequestParam("serviceCode") serviceCode: String,
 	) : String {
 		secureLog.info("Reached /altinn/organisasjoner")
-		if (isInternal(servlet)) {
-			secureLog.info("Passed internal /altinn/organisasjoner")
-			return altinnClient.hentOrganisasjoner(fnr, serviceCode)
-		}
-		secureLog.error("Attempted external access to /altinn/organisasjoner")
-		throw RuntimeException("No access")
+		return altinnClient.hentOrganisasjoner(fnr, serviceCode)
 	}
 
 	@Unprotected
 	@GetMapping("/altinn/rettigheter")
 	fun hentRettigheter(
-		servlet: HttpServletRequest,
 		@RequestParam("fnr") fnr: String,
 		@RequestParam("orgNr") orgNr: String,
 	) : List<AltinnRettighet> {
 		secureLog.info("Reached /altinn/rettigheter")
-		if (isInternal(servlet)) {
-			secureLog.info("Passed internal /altinn/rettigheter")
-			return altinnClient.hentRettigheter(norskIdent = fnr, orgNr)
-		}
-		secureLog.error("Attempted external access to /altinn/rettigheter")
-		throw RuntimeException("No access")
+		return altinnClient.hentRettigheter(norskIdent = fnr, orgNr)
 	}
 
 	private fun isInternal(servlet: HttpServletRequest): Boolean {
