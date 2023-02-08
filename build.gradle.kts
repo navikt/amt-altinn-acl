@@ -35,12 +35,14 @@ dependencies {
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("org.flywaydb:flyway-core")
     implementation("net.logstash.logback:logstash-logback-encoder:7.2")
+    implementation("net.javacrumbs.shedlock:shedlock-spring:4.44.0")
 
     implementation("com.github.navikt.common-java-modules:rest:$commonVersion") {
         exclude("com.github.navikt.common-java-modules", "log")
     }
     implementation("com.github.navikt.common-java-modules:token-client:$commonVersion")
-    
+    implementation("com.github.navikt.common-java-modules:job:$commonVersion")
+
     implementation("no.nav.security:token-validation-spring:3.0.2")
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
     runtimeOnly("org.postgresql:postgresql")

@@ -56,4 +56,16 @@ class RettigheterCacheRepository(
 			.firstOrNull()
 	}
 
+	fun hentUtdaterteBrukere(batchSize: Int = 25): List<RettigheterCacheDbo> {
+		val sql = """
+			select * from rettigheter_cache
+			where CURRENT_TIMESTAMP > expires_after
+			order by expires_after asc
+			limit :limit
+		""".trimIndent()
+		val parameters = MapSqlParameterSource(mapOf(
+			"limit" to batchSize,
+		))
+		return template.query(sql, parameters, rowMapper)
+	}
 }

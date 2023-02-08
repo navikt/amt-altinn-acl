@@ -2,7 +2,9 @@ package no.nav.amt_altinn_acl.service
 
 import no.nav.amt_altinn_acl.client.altinn.AltinnClient
 import no.nav.amt_altinn_acl.domain.AltinnRettighet
+import no.nav.amt_altinn_acl.domain.Bruker
 import no.nav.amt_altinn_acl.repository.RettigheterCacheRepository
+import no.nav.amt_altinn_acl.repository.dbo.RettigheterCacheDbo
 import no.nav.amt_altinn_acl.utils.JsonUtils
 import no.nav.amt_altinn_acl.utils.SecureLog.secureLog
 import org.slf4j.LoggerFactory
@@ -24,7 +26,27 @@ class RettigheterService(
 
 	companion object {
 		const val CACHE_VERSION = 2
-		const val CACHE_EXPIRATION_MINUTES = 15L
+		const val CACHE_EXPIRATION_HOURS = 15L
+	}
+
+	fun hentUtdaterteBrukere(batchSize: Int = 25): List<Bruker> {
+		return rettigheterCacheRepository
+			.hentUtdaterteBrukere(batchSize)
+			.map { it.toModel() }
+	}
+
+	fun synkroniserBrukere(personligeIdenter: List<String>) {
+		log.info("Starter synkronisering av ${personligeIdenter.size} brukere med utgått tilgang")
+		secureLog.info("Starter synkronisering av ${personligeIdenter.size} brukere med utgått tilgang")
+
+		personligeIdenter.forEach { personligIdent ->
+			secureLog.info("Starter synkronisering av rettigheter for $personligIdent")
+			val rettigheter = hentAlleRettigheter(personligIdent)
+			secureLog.info("Synkroniserte rettigheter for $personligIdent, bruker har nå ${rettigheter.size} rettigheter")
+		}
+		log.info("Fullført synkronisering av ${personligeIdenter.size} brukere med utgått tilgang")
+		secureLog.info("Fullført synkronisering av ${personligeIdenter.size} brukere med utgått tilgang")
+
 	}
 
 	fun hentAlleRettigheter(norskIdent: String): List<AltinnRettighet> {
@@ -76,7 +98,7 @@ class RettigheterService(
 
 	private fun oppdaterRettigheterCache(norskIdent: String, rettigheter: List<AltinnRettighet>) {
 		val json = JsonUtils.toJsonString(CachetRettigheter(rettigheter = rettigheter))
-		val expiration = ZonedDateTime.now().plusMinutes(CACHE_EXPIRATION_MINUTES)
+		val expiration = ZonedDateTime.now().plusHours(CACHE_EXPIRATION_HOURS)
 
 		rettigheterCacheRepository.upsertData(norskIdent, CACHE_VERSION, json, expiration)
 	}
@@ -85,4 +107,9 @@ class RettigheterService(
 		val rettigheter: List<AltinnRettighet>,
 	)
 
+	private fun RettigheterCacheDbo.toModel() = Bruker(
+		personligIdent = norskIdent,
+		expiresAfter = expiresAfter,
+		tilganger = dataJson.let { JsonUtils.fromJsonString<CachetRettigheter>(it) }.rettigheter
+	)
 }

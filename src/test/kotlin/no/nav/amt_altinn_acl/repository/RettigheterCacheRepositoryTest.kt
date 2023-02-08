@@ -76,4 +76,32 @@ class RettigheterCacheRepositoryTest {
 		cachetRettighet.expiresAfter shouldBeEqualTo newExpiration
 	}
 
+
+	@Test
+	fun `hentUtdaterteBrukere - ingen utdaterte brukere - returnerer tom liste`() {
+		val personligIdent = "235435"
+		val data = RettigheterService.CachetRettigheter(
+			listOf(AltinnRettighet("123", "4367842"))
+		)
+		repository.upsertData(norskIdent = personligIdent, 1, toJsonString(data), ZonedDateTime.now().plusHours(1))
+
+		repository.hentUtdaterteBrukere(1).size shouldBe 0
+	}
+
+	@Test
+	fun `hentUtdaterteBrukere - utdatert bruker - returnerer bruker`() {
+		val personligIdent = "235435"
+		val personligIdent2 = "235435"
+
+		val data = RettigheterService.CachetRettigheter(
+			listOf(AltinnRettighet("123", "4367842"))
+		)
+		repository.upsertData(norskIdent = personligIdent, 1, toJsonString(data), ZonedDateTime.now().plusHours(1))
+		repository.upsertData(norskIdent = personligIdent2, 1, toJsonString(data), ZonedDateTime.now().minusMinutes(1))
+
+		val utdaterteBrukere = repository.hentUtdaterteBrukere(1)
+
+		utdaterteBrukere.size shouldBe 1
+		utdaterteBrukere.first().norskIdent shouldBe personligIdent2
+	}
 }
