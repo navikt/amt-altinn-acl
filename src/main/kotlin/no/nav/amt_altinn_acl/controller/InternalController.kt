@@ -1,6 +1,4 @@
 package no.nav.amt_altinn_acl.controller
-
-import jakarta.servlet.http.HttpServletRequest
 import no.nav.amt_altinn_acl.client.altinn.AltinnClient
 import no.nav.amt_altinn_acl.client.altinn.AltinnRettighet
 import no.nav.amt_altinn_acl.utils.SecureLog.secureLog
@@ -17,7 +15,7 @@ class InternalController (
 ) {
 
 	@Unprotected
-	@GetMapping("/altinn/organisasjoner")
+	@GetMapping("/organisasjoner")
 	fun hentOrganisasjoner(
 		@RequestParam("fnr") fnr: String,
 		@RequestParam("serviceCode") serviceCode: String,
@@ -27,17 +25,13 @@ class InternalController (
 	}
 
 	@Unprotected
-	@GetMapping("/altinn/rettigheter")
+	@GetMapping("/rettigheter")
 	fun hentRettigheter(
 		@RequestParam("fnr") fnr: String,
 		@RequestParam("orgNr") orgNr: String,
 	) : List<AltinnRettighet> {
 		secureLog.info("Reached /altinn/rettigheter")
 		return altinnClient.hentRettigheter(norskIdent = fnr, orgNr)
-	}
-
-	private fun isInternal(servlet: HttpServletRequest): Boolean {
-		return servlet.remoteAddr == "127.0.0.1"
 	}
 
 }
