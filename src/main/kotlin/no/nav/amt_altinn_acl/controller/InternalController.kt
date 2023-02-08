@@ -1,5 +1,6 @@
 package no.nav.amt_altinn_acl.controller
 
+import jakarta.servlet.http.HttpServletRequest
 import no.nav.amt_altinn_acl.client.altinn.AltinnClient
 import no.nav.amt_altinn_acl.client.altinn.AltinnRettighet
 import no.nav.security.token.support.core.api.Unprotected
@@ -8,7 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import javax.servlet.http.HttpServletRequest
 
 @RestController
 @RequestMapping("/internal")
