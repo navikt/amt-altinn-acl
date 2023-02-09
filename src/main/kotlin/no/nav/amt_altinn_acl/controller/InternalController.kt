@@ -27,7 +27,6 @@ class InternalController (
 		@RequestParam("serviceCode") serviceCode: String,
 	) : String {
 		secureLog.info("Reached /altinn/organisasjoner")
-		log.info("Tester nytt loggoppsett: Skal havne i vanlig logg")
 		if (isInternal(servlet)) {
 			secureLog.info("Passed internal /altinn/organisasjoner")
 			return altinnClient.hentOrganisasjoner(fnr, serviceCode)
