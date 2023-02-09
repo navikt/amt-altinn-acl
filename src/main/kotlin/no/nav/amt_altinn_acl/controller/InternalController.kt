@@ -5,6 +5,7 @@ import no.nav.amt_altinn_acl.client.altinn.AltinnClient
 import no.nav.amt_altinn_acl.client.altinn.AltinnRettighet
 import no.nav.amt_altinn_acl.utils.SecureLog.secureLog
 import no.nav.security.token.support.core.api.Unprotected
+import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -16,6 +17,8 @@ class InternalController (
 	private val altinnClient: AltinnClient
 ) {
 
+	private val log = LoggerFactory.getLogger(javaClass)
+
 	@Unprotected
 	@GetMapping("/altinn/organisasjoner")
 	fun hentOrganisasjoner(
@@ -24,6 +27,7 @@ class InternalController (
 		@RequestParam("serviceCode") serviceCode: String,
 	) : String {
 		secureLog.info("Reached /altinn/organisasjoner")
+		log.info("Tester nytt loggoppsett: Skal havne i vanlig logg")
 		if (isInternal(servlet)) {
 			secureLog.info("Passed internal /altinn/organisasjoner")
 			return altinnClient.hentOrganisasjoner(fnr, serviceCode)

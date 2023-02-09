@@ -34,9 +34,11 @@ dependencies {
 
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("org.flywaydb:flyway-core")
-    
-    implementation("com.github.navikt.common-java-modules:log:$commonVersion")
-    implementation("com.github.navikt.common-java-modules:rest:$commonVersion")
+    implementation("net.logstash.logback:logstash-logback-encoder:7.2")
+
+    implementation("com.github.navikt.common-java-modules:rest:$commonVersion") {
+        exclude("com.github.navikt.common-java-modules", "log")
+    }
     implementation("com.github.navikt.common-java-modules:token-client:$commonVersion")
     
     implementation("no.nav.security:token-validation-spring:3.0.2")
