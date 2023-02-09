@@ -4,7 +4,6 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import no.nav.amt_altinn_acl.client.altinn.AltinnClient
-import no.nav.amt_altinn_acl.client.altinn.Organisasjon
 import no.nav.amt_altinn_acl.domain.AltinnRettighet
 import no.nav.amt_altinn_acl.jobs.AltinnUpdater
 import no.nav.amt_altinn_acl.repository.RettigheterCacheRepository
@@ -48,19 +47,20 @@ class AltinnUpdaterTests {
 
 	@Test
 	fun `update - utdatert bruker - skal synkronisere bruker`() {
-		val org = Organisasjon("2131", Organisasjon.Type.UNDERENHET)
+		val organisasjonsnummer = "2131"
 		val emptyRettigheterData = RettigheterService.CachetRettigheter(emptyList())
 		val personligIdent = Random.nextLong().toString()
 
 		rettigheterCacheRepository.upsertData(norskIdent = personligIdent, CACHE_VERSION, toJsonString(emptyRettigheterData), ZonedDateTime.now().minusMinutes(1))
 
 		every {
-			altinnClient.hentTilknyttedeOrganisasjoner(personligIdent)
-		} returns (listOf(org))
+			altinnClient.hentOrganisasjoner(personligIdent, koordinatorServiceKode)
+		} returns Result.success(listOf(organisasjonsnummer))
+
 
 		every {
-			altinnClient.hentRettigheter(personligIdent, org.organisasjonsnummer)
-		} returns listOf(no.nav.amt_altinn_acl.client.altinn.AltinnRettighet(koordinatorServiceKode))
+			altinnClient.hentOrganisasjoner(personligIdent, veilederServiceKode)
+		} returns Result.success(emptyList())
 
 		altinnUpdater.update()
 
@@ -69,7 +69,7 @@ class AltinnUpdaterTests {
 
 		nyeRettigheter!!.rettigheter.size shouldBe 1
 		nyeRettigheter.rettigheter shouldBe listOf(AltinnRettighet(
-			organisasjonsnummer = org.organisasjonsnummer,
+			organisasjonsnummer = organisasjonsnummer,
 			serviceCode = koordinatorServiceKode
 		))
 

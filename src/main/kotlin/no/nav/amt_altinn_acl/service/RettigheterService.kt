@@ -14,15 +14,13 @@ import java.time.ZonedDateTime
 
 @Service
 class RettigheterService(
-	@Value("\${altinn.koordinator-service-code}") altinnKoordinatorServiceCode: String,
-	@Value("\${altinn.veileder-service-code}") altinnVeilederServiceCode: String,
+	@Value("\${altinn.koordinator-service-code}") private val altinnKoordinatorServiceCode: String,
+	@Value("\${altinn.veileder-service-code}") private val altinnVeilederServiceCode: String,
 	private val altinnClient: AltinnClient,
 	private val rettigheterCacheRepository: RettigheterCacheRepository
 ) {
 
 	private val log = LoggerFactory.getLogger(javaClass)
-
-	private val relevanteServiceKoder = listOf(altinnKoordinatorServiceCode, altinnVeilederServiceCode)
 
 	companion object {
 		const val CACHE_VERSION = 2
@@ -41,7 +39,7 @@ class RettigheterService(
 
 		personligeIdenter.forEach { personligIdent ->
 			secureLog.info("Starter synkronisering av rettigheter for $personligIdent")
-			val rettigheter = hentAlleRettigheter(personligIdent)
+			val rettigheter = getRettigheter(personligIdent)
 			secureLog.info("Synkroniserte rettigheter for $personligIdent, bruker har nå ${rettigheter.size} rettigheter")
 		}
 		log.info("Fullført synkronisering av ${personligeIdenter.size} brukere med utgått tilgang")
@@ -49,7 +47,7 @@ class RettigheterService(
 
 	}
 
-	fun hentAlleRettigheter(norskIdent: String): List<AltinnRettighet> {
+	fun getRettigheter(norskIdent: String): List<AltinnRettighet> {
 		secureLog.info("Henter alle rettigheter for $norskIdent")
 
 		val cachetRettigheterDbo = rettigheterCacheRepository.hentCachetData(norskIdent, CACHE_VERSION)
@@ -62,38 +60,28 @@ class RettigheterService(
 
 		secureLog.info("Starter uthenting av altinn rettigheter for $norskIdent")
 
-		try {
-			val rettigheter = hentRettigheterFraAltinn(norskIdent)
-			secureLog.info("Fullført uthenting av altinn rettigheter for $norskIdent. Personen har nå ${rettigheter.size} rettigheter")
-			oppdaterRettigheterCache(norskIdent, rettigheter)
-			return rettigheter
-		} catch (t: Throwable) {
-			log.error("Klarte ikke å hente rettigheter", t)
-			secureLog.error("Klarte ikke å hente rettigheter for ident $norskIdent", t)
-
-			if (cachetRettigheter != null) {
-				secureLog.warn("Bruker utdaterte rettigheter for ident $norskIdent")
-				return cachetRettigheter.rettigheter
+		return getAltinnRettigheter(norskIdent)
+			.getOrElse {
+				secureLog.error("Uthenting av rettigheter fra altinn feilet, bruker cachede rettigheter", it)
+				return cachetRettigheter?.rettigheter
+					?: throw RuntimeException("Klarte ikke å hente Altinn rettigheter")
 			}
-
-			throw RuntimeException("Klarte ikke å hente Altinn rettigheter")
-		}
+			.also { oppdaterRettigheterCache(norskIdent, it) }
 	}
 
-	private fun hentRettigheterFraAltinn(norskIdent: String): List<AltinnRettighet> {
-		val virksomheter = altinnClient.hentTilknyttedeOrganisasjoner(norskIdent)
+	fun getAltinnRettigheter(norskIdent: String) : Result<List<AltinnRettighet>> {
+		val veilederRettigheter = altinnClient.hentOrganisasjoner(norskIdent, altinnVeilederServiceCode)
+			.getOrElse { return Result.failure(it) }
+			.map { AltinnRettighet(it, altinnVeilederServiceCode) }
 
-		return virksomheter.parallelStream()
-			.flatMap {
-				altinnClient.hentRettigheter(norskIdent, it.organisasjonsnummer)
-					.map { r -> AltinnRettighet(
-						organisasjonsnummer = it.organisasjonsnummer,
-						serviceCode = r.serviceCode
-					) }
-					.stream()
-			}
-			.filter { relevanteServiceKoder.contains(it.serviceCode) }
-			.toList()
+		val koordinatorRettigheter = altinnClient.hentOrganisasjoner(norskIdent, altinnKoordinatorServiceCode)
+			.getOrElse { return Result.failure(it) }
+			.map { AltinnRettighet(it, altinnKoordinatorServiceCode) }
+
+		return Result.success(
+			veilederRettigheter
+				.plus(koordinatorRettigheter)
+		)
 	}
 
 	private fun oppdaterRettigheterCache(norskIdent: String, rettigheter: List<AltinnRettighet>) {

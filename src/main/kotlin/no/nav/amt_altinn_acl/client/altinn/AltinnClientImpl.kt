@@ -6,6 +6,7 @@ import no.nav.amt_altinn_acl.utils.SecureLog.secureLog
 import no.nav.common.rest.client.RestClient
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.slf4j.LoggerFactory
 
 class AltinnClientImpl(
 	private val baseUrl: String,
@@ -13,14 +14,11 @@ class AltinnClientImpl(
 	private val maskinportenTokenProvider: () -> String,
 	private val client: OkHttpClient = RestClient.baseClient(),
 ) : AltinnClient {
+	private val log = LoggerFactory.getLogger(javaClass)
 
-	override fun hentOrganisasjoner(norskIdent: String, serviceCode: String?): String {
-		val requestUrl = serviceCode
-			?.let { "$baseUrl/api/serviceowner/reportees?subject=$norskIdent&serviceCode=$serviceCode&serviceEdition=1"}
-				?: "$baseUrl/api/serviceowner/reportees?subject=$norskIdent"
-
+	override fun hentOrganisasjoner(norskIdent: String, serviceCode: String): Result<List<String>> {
 		val request = Request.Builder()
-			.url(requestUrl)
+			.url("$baseUrl/api/serviceowner/reportees?subject=$norskIdent&serviceCode=$serviceCode&serviceEdition=1")
 			.addHeader("APIKEY", altinnApiKey)
 			.addHeader("Authorization", "Bearer ${maskinportenTokenProvider.invoke()}")
 			.get()
@@ -28,40 +26,17 @@ class AltinnClientImpl(
 
 		client.newCall(request).execute().use { response ->
 			if (!response.isSuccessful) {
-				secureLog.error("Klarte ikke å hente tilknyttede organisasjoner for norskIdent=$norskIdent message=${response.message}, code=${response.code}, body=${response.body?.string()}")
-				throw RuntimeException("Klarte ikke å hente tilknyttede organisasjoner code=${response.code}")
+				secureLog.error("Klarte ikke å hente organisasjoner for serviceCode=$serviceCode norskIdent=$norskIdent message=${response.message}, code=${response.code}, body=${response.body?.string()}")
+				log.error("Klarte ikk ehente organisasjoner for $serviceCode")
+				throw RuntimeException("Klarte ikke å hente organisasjoner code=${response.code}")
 			}
 
-			val body = response.body?.string() ?: throw RuntimeException("Body is missing")
-			return body
-		}
-	}
+			val body = response.body?.string() ?: return Result.failure(Exception("Body is missing"))
+			val data = fromJsonString<List<ReporteeResponseEntity.Reportee>>(body)
+				.filter { it.organizationNumber != null }
+				.mapNotNull { it.organizationNumber }
 
-	override fun hentTilknyttedeOrganisasjoner(norskIdent: String): List<Organisasjon> {
-		val request = Request.Builder()
-			.url("$baseUrl/api/serviceowner/reportees?subject=$norskIdent")
-			.addHeader("APIKEY", altinnApiKey)
-			.addHeader("Authorization", "Bearer ${maskinportenTokenProvider.invoke()}")
-			.get()
-			.build()
-
-		client.newCall(request).execute().use { response ->
-			if (!response.isSuccessful) {
-				secureLog.error("Klarte ikke å hente tilknyttede organisasjoner for norskIdent=$norskIdent message=${response.message}, code=${response.code}, body=${response.body?.string()}")
-				throw RuntimeException("Klarte ikke å hente tilknyttede organisasjoner code=${response.code}")
-			}
-
-			val body = response.body?.string() ?: throw RuntimeException("Body is missing")
-
-			val data = fromJsonString<List<HentTilknyttedeOrganisasjoner.Reportee>>(body)
-
-			return data
-				.map {
-					Organisasjon(
-						type = mapType(it.type) ?: return@map null,
-						organisasjonsnummer = it.organizationNumber ?: return@map null
-					)
-				}.filterNotNull()
+			return Result.success(data)
 		}
 	}
 
@@ -88,24 +63,6 @@ class AltinnClientImpl(
 		}
 	}
 
-	private fun mapType(type: String): Organisasjon.Type? {
-		return when (type) {
-			"Enterprise" -> Organisasjon.Type.OVERORDNET_ENHET
-			"Business" -> Organisasjon.Type.UNDERENHET
-			else -> null
-		}
-	}
-
-	object HentTilknyttedeOrganisasjoner {
-		data class Reportee(
-			@JsonAlias("Type")
-			val type: String,
-
-			@JsonAlias("OrganizationNumber")
-			val organizationNumber: String?,
-		)
-	}
-
 	object HentRettigheter {
 		data class Response(
 			@JsonAlias("Rights")
@@ -118,4 +75,13 @@ class AltinnClientImpl(
 		}
 	}
 
+	object ReporteeResponseEntity {
+		data class Reportee(
+			@JsonAlias("Type")
+			val type: String,
+
+			@JsonAlias("OrganizationNumber")
+			val organizationNumber: String?,
+		)
+	}
 }

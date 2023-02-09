@@ -35,7 +35,7 @@ class RolleServiceTest {
 		val organisasjonsnummer = "53928442"
 
 		every {
-			rettigheterService.hentAlleRettigheter(norskIdent)
+			rettigheterService.getRettigheter(norskIdent)
 		} returns listOf(
 			AltinnRettighet(organisasjonsnummer, koordinatorServiceKode),
 			AltinnRettighet("42378943", "374892")

@@ -1,22 +1,10 @@
 package no.nav.amt_altinn_acl.client.altinn
 
 interface AltinnClient {
+	fun hentOrganisasjoner(norskIdent: String, serviceCode: String): Result<List<String>>
 
-	fun hentTilknyttedeOrganisasjoner(norskIdent: String): List<Organisasjon>
-
+	@Deprecated("Slettes etter ny kode er verifisert")
 	fun hentRettigheter(norskIdent: String, organisasjonsnummer: String): List<AltinnRettighet>
-
-	fun hentOrganisasjoner(norskIdent: String, serviceCode: String?): String
-}
-
-data class Organisasjon(
-	val organisasjonsnummer: String,
-	val type: Type
-) {
-	enum class Type {
-		OVERORDNET_ENHET,
-		UNDERENHET
-	}
 }
 
 data class AltinnRettighet(

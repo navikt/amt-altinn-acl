@@ -23,11 +23,11 @@ class InternalController (
 		servlet: HttpServletRequest,
 		@RequestParam("fnr") fnr: String,
 		@RequestParam("serviceCode") serviceCode: String,
-	) : String {
+	) : List<String> {
 		secureLog.info("Reached /altinn/organisasjoner")
 		if (isInternal(servlet)) {
 			secureLog.info("Passed internal /altinn/organisasjoner")
-			return altinnClient.hentOrganisasjoner(fnr, serviceCode)
+			return altinnClient.hentOrganisasjoner(fnr, serviceCode).getOrThrow()
 		}
 		secureLog.error("Attempted external access to /altinn/organisasjoner")
 		throw RuntimeException("No access")

@@ -7,8 +7,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import no.nav.amt_altinn_acl.client.altinn.AltinnClient
-import no.nav.amt_altinn_acl.client.altinn.AltinnRettighet
-import no.nav.amt_altinn_acl.client.altinn.Organisasjon
 import no.nav.amt_altinn_acl.repository.RettigheterCacheRepository
 import no.nav.amt_altinn_acl.repository.dbo.RettigheterCacheDbo
 import no.nav.amt_altinn_acl.service.RettigheterService.Companion.CACHE_VERSION
@@ -41,7 +39,7 @@ class RettigheterServiceTest {
 	}
 
 	@Test
-	fun `hentAlleRettigheter - skal hente rettigheter fra cache`() {
+	fun `hentAlleRettigheter - cached data er ikke expired - skal hente rettigheter fra cache`() {
 		val norskIdent = "21313"
 		val organisasjonsnummer = "34532534"
 		val serviceCode = "432438"
@@ -61,19 +59,19 @@ class RettigheterServiceTest {
 		""".trimIndent(), ZonedDateTime.now().plusHours(1), ZonedDateTime.now()
 		)
 
-		val rettigheter = rettigheterService.hentAlleRettigheter(norskIdent)
+		val rettigheter = rettigheterService.getRettigheter(norskIdent)
 
 		rettigheter shouldHaveSize 1
 		rettigheter.first().serviceCode shouldBe serviceCode
 		rettigheter.first().organisasjonsnummer shouldBe organisasjonsnummer
 
 		verify(exactly = 0) {
-			altinnClient.hentRettigheter(any(), any())
+			altinnClient.hentOrganisasjoner(norskIdent, serviceCode)
 		}
 	}
 
 	@Test
-	fun `hentAlleRettigheter - skal bruke expired data hvis kall til altinn feiler`() {
+	fun `hentAlleRettigheter - altinn feiler - skal bruke expired data`() {
 		val norskIdent = "21313"
 		val organisasjonsnummer = "34532534"
 		val serviceCode = "432438"
@@ -94,10 +92,10 @@ class RettigheterServiceTest {
 		)
 
 		every {
-			altinnClient.hentTilknyttedeOrganisasjoner(norskIdent)
-		} throws RuntimeException()
+			altinnClient.hentOrganisasjoner(norskIdent, any())
+		} returns Result.failure(Exception("Body is missing"))
 
-		val rettigheter = rettigheterService.hentAlleRettigheter(norskIdent)
+		val rettigheter = rettigheterService.getRettigheter(norskIdent)
 
 		rettigheter shouldHaveSize 1
 		rettigheter.first().serviceCode shouldBe serviceCode
@@ -105,7 +103,7 @@ class RettigheterServiceTest {
 	}
 
 	@Test
-	fun `hentAlleRettigheter - skal feile hvis ingen cachet data og kall til Altinn feiler`() {
+	fun `hentAlleRettigheter - ingen cachet data, altinn feiler - skal kaste exception`() {
 		val norskIdent = "21313"
 
 		every {
@@ -113,42 +111,37 @@ class RettigheterServiceTest {
 		} returns null
 
 		every {
-			altinnClient.hentTilknyttedeOrganisasjoner(norskIdent)
+			altinnClient.hentOrganisasjoner(norskIdent, any())
 		} throws RuntimeException()
 
-		shouldThrowExactly<RuntimeException> { rettigheterService.hentAlleRettigheter(norskIdent) }
+		shouldThrowExactly<RuntimeException> { rettigheterService.getRettigheter(norskIdent) }
 	}
-
 
 	@Test
 	fun `hentAlleRettigheter - bruker finnes ikke i cache - skal cache`() {
 		val norskIdent = "21313"
 		val organisasjonsnummer = "34532534"
-		val serviceCode = "432438"
 
 		every {
-			altinnClient.hentTilknyttedeOrganisasjoner(norskIdent)
-		} returns listOf(Organisasjon(organisasjonsnummer, Organisasjon.Type.UNDERENHET))
+			altinnClient.hentOrganisasjoner(norskIdent, koordinatorServiceKode)
+		} returns Result.success(listOf(organisasjonsnummer))
 
 		every {
-			altinnClient.hentRettigheter(norskIdent, organisasjonsnummer)
-		} returns listOf(
-			AltinnRettighet(serviceCode),
-			AltinnRettighet(koordinatorServiceKode)
-		)
+			altinnClient.hentOrganisasjoner(norskIdent, veilederServiceKode)
+		} returns Result.success(emptyList())
 
 		every {
-			rettigheterCacheRepository.hentCachetData(norskIdent, 2)
+			rettigheterCacheRepository.hentCachetData(norskIdent, CACHE_VERSION)
 		} returns null
 
 		every {
 			rettigheterCacheRepository.upsertData(norskIdent, 2, any(), any())
 		} returns Unit
 
-		rettigheterService.hentAlleRettigheter(norskIdent)
+		rettigheterService.getRettigheter(norskIdent)
 
 		val expectedJson = """
-			{"rettigheter":[{"organisasjonsnummer":"34532534","serviceCode":"1234"}]}
+			{"rettigheter":[{"organisasjonsnummer":"$organisasjonsnummer","serviceCode":"$koordinatorServiceKode"}]}
 		""".trimIndent()
 
 		verify(exactly = 1) {
@@ -160,11 +153,10 @@ class RettigheterServiceTest {
 	fun `hentAlleRettigheter - bruker har rettigheter i cache men ikke i altinn - skal caches`() {
 		val norskIdent = "21313"
 		val organisasjonsnummer = "34532534"
-		val serviceCode = "343092"
 		val tommeRettigheter = """{"rettigheter":[]}"""
 		every {
-			altinnClient.hentTilknyttedeOrganisasjoner(norskIdent)
-		} returns listOf(Organisasjon(organisasjonsnummer, Organisasjon.Type.UNDERENHET))
+			altinnClient.hentOrganisasjoner(norskIdent, any())
+		} returns Result.success(emptyList())
 
 		every {
 			rettigheterCacheRepository.hentCachetData(norskIdent, CACHE_VERSION)
@@ -173,7 +165,7 @@ class RettigheterServiceTest {
 			{
 			  "rettigheter": [
 				{
-				  "serviceCode": "$serviceCode",
+				  "serviceCode": "$koordinatorServiceKode",
 				  "organisasjonsnummer": "$organisasjonsnummer"
 				}
 			  ]
@@ -181,15 +173,12 @@ class RettigheterServiceTest {
 		""".trimIndent(), ZonedDateTime.now().minusHours(1), ZonedDateTime.now()
 		)
 
-		every {
-			altinnClient.hentRettigheter(norskIdent, organisasjonsnummer)
-		} returns emptyList()
 
 		every {
 			rettigheterCacheRepository.upsertData(norskIdent, CACHE_VERSION, any(), any())
 		} returns Unit
 
-		val rettigheter = rettigheterService.hentAlleRettigheter(norskIdent)
+		val rettigheter = rettigheterService.getRettigheter(norskIdent)
 
 		rettigheter shouldHaveSize 0
 

@@ -1,5 +1,6 @@
 package no.nav.amt_altinn_acl.test_util
 
+import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
@@ -15,7 +16,7 @@ open class MockHttpClient {
 
 	fun start() {
 		try {
-		    server.start()
+			server.start()
 		} catch (e: IllegalArgumentException) {
 			log.info("${javaClass.simpleName} is already started")
 		}
@@ -47,6 +48,26 @@ open class MockHttpClient {
 		}
 
 		server.enqueue(response)
+	}
+
+	fun dispatch(
+		responseCode: Int = 200,
+		headers: Map<String, String> = emptyMap(),
+		body: String
+	) {
+		server.dispatcher = object : Dispatcher() {
+			override fun dispatch(request: RecordedRequest): MockResponse {
+				val response = MockResponse()
+					.setBody(body)
+					.setResponseCode(responseCode)
+
+				headers.forEach {
+					response.addHeader(it.key, it.value)
+				}
+				return response
+
+			}
+		}
 	}
 
 	fun latestRequest(): RecordedRequest {

@@ -14,7 +14,7 @@ class RolleService(
 ) {
 
 	fun hentTiltaksarrangorRoller(norskIdent: String): List<TiltaksarrangorRoller> {
-		val rettigheter = rettigheterService.hentAlleRettigheter(norskIdent)
+		val rettigheter = rettigheterService.getRettigheter(norskIdent)
 
 		return hentTiltaksarrangorRoller(rettigheter)
 	}
