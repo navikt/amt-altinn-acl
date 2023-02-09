@@ -53,14 +53,16 @@ class InternalController (
 	@GetMapping("/altinn/synkroniser")
 	fun synkroniserAltinnRettigheter(
 		servlet: HttpServletRequest,
-	) : List<AltinnRettighet> {
+	) {
 		secureLog.info("Reached /altinn/synkroniser")
 		if (isInternal(servlet)) {
 			secureLog.info("Passed internal /altinn/synkroniser")
 			altinnUpdater.update()
 		}
-		secureLog.error("Attempted external access to /altinn/synkroniser")
-		throw RuntimeException("No access")
+		else {
+			secureLog.error("Attempted external access to /altinn/synkroniser")
+			throw RuntimeException("No access")
+		}
 	}
 
 	private fun isInternal(servlet: HttpServletRequest): Boolean {
