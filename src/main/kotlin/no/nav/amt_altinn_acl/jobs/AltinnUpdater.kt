@@ -4,9 +4,11 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import no.nav.amt_altinn_acl.service.RettigheterService
 import no.nav.common.job.JobRunner
 import org.springframework.context.annotation.Configuration
+import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.scheduling.annotation.Scheduled
 
 @Configuration
+@EnableScheduling
 class AltinnUpdater(
 	private val rettigheterService: RettigheterService
 ) {

@@ -1,7 +1,7 @@
 package no.nav.amt_altinn_acl.test_util
 
 import no.nav.amt_altinn_acl.test_util.Constants.TEST_JWK
-import no.nav.amt_altinn_acl.test_util.mock_clients.MockAltinnHttpClient
+import no.nav.amt_altinn_acl.test_util.mock_clients.MockAltinnHttpServer
 import no.nav.amt_altinn_acl.test_util.mock_clients.MockMaskinportenHttpClient
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -34,8 +34,6 @@ class IntegrationTest {
 	@AfterEach
 	fun cleanDatabase() {
 		DbTestDataUtils.cleanDatabase(postgresDataSource)
-		mockAltinnHttpClient.resetRequestCount()
-		mockMaskinportenHttpClient.resetRequestCount()
 	}
 
 	companion object {
@@ -43,7 +41,7 @@ class IntegrationTest {
 		const val altinnVeilederServiceKode = "88888"
 
 		val oAuthServer = MockOAuthServer()
-		val mockAltinnHttpClient = MockAltinnHttpClient()
+		val mockAltinnHttpClient = MockAltinnHttpServer()
 		val mockMaskinportenHttpClient = MockMaskinportenHttpClient()
 		val postgresDataSource = SingletonPostgresContainer.getDataSource()
 
