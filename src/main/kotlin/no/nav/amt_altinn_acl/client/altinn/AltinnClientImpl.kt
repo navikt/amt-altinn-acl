@@ -16,7 +16,7 @@ class AltinnClientImpl(
 
 	override fun hentOrganisasjoner(norskIdent: String, serviceCode: String?): String {
 		val requestUrl = serviceCode
-			?.let { "$baseUrl/api/serviceowner/reportees?subject=$norskIdent&serviceCode=$serviceCode"}
+			?.let { "$baseUrl/api/serviceowner/reportees?subject=$norskIdent&serviceCode=$serviceCode&serviceEdition=1"}
 				?: "$baseUrl/api/serviceowner/reportees?subject=$norskIdent"
 
 		val request = Request.Builder()
