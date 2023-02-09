@@ -62,9 +62,7 @@ class RettigheterService(
 
 		try {
 			val rettigheter = hentRettigheterFraAltinn(norskIdent)
-			if (rettigheter.isNotEmpty()) {
-				oppdaterRettigheterCache(norskIdent, rettigheter)
-			}
+			oppdaterRettigheterCache(norskIdent, rettigheter)
 			return rettigheter
 		} catch (t: Throwable) {
 			log.error("Klarte ikke å hente rettigheter", t)
