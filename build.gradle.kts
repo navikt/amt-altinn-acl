@@ -16,7 +16,7 @@ repositories {
     maven { setUrl("https://jitpack.io") }
 }
 
-val commonVersion = "2023.01.30_16.31-5977997e3a67"
+val commonVersion = "2023.02.08_14.02-e5f1a7a4b9e4"
 val testcontainersVersion = "1.17.6"
 
 dependencies {
@@ -41,7 +41,9 @@ dependencies {
         exclude("com.github.navikt.common-java-modules", "log")
     }
     implementation("com.github.navikt.common-java-modules:token-client:$commonVersion")
-    implementation("com.github.navikt.common-java-modules:job:$commonVersion")
+    implementation("com.github.navikt.common-java-modules:job:$commonVersion") {
+        exclude("com.github.navikt.common-java-modules", "log")
+    }
 
     implementation("no.nav.security:token-validation-spring:3.0.2")
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
