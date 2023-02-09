@@ -50,18 +50,21 @@ class RettigheterService(
 	}
 
 	fun hentAlleRettigheter(norskIdent: String): List<AltinnRettighet> {
+		secureLog.info("Henter alle rettigheter for $norskIdent")
+
 		val cachetRettigheterDbo = rettigheterCacheRepository.hentCachetData(norskIdent, CACHE_VERSION)
-
 		val hasExpired = cachetRettigheterDbo == null || ZonedDateTime.now().isAfter(cachetRettigheterDbo.expiresAfter)
-
 		val cachetRettigheter = cachetRettigheterDbo?.let { JsonUtils.fromJsonString<CachetRettigheter>(it.dataJson) }
 
 		if (!hasExpired && cachetRettigheter != null && cachetRettigheter.rettigheter.isNotEmpty()) {
 			return cachetRettigheter.rettigheter
 		}
 
+		secureLog.info("Starter uthenting av altinn rettigheter for $norskIdent")
+
 		try {
 			val rettigheter = hentRettigheterFraAltinn(norskIdent)
+			secureLog.info("Fullført uthenting av altinn rettigheter for $norskIdent. Personen har nå ${rettigheter.size} rettigheter")
 			oppdaterRettigheterCache(norskIdent, rettigheter)
 			return rettigheter
 		} catch (t: Throwable) {
@@ -75,7 +78,6 @@ class RettigheterService(
 
 			throw RuntimeException("Klarte ikke å hente Altinn rettigheter")
 		}
-
 	}
 
 	private fun hentRettigheterFraAltinn(norskIdent: String): List<AltinnRettighet> {
