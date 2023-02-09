@@ -5,7 +5,6 @@ import no.nav.amt_altinn_acl.client.altinn.AltinnClient
 import no.nav.amt_altinn_acl.client.altinn.AltinnRettighet
 import no.nav.amt_altinn_acl.utils.SecureLog.secureLog
 import no.nav.security.token.support.core.api.Unprotected
-import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -16,9 +15,6 @@ import org.springframework.web.bind.annotation.RestController
 class InternalController (
 	private val altinnClient: AltinnClient
 ) {
-
-	private val log = LoggerFactory.getLogger(javaClass)
-
 	@Unprotected
 	@GetMapping("/altinn/organisasjoner")
 	fun hentOrganisasjoner(
