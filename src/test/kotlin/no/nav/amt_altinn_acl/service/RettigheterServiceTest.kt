@@ -11,6 +11,7 @@ import no.nav.amt_altinn_acl.client.altinn.AltinnRettighet
 import no.nav.amt_altinn_acl.client.altinn.Organisasjon
 import no.nav.amt_altinn_acl.repository.RettigheterCacheRepository
 import no.nav.amt_altinn_acl.repository.dbo.RettigheterCacheDbo
+import no.nav.amt_altinn_acl.service.RettigheterService.Companion.CACHE_VERSION
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.ZonedDateTime
@@ -120,7 +121,7 @@ class RettigheterServiceTest {
 
 
 	@Test
-	fun `skal ikke lagre unødvendige rettigheter`() {
+	fun `hentAlleRettigheter - bruker finnes ikke i cache - skal cache`() {
 		val norskIdent = "21313"
 		val organisasjonsnummer = "34532534"
 		val serviceCode = "432438"
@@ -156,28 +157,44 @@ class RettigheterServiceTest {
 	}
 
 	@Test
-	fun `hentAlleRettigheter - mangler rettigheter - skal ikke caches`() {
+	fun `hentAlleRettigheter - bruker har rettigheter i cache men ikke i altinn - skal caches`() {
 		val norskIdent = "21313"
 		val organisasjonsnummer = "34532534"
-
+		val serviceCode = "343092"
+		val tommeRettigheter = """{"rettigheter":[]}"""
 		every {
 			altinnClient.hentTilknyttedeOrganisasjoner(norskIdent)
 		} returns listOf(Organisasjon(organisasjonsnummer, Organisasjon.Type.UNDERENHET))
 
 		every {
-			rettigheterCacheRepository.hentCachetData(norskIdent, 2)
-		} returns null
+			rettigheterCacheRepository.hentCachetData(norskIdent, CACHE_VERSION)
+		} returns RettigheterCacheDbo(
+			1, norskIdent, 1, """
+			{
+			  "rettigheter": [
+				{
+				  "serviceCode": "$serviceCode",
+				  "organisasjonsnummer": "$organisasjonsnummer"
+				}
+			  ]
+       		 }
+		""".trimIndent(), ZonedDateTime.now().minusHours(1), ZonedDateTime.now()
+		)
 
 		every {
 			altinnClient.hentRettigheter(norskIdent, organisasjonsnummer)
 		} returns emptyList()
 
+		every {
+			rettigheterCacheRepository.upsertData(norskIdent, CACHE_VERSION, any(), any())
+		} returns Unit
+
 		val rettigheter = rettigheterService.hentAlleRettigheter(norskIdent)
 
 		rettigheter shouldHaveSize 0
 
-		verify(exactly = 0) {
-			rettigheterCacheRepository.upsertData(any(), any(), any(), any())
+		verify(exactly = 1) {
+			rettigheterCacheRepository.upsertData(norskIdent, CACHE_VERSION, tommeRettigheter, any())
 		}
 	}
 
