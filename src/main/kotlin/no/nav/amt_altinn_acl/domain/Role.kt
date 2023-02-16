@@ -2,9 +2,9 @@ package no.nav.amt_altinn_acl.domain
 
 import java.time.ZonedDateTime
 
-data class Right(
+data class Role(
 	val id: Long,
-	val rightType: RightType,
+	val roleType: RoleType,
 	val validFrom: ZonedDateTime,
 	val validTo: ZonedDateTime?
 )

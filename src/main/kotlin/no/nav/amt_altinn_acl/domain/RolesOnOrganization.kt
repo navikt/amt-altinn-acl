@@ -1,6 +1,6 @@
 package no.nav.amt_altinn_acl.domain
 
-data class RightsOnOrganization(
+data class RolesOnOrganization(
 	val organizationNumber: String,
-	val rights: List<Right>
+	val roles: List<Role>
 )

@@ -2,12 +2,12 @@ package no.nav.amt_altinn_acl.service
 
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import no.nav.amt_altinn_acl.domain.RightType
-import no.nav.amt_altinn_acl.domain.RightType.KOORDINATOR
-import no.nav.amt_altinn_acl.domain.RightType.VEILEDER
-import no.nav.amt_altinn_acl.domain.RightsOnOrganization
+import no.nav.amt_altinn_acl.domain.RoleType
+import no.nav.amt_altinn_acl.domain.RoleType.KOORDINATOR
+import no.nav.amt_altinn_acl.domain.RoleType.VEILEDER
+import no.nav.amt_altinn_acl.domain.RolesOnOrganization
 import no.nav.amt_altinn_acl.repository.PersonRepository
-import no.nav.amt_altinn_acl.repository.RightsRepository
+import no.nav.amt_altinn_acl.repository.RoleRepository
 import no.nav.amt_altinn_acl.test_util.IntegrationTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -16,16 +16,16 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-class RightsServiceTest : IntegrationTest() {
+class RoleServiceTest : IntegrationTest() {
 
 	@Autowired
-	lateinit var rightsService: RightsService
+	lateinit var roleService: RoleService
 
 	@Autowired
 	lateinit var personRepository: PersonRepository
 
 	@Autowired
-	lateinit var rightsRepository: RightsRepository
+	lateinit var roleRepository: RoleRepository
 
 	@BeforeEach
 	internal fun setUp() {
@@ -41,7 +41,7 @@ class RightsServiceTest : IntegrationTest() {
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf(organization))
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organization))
 
-		val rights = rightsService.getRightsForPerson(norskIdent)
+		val rights = roleService.getRolesForPerson(norskIdent)
 
 		mockAltinnHttpClient.requestCount() shouldBe 2
 
@@ -65,13 +65,13 @@ class RightsServiceTest : IntegrationTest() {
 		val personDbo = personRepository.getOrCreate(norskIdent)
 		personRepository.setSynchronized(norskIdent)
 
-		rightsRepository.createRight(
+		roleRepository.createRole(
 			personId = personDbo.id,
 			organizationNumber = organization,
-			rightType = KOORDINATOR
+			roleType = KOORDINATOR
 		)
 
-		rightsService.getRightsForPerson(norskIdent)
+		roleService.getRolesForPerson(norskIdent)
 		mockAltinnHttpClient.requestCount() shouldBe 0
 	}
 
@@ -86,7 +86,7 @@ class RightsServiceTest : IntegrationTest() {
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf(organization))
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organization))
 
-		val rights = rightsService.getRightsForPerson(norskIdent)
+		val rights = roleService.getRolesForPerson(norskIdent)
 
 		hasRight(rights, organization, VEILEDER) shouldBe true
 		hasRight(rights, organization, KOORDINATOR) shouldBe true
@@ -100,18 +100,18 @@ class RightsServiceTest : IntegrationTest() {
 		val organization = UUID.randomUUID().toString()
 
 		val personDbo = personRepository.getOrCreate(norskIdent)
-		rightsRepository.createRight(personDbo.id, organization, KOORDINATOR)
-		rightsRepository.createRight(personDbo.id, organization, VEILEDER)
+		roleRepository.createRole(personDbo.id, organization, KOORDINATOR)
+		roleRepository.createRole(personDbo.id, organization, VEILEDER)
 
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organization))
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf())
 
-		val rights = rightsService.getRightsForPerson(norskIdent)
+		val rights = roleService.getRolesForPerson(norskIdent)
 
 		hasRight(rights, organization, VEILEDER) shouldBe false
 		hasRight(rights, organization, KOORDINATOR) shouldBe true
 
-		val invalidVeileder = rightsRepository.getRightsForPerson(personDbo.id, false).find { it.rightType == VEILEDER }!!
+		val invalidVeileder = roleRepository.getRolesForPerson(personDbo.id, false).find { it.roleType == VEILEDER }!!
 
 		invalidVeileder.validTo shouldNotBe null
 	}
@@ -122,12 +122,12 @@ class RightsServiceTest : IntegrationTest() {
 		val organization = UUID.randomUUID().toString()
 
 		val personDbo = personRepository.getOrCreate(norskIdent)
-		rightsRepository.createRight(personDbo.id, organization, VEILEDER)
+		roleRepository.createRole(personDbo.id, organization, VEILEDER)
 
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organization))
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf(organization))
 
-		val rights = rightsService.getRightsForPerson(norskIdent)
+		val rights = roleService.getRolesForPerson(norskIdent)
 
 		hasRight(rights, organization, VEILEDER) shouldBe true
 		hasRight(rights, organization, KOORDINATOR) shouldBe true
@@ -139,12 +139,12 @@ class RightsServiceTest : IntegrationTest() {
 		val organization = UUID.randomUUID().toString()
 
 		val personDbo = personRepository.getOrCreate(norskIdent)
-		rightsRepository.createRight(personDbo.id, organization, KOORDINATOR)
+		roleRepository.createRole(personDbo.id, organization, KOORDINATOR)
 
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf())
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf())
 
-		val rights = rightsService.getRightsForPerson(norskIdent)
+		val rights = roleService.getRolesForPerson(norskIdent)
 
 		rights.isEmpty() shouldBe true
 
@@ -152,25 +152,25 @@ class RightsServiceTest : IntegrationTest() {
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organization))
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf())
 
-		val updatedRights = rightsService.getRightsForPerson(norskIdent)
+		val updatedRights = roleService.getRolesForPerson(norskIdent)
 
 		hasRight(updatedRights, organization, KOORDINATOR) shouldBe true
 
-		val databaseRights = rightsRepository.getRightsForPerson(personDbo.id, false)
-			.filter { it.rightType == KOORDINATOR }
+		val databaseRights = roleRepository.getRolesForPerson(personDbo.id, false)
+			.filter { it.roleType == KOORDINATOR }
 
 		databaseRights.size shouldBe 2
 
 	}
 
-	private fun hasRightInDatabase(personId: Long, organizationNumber: String, right: RightType): Boolean {
-		return rightsRepository.getRightsForPerson(personId)
-			.find { it.organizationNumber == organizationNumber && it.rightType == right } != null
+	private fun hasRightInDatabase(personId: Long, organizationNumber: String, right: RoleType): Boolean {
+		return roleRepository.getRolesForPerson(personId)
+			.find { it.organizationNumber == organizationNumber && it.roleType == right } != null
 	}
 
-	private fun hasRight(list: List<RightsOnOrganization>, organizationNumber: String, right: RightType): Boolean {
+	private fun hasRight(list: List<RolesOnOrganization>, organizationNumber: String, right: RoleType): Boolean {
 		return list.find { it.organizationNumber == organizationNumber }
-			?.rights?.find { it.rightType == right } != null
+			?.roles?.find { it.roleType == right } != null
 	}
 
 	private fun ZonedDateTime.days(): ZonedDateTime {

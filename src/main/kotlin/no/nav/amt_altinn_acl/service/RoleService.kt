@@ -1,12 +1,12 @@
 package no.nav.amt_altinn_acl.service
 
 import no.nav.amt_altinn_acl.client.altinn.AltinnClient
-import no.nav.amt_altinn_acl.domain.Right
-import no.nav.amt_altinn_acl.domain.RightType
-import no.nav.amt_altinn_acl.domain.RightsOnOrganization
+import no.nav.amt_altinn_acl.domain.Role
+import no.nav.amt_altinn_acl.domain.RoleType
+import no.nav.amt_altinn_acl.domain.RolesOnOrganization
 import no.nav.amt_altinn_acl.repository.PersonRepository
-import no.nav.amt_altinn_acl.repository.RightsRepository
-import no.nav.amt_altinn_acl.repository.dbo.RightDbo
+import no.nav.amt_altinn_acl.repository.RoleRepository
+import no.nav.amt_altinn_acl.repository.dbo.RoleDbo
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.Duration
@@ -15,26 +15,26 @@ import java.time.LocalDateTime
 import java.time.ZonedDateTime
 
 @Service
-class RightsService(
+class RoleService(
 	private val personRepository: PersonRepository,
-	private val rightsRepository: RightsRepository,
+	private val roleRepository: RoleRepository,
 	private val altinnClient: AltinnClient
 ) {
 
 	private val log = LoggerFactory.getLogger(javaClass)
 
-	fun getRightsForPerson(norskIdent: String, onlyValid: Boolean = true): List<RightsOnOrganization> {
+	fun getRolesForPerson(norskIdent: String, onlyValid: Boolean = true): List<RolesOnOrganization> {
 		val person = personRepository.getOrCreate(norskIdent)
 		val synchronizeIfBefore = ZonedDateTime.now().minusHours(1)
 
 		val rights = if (person.lastSynchronized.isBefore(synchronizeIfBefore)) {
 			updateRights(person.id, norskIdent)
-			rightsRepository.getRightsForPerson(person.id, onlyValid)
+			roleRepository.getRolesForPerson(person.id, onlyValid)
 		} else {
-			rightsRepository.getRightsForPerson(person.id, onlyValid).let {
+			roleRepository.getRolesForPerson(person.id, onlyValid).let {
 				if (it.isEmpty()) {
 					updateRights(person.id, norskIdent)
-					return@let rightsRepository.getRightsForPerson(person.id, onlyValid)
+					return@let roleRepository.getRolesForPerson(person.id, onlyValid)
 				}
 				return@let it
 			}
@@ -59,23 +59,25 @@ class RightsService(
 	private fun updateRights(id: Long, norskIdent: String) {
 		val start = Instant.now()
 
-		val allOldRights = rightsRepository.getRightsForPerson(id)
+		val allOldRights = roleRepository.getRolesForPerson(id)
 
-		RightType.values().forEach { right ->
-			val oldRights = allOldRights.filter { it.rightType == right }
+		RoleType.values().forEach { right ->
+			val oldRights = allOldRights.filter { it.roleType == right }
 
 			val oranizationsWithRight = altinnClient.hentOrganisasjoner(norskIdent, right.serviceCode)
 				.getOrThrow()
 
 			oldRights.forEach { oldRight ->
 				if (!oranizationsWithRight.contains(oldRight.organizationNumber)) {
-					rightsRepository.invalidateRight(oldRight.id)
+					log.debug("User $id lost $right on ${oldRight.organizationNumber}")
+					roleRepository.invalidateRole(oldRight.id)
 				}
 			}
 
 			oranizationsWithRight.forEach { orgRight ->
 				if (oldRights.find { it.organizationNumber == orgRight } == null) {
-					rightsRepository.createRight(id, orgRight, right)
+					log.debug("User $id got $right on $orgRight")
+					roleRepository.createRole(id, orgRight, right)
 				}
 			}
 		}
@@ -85,18 +87,18 @@ class RightsService(
 		log.info("Updated rights for person with id $id in ${duration.toMillis()} ms")
 	}
 
-	private fun map(rights: List<RightDbo>): List<RightsOnOrganization> {
+	private fun map(rights: List<RoleDbo>): List<RolesOnOrganization> {
 		val rightsPerOrganization = rights.associateBy(
 			{ it.organizationNumber },
 			{ rights.filter { r -> r.organizationNumber == it.organizationNumber } })
 
 		return rightsPerOrganization.map { org ->
-			RightsOnOrganization(
+			RolesOnOrganization(
 				organizationNumber = org.key,
-				rights = org.value.map { right ->
-					Right(
+				roles = org.value.map { right ->
+					Role(
 						id = right.id,
-						rightType = right.rightType,
+						roleType = right.roleType,
 						validFrom = right.validFrom,
 						validTo = right.validTo
 					)

@@ -4,15 +4,14 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import no.nav.amt_altinn_acl.client.altinn.AltinnClient
-import no.nav.amt_altinn_acl.domain.RightType
-import no.nav.amt_altinn_acl.domain.RightType.KOORDINATOR
-import no.nav.amt_altinn_acl.domain.RightType.VEILEDER
-import no.nav.amt_altinn_acl.domain.RightsOnOrganization
+import no.nav.amt_altinn_acl.domain.RoleType
+import no.nav.amt_altinn_acl.domain.RoleType.KOORDINATOR
+import no.nav.amt_altinn_acl.domain.RoleType.VEILEDER
+import no.nav.amt_altinn_acl.domain.RolesOnOrganization
 import no.nav.amt_altinn_acl.jobs.AltinnUpdater
 import no.nav.amt_altinn_acl.repository.PersonRepository
-import no.nav.amt_altinn_acl.repository.RightsRepository
-import no.nav.amt_altinn_acl.service.RettigheterService
-import no.nav.amt_altinn_acl.service.RightsService
+import no.nav.amt_altinn_acl.repository.RoleRepository
+import no.nav.amt_altinn_acl.service.RoleService
 import no.nav.amt_altinn_acl.test_util.SingletonPostgresContainer
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -21,9 +20,9 @@ import kotlin.random.Random
 
 class AltinnUpdaterTests {
 	private lateinit var personRepository: PersonRepository
-	private lateinit var rightRepository: RightsRepository
+	private lateinit var rightRepository: RoleRepository
 
-	private lateinit var rightService: RightsService
+	private lateinit var rightService: RoleService
 
 	private lateinit var altinnUpdater: AltinnUpdater
 	private lateinit var altinnClient: AltinnClient
@@ -35,9 +34,9 @@ class AltinnUpdaterTests {
 
 		val template = NamedParameterJdbcTemplate(dataSource)
 		personRepository = PersonRepository(template)
-		rightRepository = RightsRepository(template)
+		rightRepository = RoleRepository(template)
 
-		rightService = RightsService(personRepository, rightRepository, altinnClient)
+		rightService = RoleService(personRepository, rightRepository, altinnClient)
 
 		altinnUpdater = AltinnUpdater(rightService)
 	}
@@ -60,13 +59,13 @@ class AltinnUpdaterTests {
 
 		altinnUpdater.update()
 
-		val oppdaterteRettigheter = rightService.getRightsForPerson(personligIdent)
+		val oppdaterteRettigheter = rightService.getRolesForPerson(personligIdent)
 		hasRight(oppdaterteRettigheter, organisasjonsnummer, KOORDINATOR) shouldBe true
 	}
 
-	private fun hasRight(list: List<RightsOnOrganization>, organizationNumber: String, right: RightType): Boolean {
+	private fun hasRight(list: List<RolesOnOrganization>, organizationNumber: String, right: RoleType): Boolean {
 		return list.find { it.organizationNumber == organizationNumber }
-			?.rights?.find { it.rightType == right } != null
+			?.roles?.find { it.roleType == right } != null
 	}
 
 
