@@ -1,6 +1,7 @@
 package no.nav.amt_altinn_acl.controller
 
 import io.kotest.matchers.shouldBe
+import no.nav.amt_altinn_acl.domain.RightType
 import no.nav.amt_altinn_acl.test_util.IntegrationTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -41,8 +42,8 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 
 		mockMaskinportenHttpClient.enqueueTokenResponse()
 
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, altinnKoordinatorServiceKode, listOf(orgnr))
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, altinnVeilederServiceKode, listOf(orgnr))
+		mockAltinnHttpClient.addReporteeResponse(norskIdent, RightType.KOORDINATOR.serviceCode, listOf(orgnr))
+		mockAltinnHttpClient.addReporteeResponse(norskIdent, RightType.VEILEDER.serviceCode, listOf(orgnr))
 
 
 		val response = sendRequest(
@@ -52,7 +53,7 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 		)
 
 		val expectedJson = """
-			{"roller":[{"organisasjonsnummer":"$orgnr","roller":["VEILEDER","KOORDINATOR"]}]}
+			{"roller":[{"organisasjonsnummer":"$orgnr","roller":["KOORDINATOR","VEILEDER"]}]}
 		""".trimIndent()
 
 		response.code shouldBe 200
@@ -66,8 +67,8 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 
 		mockMaskinportenHttpClient.enqueueTokenResponse()
 
-		mockAltinnHttpClient.addReporteeResponse(personIdent, altinnKoordinatorServiceKode, listOf(orgnr))
-		mockAltinnHttpClient.addReporteeResponse(personIdent, altinnVeilederServiceKode, emptyList())
+		mockAltinnHttpClient.addReporteeResponse(personIdent, RightType.KOORDINATOR.serviceCode, listOf(orgnr))
+		mockAltinnHttpClient.addReporteeResponse(personIdent, RightType.VEILEDER.serviceCode, emptyList())
 
 		val response1 = sendRequest(
 			method = "GET",
