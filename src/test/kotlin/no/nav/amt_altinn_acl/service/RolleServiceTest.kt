@@ -2,12 +2,12 @@ package no.nav.amt_altinn_acl.service
 
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import no.nav.amt_altinn_acl.domain.RoleType
-import no.nav.amt_altinn_acl.domain.RoleType.KOORDINATOR
-import no.nav.amt_altinn_acl.domain.RoleType.VEILEDER
-import no.nav.amt_altinn_acl.domain.RolesOnOrganization
+import no.nav.amt_altinn_acl.domain.RolleType
+import no.nav.amt_altinn_acl.domain.RolleType.KOORDINATOR
+import no.nav.amt_altinn_acl.domain.RolleType.VEILEDER
+import no.nav.amt_altinn_acl.domain.RollerInOrganization
 import no.nav.amt_altinn_acl.repository.PersonRepository
-import no.nav.amt_altinn_acl.repository.RoleRepository
+import no.nav.amt_altinn_acl.repository.RolleRepository
 import no.nav.amt_altinn_acl.test_util.IntegrationTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -16,16 +16,16 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-class RoleServiceTest : IntegrationTest() {
+class RolleServiceTest : IntegrationTest() {
 
 	@Autowired
-	lateinit var roleService: RoleService
+	lateinit var rolleService: RolleService
 
 	@Autowired
 	lateinit var personRepository: PersonRepository
 
 	@Autowired
-	lateinit var roleRepository: RoleRepository
+	lateinit var rolleRepository: RolleRepository
 
 	@BeforeEach
 	internal fun setUp() {
@@ -34,49 +34,49 @@ class RoleServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	internal fun `getRightsForPerson - not exist - create person and get rights from altinn`() {
+	internal fun `getRollerForPerson - not exist - create person and get roller from altinn`() {
 		val norskIdent = UUID.randomUUID().toString()
 		val organization = UUID.randomUUID().toString()
 
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf(organization))
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organization))
 
-		val rights = roleService.getRolesForPerson(norskIdent)
+		val roller = rolleService.getRollerForPerson(norskIdent)
 
 		mockAltinnHttpClient.requestCount() shouldBe 2
 
-		rights.size shouldBe 1
+		roller.size shouldBe 1
 
-		hasRight(rights, organization, VEILEDER) shouldBe true
-		hasRight(rights, organization, KOORDINATOR) shouldBe true
+		hasRolle(roller, organization, VEILEDER) shouldBe true
+		hasRolle(roller, organization, KOORDINATOR) shouldBe true
 
 		val databasePerson = personRepository.getOrCreate(norskIdent)
 		databasePerson.lastSynchronized.days() shouldBe ZonedDateTime.now().days()
 
-		hasRightInDatabase(databasePerson.id, organization, VEILEDER) shouldBe true
-		hasRightInDatabase(databasePerson.id, organization, KOORDINATOR) shouldBe true
+		hasRolleInDatabase(databasePerson.id, organization, VEILEDER) shouldBe true
+		hasRolleInDatabase(databasePerson.id, organization, KOORDINATOR) shouldBe true
 	}
 
 	@Test
-	internal fun `getRightsForPerson - exists - has rights - return cached rights if under cacheTime`() {
+	internal fun `getRollerForPerson - exists - has rolle - return cached rolle if under cacheTime`() {
 		val norskIdent = UUID.randomUUID().toString()
 		val organization = UUID.randomUUID().toString()
 
 		val personDbo = personRepository.getOrCreate(norskIdent)
 		personRepository.setSynchronized(norskIdent)
 
-		roleRepository.createRole(
+		rolleRepository.createRolle(
 			personId = personDbo.id,
 			organizationNumber = organization,
-			roleType = KOORDINATOR
+			rolleType = KOORDINATOR
 		)
 
-		roleService.getRolesForPerson(norskIdent)
+		rolleService.getRollerForPerson(norskIdent)
 		mockAltinnHttpClient.requestCount() shouldBe 0
 	}
 
 	@Test
-	internal fun `getRightsForPerson - exists - has no rights - should check altinn`() {
+	internal fun `getRollerForPerson - exists - has no roller - should check altinn`() {
 		val norskIdent = UUID.randomUUID().toString()
 		val organization = UUID.randomUUID().toString()
 
@@ -86,91 +86,91 @@ class RoleServiceTest : IntegrationTest() {
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf(organization))
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organization))
 
-		val rights = roleService.getRolesForPerson(norskIdent)
+		val roller = rolleService.getRollerForPerson(norskIdent)
 
-		hasRight(rights, organization, VEILEDER) shouldBe true
-		hasRight(rights, organization, KOORDINATOR) shouldBe true
+		hasRolle(roller, organization, VEILEDER) shouldBe true
+		hasRolle(roller, organization, KOORDINATOR) shouldBe true
 
 		mockAltinnHttpClient.requestCount() shouldBe 2
 	}
 
 	@Test
-	internal fun `getRightsForPerson - exists - has lost rights in altinn`() {
+	internal fun `getRollerForPerson - exists - has lost roller in altinn`() {
 		val norskIdent = UUID.randomUUID().toString()
 		val organization = UUID.randomUUID().toString()
 
 		val personDbo = personRepository.getOrCreate(norskIdent)
-		roleRepository.createRole(personDbo.id, organization, KOORDINATOR)
-		roleRepository.createRole(personDbo.id, organization, VEILEDER)
+		rolleRepository.createRolle(personDbo.id, organization, KOORDINATOR)
+		rolleRepository.createRolle(personDbo.id, organization, VEILEDER)
 
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organization))
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf())
 
-		val rights = roleService.getRolesForPerson(norskIdent)
+		val roller = rolleService.getRollerForPerson(norskIdent)
 
-		hasRight(rights, organization, VEILEDER) shouldBe false
-		hasRight(rights, organization, KOORDINATOR) shouldBe true
+		hasRolle(roller, organization, VEILEDER) shouldBe false
+		hasRolle(roller, organization, KOORDINATOR) shouldBe true
 
-		val invalidVeileder = roleRepository.getRolesForPerson(personDbo.id, false).find { it.roleType == VEILEDER }!!
+		val invalidVeileder = rolleRepository.getRollerForPerson(personDbo.id, false).find { it.rolleType == VEILEDER }!!
 
 		invalidVeileder.validTo shouldNotBe null
 	}
 
 	@Test
-	internal fun `getRightsForPerson - exists - has gained rights in altinn`() {
+	internal fun `getRollerForPerson - exists - has gained rolle in altinn`() {
 		val norskIdent = UUID.randomUUID().toString()
 		val organization = UUID.randomUUID().toString()
 
 		val personDbo = personRepository.getOrCreate(norskIdent)
-		roleRepository.createRole(personDbo.id, organization, VEILEDER)
+		rolleRepository.createRolle(personDbo.id, organization, VEILEDER)
 
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organization))
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf(organization))
 
-		val rights = roleService.getRolesForPerson(norskIdent)
+		val roller = rolleService.getRollerForPerson(norskIdent)
 
-		hasRight(rights, organization, VEILEDER) shouldBe true
-		hasRight(rights, organization, KOORDINATOR) shouldBe true
+		hasRolle(roller, organization, VEILEDER) shouldBe true
+		hasRolle(roller, organization, KOORDINATOR) shouldBe true
 	}
 
 	@Test
-	internal fun `getRightsForPerson - exists - has regained right in altinn`() {
+	internal fun `getRollerForPerson - exists - has regained rolle in altinn`() {
 		val norskIdent = UUID.randomUUID().toString()
 		val organization = UUID.randomUUID().toString()
 
 		val personDbo = personRepository.getOrCreate(norskIdent)
-		roleRepository.createRole(personDbo.id, organization, KOORDINATOR)
+		rolleRepository.createRolle(personDbo.id, organization, KOORDINATOR)
 
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf())
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf())
 
-		val rights = roleService.getRolesForPerson(norskIdent)
+		val roller = rolleService.getRollerForPerson(norskIdent)
 
-		rights.isEmpty() shouldBe true
+		roller.isEmpty() shouldBe true
 
 		mockAltinnHttpClient.resetHttpServer()
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organization))
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf())
 
-		val updatedRights = roleService.getRolesForPerson(norskIdent)
+		val updatedRoller = rolleService.getRollerForPerson(norskIdent)
 
-		hasRight(updatedRights, organization, KOORDINATOR) shouldBe true
+		hasRolle(updatedRoller, organization, KOORDINATOR) shouldBe true
 
-		val databaseRights = roleRepository.getRolesForPerson(personDbo.id, false)
-			.filter { it.roleType == KOORDINATOR }
+		val databaseRights = rolleRepository.getRollerForPerson(personDbo.id, false)
+			.filter { it.rolleType == KOORDINATOR }
 
 		databaseRights.size shouldBe 2
 
 	}
 
-	private fun hasRightInDatabase(personId: Long, organizationNumber: String, right: RoleType): Boolean {
-		return roleRepository.getRolesForPerson(personId)
-			.find { it.organizationNumber == organizationNumber && it.roleType == right } != null
+	private fun hasRolleInDatabase(personId: Long, organizationNumber: String, rolle: RolleType): Boolean {
+		return rolleRepository.getRollerForPerson(personId)
+			.find { it.organizationNumber == organizationNumber && it.rolleType == rolle } != null
 	}
 
-	private fun hasRight(list: List<RolesOnOrganization>, organizationNumber: String, right: RoleType): Boolean {
+	private fun hasRolle(list: List<RollerInOrganization>, organizationNumber: String, rolle: RolleType): Boolean {
 		return list.find { it.organizationNumber == organizationNumber }
-			?.roles?.find { it.roleType == right } != null
+			?.roller?.find { it.rolleType == rolle } != null
 	}
 
 	private fun ZonedDateTime.days(): ZonedDateTime {

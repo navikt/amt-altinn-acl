@@ -1,12 +1,12 @@
 package no.nav.amt_altinn_acl.service
 
 import no.nav.amt_altinn_acl.client.altinn.AltinnClient
-import no.nav.amt_altinn_acl.domain.Role
-import no.nav.amt_altinn_acl.domain.RoleType
-import no.nav.amt_altinn_acl.domain.RolesOnOrganization
+import no.nav.amt_altinn_acl.domain.Rolle
+import no.nav.amt_altinn_acl.domain.RolleType
+import no.nav.amt_altinn_acl.domain.RollerInOrganization
 import no.nav.amt_altinn_acl.repository.PersonRepository
-import no.nav.amt_altinn_acl.repository.RoleRepository
-import no.nav.amt_altinn_acl.repository.dbo.RoleDbo
+import no.nav.amt_altinn_acl.repository.RolleRepository
+import no.nav.amt_altinn_acl.repository.dbo.RolleDbo
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.Duration
@@ -15,26 +15,26 @@ import java.time.LocalDateTime
 import java.time.ZonedDateTime
 
 @Service
-class RoleService(
+class RolleService(
 	private val personRepository: PersonRepository,
-	private val roleRepository: RoleRepository,
+	private val rolleRepository: RolleRepository,
 	private val altinnClient: AltinnClient
 ) {
 
 	private val log = LoggerFactory.getLogger(javaClass)
 
-	fun getRolesForPerson(norskIdent: String, onlyValid: Boolean = true): List<RolesOnOrganization> {
+	fun getRollerForPerson(norskIdent: String, onlyValid: Boolean = true): List<RollerInOrganization> {
 		val person = personRepository.getOrCreate(norskIdent)
 		val synchronizeIfBefore = ZonedDateTime.now().minusHours(1)
 
 		val rights = if (person.lastSynchronized.isBefore(synchronizeIfBefore)) {
-			updateRights(person.id, norskIdent)
-			roleRepository.getRolesForPerson(person.id, onlyValid)
+			updateRoller(person.id, norskIdent)
+			rolleRepository.getRollerForPerson(person.id, onlyValid)
 		} else {
-			roleRepository.getRolesForPerson(person.id, onlyValid).let {
+			rolleRepository.getRollerForPerson(person.id, onlyValid).let {
 				if (it.isEmpty()) {
-					updateRights(person.id, norskIdent)
-					return@let roleRepository.getRolesForPerson(person.id, onlyValid)
+					updateRoller(person.id, norskIdent)
+					return@let rolleRepository.getRollerForPerson(person.id, onlyValid)
 				}
 				return@let it
 			}
@@ -50,19 +50,19 @@ class RoleService(
 		log.info("Starter synkronisering av ${personsToSynchronize.size} brukere med utgått tilgang")
 
 		personsToSynchronize.forEach { personDbo ->
-			updateRights(personDbo.id, personDbo.norskIdent)
+			updateRoller(personDbo.id, personDbo.norskIdent)
 		}
 
 		log.info("Fullført synkronisering av ${personsToSynchronize.size} brukere med utgått tilgang")
 	}
 
-	private fun updateRights(id: Long, norskIdent: String) {
+	private fun updateRoller(id: Long, norskIdent: String) {
 		val start = Instant.now()
 
-		val allOldRights = roleRepository.getRolesForPerson(id)
+		val allOldRights = rolleRepository.getRollerForPerson(id)
 
-		RoleType.values().forEach { right ->
-			val oldRights = allOldRights.filter { it.roleType == right }
+		RolleType.values().forEach { right ->
+			val oldRights = allOldRights.filter { it.rolleType == right }
 
 			val oranizationsWithRight = altinnClient.hentOrganisasjoner(norskIdent, right.serviceCode)
 				.getOrThrow()
@@ -70,14 +70,14 @@ class RoleService(
 			oldRights.forEach { oldRight ->
 				if (!oranizationsWithRight.contains(oldRight.organizationNumber)) {
 					log.debug("User $id lost $right on ${oldRight.organizationNumber}")
-					roleRepository.invalidateRole(oldRight.id)
+					rolleRepository.invalidateRolle(oldRight.id)
 				}
 			}
 
 			oranizationsWithRight.forEach { orgRight ->
 				if (oldRights.find { it.organizationNumber == orgRight } == null) {
 					log.debug("User $id got $right on $orgRight")
-					roleRepository.createRole(id, orgRight, right)
+					rolleRepository.createRolle(id, orgRight, right)
 				}
 			}
 		}
@@ -87,20 +87,20 @@ class RoleService(
 		log.info("Updated rights for person with id $id in ${duration.toMillis()} ms")
 	}
 
-	private fun map(rights: List<RoleDbo>): List<RolesOnOrganization> {
-		val rightsPerOrganization = rights.associateBy(
+	private fun map(rights: List<RolleDbo>): List<RollerInOrganization> {
+		val rollerPerOrganization = rights.associateBy(
 			{ it.organizationNumber },
 			{ rights.filter { r -> r.organizationNumber == it.organizationNumber } })
 
-		return rightsPerOrganization.map { org ->
-			RolesOnOrganization(
+		return rollerPerOrganization.map { org ->
+			RollerInOrganization(
 				organizationNumber = org.key,
-				roles = org.value.map { right ->
-					Role(
-						id = right.id,
-						roleType = right.roleType,
-						validFrom = right.validFrom,
-						validTo = right.validTo
+				roller = org.value.map { rolle ->
+					Rolle(
+						id = rolle.id,
+						rolleType = rolle.rolleType,
+						validFrom = rolle.validFrom,
+						validTo = rolle.validTo
 					)
 				}
 			)

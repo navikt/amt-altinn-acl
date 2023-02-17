@@ -1,8 +1,8 @@
 package no.nav.amt_altinn_acl.controller
 
-import no.nav.amt_altinn_acl.domain.RoleType
+import no.nav.amt_altinn_acl.domain.RolleType
 import no.nav.amt_altinn_acl.service.AuthService
-import no.nav.amt_altinn_acl.service.RoleService
+import no.nav.amt_altinn_acl.service.RolleService
 import no.nav.amt_altinn_acl.utils.Issuer
 import no.nav.security.token.support.core.api.ProtectedWithClaims
 import org.springframework.web.bind.annotation.GetMapping
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/v1/rolle")
 class RolleController(
 	private val authService: AuthService,
-	private val roleService: RoleService
+	private val rolleService: RolleService
 ) {
 
 	@GetMapping("/tiltaksarrangor")
@@ -22,9 +22,9 @@ class RolleController(
 	fun hentTiltaksarrangorRoller(@RequestParam norskIdent: String): HentRollerResponse {
 		authService.verifyRequestIsMachineToMachine()
 
-		val roles = roleService.getRolesForPerson(norskIdent)
+		val roller = rolleService.getRollerForPerson(norskIdent)
 		return HentRollerResponse(
-			roles.map { right -> HentRollerResponse.TiltaksarrangorRoller(right.organizationNumber, right.roles.map { it.roleType }) }
+			roller.map { right -> HentRollerResponse.TiltaksarrangorRoller(right.organizationNumber, right.roller.map { it.rolleType }) }
 		)
 	}
 
@@ -33,7 +33,7 @@ class RolleController(
 	) {
 		data class TiltaksarrangorRoller(
 			val organisasjonsnummer: String,
-			val roller: List<RoleType>,
+			val roller: List<RolleType>,
 		)
 	}
 

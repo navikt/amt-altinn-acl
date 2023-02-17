@@ -1,6 +1,6 @@
 package no.nav.amt_altinn_acl.domain
 
-data class RolesOnOrganization(
+data class RollerInOrganization(
 	val organizationNumber: String,
-	val roles: List<Role>
+	val roller: List<Rolle>
 )

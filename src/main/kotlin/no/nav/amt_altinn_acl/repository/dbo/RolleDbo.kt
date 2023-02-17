@@ -1,13 +1,13 @@
 package no.nav.amt_altinn_acl.repository.dbo
 
-import no.nav.amt_altinn_acl.domain.RoleType
+import no.nav.amt_altinn_acl.domain.RolleType
 import java.time.ZonedDateTime
 
-data class RoleDbo(
+data class RolleDbo(
 	val id: Long,
 	val personId: Long,
 	val organizationNumber: String,
-	val roleType: RoleType,
+	val rolleType: RolleType,
 	val validFrom: ZonedDateTime,
 	val validTo: ZonedDateTime?
 )
