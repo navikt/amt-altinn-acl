@@ -27,14 +27,16 @@ class AltinnClientImpl(
 		client.newCall(request).execute().use { response ->
 			if (!response.isSuccessful) {
 				secureLog.error("Klarte ikke å hente organisasjoner for serviceCode=$serviceCode norskIdent=$norskIdent message=${response.message}, code=${response.code}, body=${response.body?.string()}")
-				log.error("Klarte ikk ehente organisasjoner for $serviceCode")
-				throw RuntimeException("Klarte ikke å hente organisasjoner code=${response.code}")
+				log.error("Klarte ikke hente organisasjoner for $serviceCode. response: ${response.code}")
+				return Result.failure(RuntimeException("Klarte ikke å hente organisasjoner code=${response.code}"))
 			}
 
-			val body = response.body?.string() ?: return Result.failure(Exception("Body is missing"))
+			val body = response.body?.string()
+				?: return Result.failure(Exception("Body is missing"))
+
 			val data = fromJsonString<List<ReporteeResponseEntity.Reportee>>(body)
-				.filter { it.organizationNumber != null }
-				.mapNotNull { it.organizationNumber }
+				.filter { it.organisasjonsnummer != null }
+				.mapNotNull { it.organisasjonsnummer }
 
 			return Result.success(data)
 		}
@@ -46,7 +48,7 @@ class AltinnClientImpl(
 			val type: String,
 
 			@JsonAlias("OrganizationNumber")
-			val organizationNumber: String?,
+			val organisasjonsnummer: String?,
 		)
 	}
 }

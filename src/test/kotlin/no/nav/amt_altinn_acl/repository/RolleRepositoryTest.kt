@@ -28,24 +28,26 @@ class RolleRepositoryTest {
 
 	@Test
 	internal fun `createRolle - returns correct rolle`() {
-		val organizationNumber = UUID.randomUUID().toString()
+		val organisasjonsnummer = UUID.randomUUID().toString()
 
-		val rolle = repository.createRolle(personId, organizationNumber, RolleType.VEILEDER)
+		val rolle = repository.createRolle(personId, organisasjonsnummer, RolleType.VEILEDER)
 
-		rolle.organizationNumber shouldBe organizationNumber
+		rolle.organisasjonsnummer shouldBe organisasjonsnummer
 	}
 
 	@Test
 	internal fun `invalidateRolle - Sets validTo to current timestamp - does not return from getValidRules`() {
-		val organizationNumber = UUID.randomUUID().toString()
+		val organisasjonsnummer = UUID.randomUUID().toString()
 
-		val rolle = repository.createRolle(personId, organizationNumber, RolleType.VEILEDER)
+		val rolle = repository.createRolle(personId, organisasjonsnummer, RolleType.VEILEDER)
 		repository.invalidateRolle(rolle.id)
 
-		val gyldigeRoller = repository.getRollerForPerson(personId)
+		val gyldigeRoller = repository.hentRollerForPerson(personId)
+			.filter { it.erGyldig() }
+
 		gyldigeRoller.isEmpty() shouldBe true
 
-		val alleRoller = repository.getRollerForPerson(personId, false)
+		val alleRoller = repository.hentRollerForPerson(personId)
 		alleRoller.size shouldBe 1
 		alleRoller.first().validTo shouldNotBe null
 	}

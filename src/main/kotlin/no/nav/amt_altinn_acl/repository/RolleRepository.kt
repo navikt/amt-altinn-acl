@@ -19,22 +19,22 @@ class RolleRepository(
 		RolleDbo(
 			id = rs.getLong("id"),
 			personId = rs.getLong("person_id"),
-			organizationNumber = rs.getString("organization_number"),
+			organisasjonsnummer = rs.getString("organisasjonsnummer"),
 			rolleType = RolleType.valueOf(rs.getString("rolle")),
 			validFrom = rs.getZonedDateTime("valid_from"),
 			validTo = rs.getNullableZonedDateTime("valid_to")
 		)
 	}
 
-	fun createRolle(personId: Long, organizationNumber: String, rolleType: RolleType): RolleDbo {
+	fun createRolle(personId: Long, organisasjonsnummer: String, rolleType: RolleType): RolleDbo {
 		val sql = """
-			INSERT INTO rolle(person_id, organization_number, rolle, valid_from)
-			VALUES (:person_id, :organization_number, :rolle, current_timestamp)
+			INSERT INTO rolle(person_id, organisasjonsnummer, rolle, valid_from)
+			VALUES (:person_id, :organisasjonsnummer, :rolle, current_timestamp)
 		""".trimIndent()
 
 		val params = sqlParameters(
 			"person_id" to personId,
-			"organization_number" to organizationNumber,
+			"organisasjonsnummer" to organisasjonsnummer,
 			"rolle" to rolleType.toString(),
 		)
 
@@ -57,22 +57,7 @@ class RolleRepository(
 		template.update(sql, sqlParameters("id" to id))
 	}
 
-	fun getRollerForPerson(personId: Long, onlyValid: Boolean = true): List<RolleDbo> {
-		return if (onlyValid) getValidRollerForPerson(personId)
-		else getAllRollerForPerson(personId)
-	}
-
-	private fun getValidRollerForPerson(personId: Long): List<RolleDbo> {
-		val sql = """
-			SELECT * from rolle
-			WHERE person_id = :person_id
-			AND valid_to is null
-		""".trimIndent()
-
-		return template.query(sql, sqlParameters("person_id" to personId), rowMapper)
-	}
-
-	private fun getAllRollerForPerson(personId: Long): List<RolleDbo> {
+	fun hentRollerForPerson(personId: Long): List<RolleDbo> {
 		val sql = """
 			SELECT * from rolle
 			WHERE person_id = :person_id

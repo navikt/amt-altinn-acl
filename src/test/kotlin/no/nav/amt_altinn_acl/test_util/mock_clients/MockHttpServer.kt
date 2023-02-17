@@ -47,7 +47,7 @@ abstract class MockHttpServer(
 		}
 	}
 
-	fun addResponseHandler(
+	protected fun addResponseHandler(
 		predicate: (req: RecordedRequest) -> Boolean,
 		response: (req: RecordedRequest) -> MockResponse
 	): UUID {
@@ -56,7 +56,7 @@ abstract class MockHttpServer(
 		return id
 	}
 
-	fun addResponseHandler(path: String, response: MockResponse): UUID {
+	protected fun addResponseHandler(path: String, response: MockResponse): UUID {
 		val predicate = { req: RecordedRequest -> req.path == path }
 		return addResponseHandler(predicate) { response }
 	}

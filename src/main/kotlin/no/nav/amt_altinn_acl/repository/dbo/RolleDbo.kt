@@ -6,8 +6,14 @@ import java.time.ZonedDateTime
 data class RolleDbo(
 	val id: Long,
 	val personId: Long,
-	val organizationNumber: String,
+	val organisasjonsnummer: String,
 	val rolleType: RolleType,
 	val validFrom: ZonedDateTime,
 	val validTo: ZonedDateTime?
-)
+) {
+
+	fun erGyldig(): Boolean {
+		return validTo == null
+	}
+
+}

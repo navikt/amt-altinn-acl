@@ -3,7 +3,7 @@ package no.nav.amt_altinn_acl.service
 import no.nav.amt_altinn_acl.client.altinn.AltinnClient
 import no.nav.amt_altinn_acl.domain.Rolle
 import no.nav.amt_altinn_acl.domain.RolleType
-import no.nav.amt_altinn_acl.domain.RollerInOrganization
+import no.nav.amt_altinn_acl.domain.RollerIOrganisasjon
 import no.nav.amt_altinn_acl.repository.PersonRepository
 import no.nav.amt_altinn_acl.repository.RolleRepository
 import no.nav.amt_altinn_acl.repository.dbo.RolleDbo
@@ -23,22 +23,20 @@ class RolleService(
 
 	private val log = LoggerFactory.getLogger(javaClass)
 
-	fun getRollerForPerson(norskIdent: String, onlyValid: Boolean = true): List<RollerInOrganization> {
+	fun getRollerForPerson(norskIdent: String): List<RollerIOrganisasjon> {
 		val person = personRepository.getOrCreate(norskIdent)
 		val synchronizeIfBefore = ZonedDateTime.now().minusHours(1)
 
-		val roller = if (person.lastSynchronized.isBefore(synchronizeIfBefore)) {
-			updateRoller(person.id, norskIdent)
-			rolleRepository.getRollerForPerson(person.id, onlyValid)
-		} else {
-			rolleRepository.getRollerForPerson(person.id, onlyValid).let {
-				if (it.isEmpty()) {
-					updateRoller(person.id, norskIdent)
-					return@let rolleRepository.getRollerForPerson(person.id, onlyValid)
-				}
-				return@let it
-			}
+		if(person.lastSynchronized.isBefore(synchronizeIfBefore)) {
+			updateRollerFromAltinn(person.id, norskIdent)
+		}
 
+		val roller = getGyldigeRoller(person.id).let {
+			if(it.isEmpty()) {
+				updateRollerFromAltinn(person.id, norskIdent)
+				return@let getGyldigeRoller(person.id)
+			}
+			return@let it
 		}
 
 		return map(roller)
@@ -50,32 +48,35 @@ class RolleService(
 		log.info("Starter synkronisering av ${personsToSynchronize.size} brukere med utgått tilgang")
 
 		personsToSynchronize.forEach { personDbo ->
-			updateRoller(personDbo.id, personDbo.norskIdent)
+			updateRollerFromAltinn(personDbo.id, personDbo.norskIdent)
 		}
 
 		log.info("Fullført synkronisering av ${personsToSynchronize.size} brukere med utgått tilgang")
 	}
 
-	private fun updateRoller(id: Long, norskIdent: String) {
+	private fun updateRollerFromAltinn(id: Long, norskIdent: String) {
 		val start = Instant.now()
 
-		val allOldRoller = rolleRepository.getRollerForPerson(id)
+		val allOldRoller = getGyldigeRoller(id)
 
 		RolleType.values().forEach { rolle ->
+			val organisasjonerMedRolle = altinnClient.hentOrganisasjoner(norskIdent, rolle.serviceCode)
+				.getOrElse {
+					log.warn("Klarte ikke oppdatere roller for bruker $id og roller $rolle, bruker lagrede roller om eksisterer", it)
+					return
+				}
+
 			val oldRoller = allOldRoller.filter { it.rolleType == rolle }
 
-			val oranizationsWithRoller = altinnClient.hentOrganisasjoner(norskIdent, rolle.serviceCode)
-				.getOrThrow()
-
 			oldRoller.forEach { oldRolle ->
-				if (!oranizationsWithRoller.contains(oldRolle.organizationNumber)) {
-					log.debug("User $id lost $rolle on ${oldRolle.organizationNumber}")
+				if (!organisasjonerMedRolle.contains(oldRolle.organisasjonsnummer)) {
+					log.debug("User $id lost $rolle on ${oldRolle.organisasjonsnummer}")
 					rolleRepository.invalidateRolle(oldRolle.id)
 				}
 			}
 
-			oranizationsWithRoller.forEach { orgRolle ->
-				if (oldRoller.find { it.organizationNumber == orgRolle } == null) {
+			organisasjonerMedRolle.forEach { orgRolle ->
+				if (oldRoller.find { it.organisasjonsnummer == orgRolle } == null) {
 					log.debug("User $id got $rolle on $orgRolle")
 					rolleRepository.createRolle(id, orgRolle, rolle)
 				}
@@ -87,14 +88,18 @@ class RolleService(
 		log.info("Updated roller for person with id $id in ${duration.toMillis()} ms")
 	}
 
-	private fun map(roller: List<RolleDbo>): List<RollerInOrganization> {
-		val rollerPerOrganization = roller.associateBy(
-			{ it.organizationNumber },
-			{ roller.filter { r -> r.organizationNumber == it.organizationNumber } })
+	private fun getGyldigeRoller(personId: Long) = rolleRepository.hentRollerForPerson(personId)
+		.filter { it.erGyldig() }
 
-		return rollerPerOrganization.map { org ->
-			RollerInOrganization(
-				organizationNumber = org.key,
+
+	private fun map(roller: List<RolleDbo>): List<RollerIOrganisasjon> {
+		val rollerPerOrganisasjon = roller.associateBy(
+			{ it.organisasjonsnummer },
+			{ roller.filter { r -> r.organisasjonsnummer == it.organisasjonsnummer } })
+
+		return rollerPerOrganisasjon.map { org ->
+			RollerIOrganisasjon(
+				organisasjonsnummer = org.key,
 				roller = org.value.map { rolle ->
 					Rolle(
 						id = rolle.id,

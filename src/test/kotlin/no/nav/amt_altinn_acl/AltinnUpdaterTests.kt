@@ -7,7 +7,7 @@ import no.nav.amt_altinn_acl.client.altinn.AltinnClient
 import no.nav.amt_altinn_acl.domain.RolleType
 import no.nav.amt_altinn_acl.domain.RolleType.KOORDINATOR
 import no.nav.amt_altinn_acl.domain.RolleType.VEILEDER
-import no.nav.amt_altinn_acl.domain.RollerInOrganization
+import no.nav.amt_altinn_acl.domain.RollerIOrganisasjon
 import no.nav.amt_altinn_acl.jobs.AltinnUpdater
 import no.nav.amt_altinn_acl.repository.PersonRepository
 import no.nav.amt_altinn_acl.repository.RolleRepository
@@ -63,8 +63,8 @@ class AltinnUpdaterTests {
 		hasRolle(oppdaterteRettigheter, organisasjonsnummer, KOORDINATOR) shouldBe true
 	}
 
-	private fun hasRolle(list: List<RollerInOrganization>, organizationNumber: String, rolle: RolleType): Boolean {
-		return list.find { it.organizationNumber == organizationNumber }
+	private fun hasRolle(list: List<RollerIOrganisasjon>, organizationNumber: String, rolle: RolleType): Boolean {
+		return list.find { it.organisasjonsnummer == organizationNumber }
 			?.roller?.find { it.rolleType == rolle } != null
 	}
 

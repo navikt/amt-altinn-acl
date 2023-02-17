@@ -23,6 +23,17 @@ class MockAltinnHttpServer : MockHttpServer(name = "Altinn Mock Server") {
 		)
 	}
 
+	fun addFailureResponse(
+		personIdent: String,
+		serviceCode: String,
+		resoponseCode: Int
+	) {
+		addResponseHandler(
+			path = "/api/serviceowner/reportees?subject=$personIdent&serviceCode=$serviceCode&serviceEdition=1",
+			response = MockResponse().setResponseCode(resoponseCode)
+		)
+	}
+
 	private fun generateReporteeResponse(organisasjonnummer: List<String>): MockResponse {
 		val body = if (organisasjonnummer.isEmpty()) {
 			"""

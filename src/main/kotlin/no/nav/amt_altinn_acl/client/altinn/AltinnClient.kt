@@ -4,7 +4,3 @@ interface AltinnClient {
 	fun hentOrganisasjoner(norskIdent: String, serviceCode: String): Result<List<String>>
 
 }
-
-data class AltinnRettighet(
-	val serviceCode: String
-)
