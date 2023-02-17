@@ -60,10 +60,10 @@ class AltinnUpdaterTests {
 		altinnUpdater.update()
 
 		val oppdaterteRettigheter = rolleService.getRollerForPerson(personligIdent)
-		hasRight(oppdaterteRettigheter, organisasjonsnummer, KOORDINATOR) shouldBe true
+		hasRolle(oppdaterteRettigheter, organisasjonsnummer, KOORDINATOR) shouldBe true
 	}
 
-	private fun hasRight(list: List<RollerInOrganization>, organizationNumber: String, rolle: RolleType): Boolean {
+	private fun hasRolle(list: List<RollerInOrganization>, organizationNumber: String, rolle: RolleType): Boolean {
 		return list.find { it.organizationNumber == organizationNumber }
 			?.roller?.find { it.rolleType == rolle } != null
 	}

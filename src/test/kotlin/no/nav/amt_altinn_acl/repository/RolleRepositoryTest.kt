@@ -27,7 +27,7 @@ class RolleRepositoryTest {
 	}
 
 	@Test
-	internal fun `createRolle - returns correct right`() {
+	internal fun `createRolle - returns correct rolle`() {
 		val organizationNumber = UUID.randomUUID().toString()
 
 		val rolle = repository.createRolle(personId, organizationNumber, RolleType.VEILEDER)

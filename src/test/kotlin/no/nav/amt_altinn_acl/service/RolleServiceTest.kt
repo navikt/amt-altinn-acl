@@ -156,10 +156,10 @@ class RolleServiceTest : IntegrationTest() {
 
 		hasRolle(updatedRoller, organization, KOORDINATOR) shouldBe true
 
-		val databaseRights = rolleRepository.getRollerForPerson(personDbo.id, false)
+		val databaseRoller = rolleRepository.getRollerForPerson(personDbo.id, false)
 			.filter { it.rolleType == KOORDINATOR }
 
-		databaseRights.size shouldBe 2
+		databaseRoller.size shouldBe 2
 
 	}
 

@@ -27,7 +27,7 @@ class RolleService(
 		val person = personRepository.getOrCreate(norskIdent)
 		val synchronizeIfBefore = ZonedDateTime.now().minusHours(1)
 
-		val rights = if (person.lastSynchronized.isBefore(synchronizeIfBefore)) {
+		val roller = if (person.lastSynchronized.isBefore(synchronizeIfBefore)) {
 			updateRoller(person.id, norskIdent)
 			rolleRepository.getRollerForPerson(person.id, onlyValid)
 		} else {
@@ -41,7 +41,7 @@ class RolleService(
 
 		}
 
-		return map(rights)
+		return map(roller)
 	}
 
 	fun synchronizeUsers(max: Int = 25, synchronizedBefore: LocalDateTime = LocalDateTime.now().minusWeeks(1)) {
@@ -59,38 +59,38 @@ class RolleService(
 	private fun updateRoller(id: Long, norskIdent: String) {
 		val start = Instant.now()
 
-		val allOldRights = rolleRepository.getRollerForPerson(id)
+		val allOldRoller = rolleRepository.getRollerForPerson(id)
 
-		RolleType.values().forEach { right ->
-			val oldRights = allOldRights.filter { it.rolleType == right }
+		RolleType.values().forEach { rolle ->
+			val oldRoller = allOldRoller.filter { it.rolleType == rolle }
 
-			val oranizationsWithRight = altinnClient.hentOrganisasjoner(norskIdent, right.serviceCode)
+			val oranizationsWithRoller = altinnClient.hentOrganisasjoner(norskIdent, rolle.serviceCode)
 				.getOrThrow()
 
-			oldRights.forEach { oldRight ->
-				if (!oranizationsWithRight.contains(oldRight.organizationNumber)) {
-					log.debug("User $id lost $right on ${oldRight.organizationNumber}")
-					rolleRepository.invalidateRolle(oldRight.id)
+			oldRoller.forEach { oldRolle ->
+				if (!oranizationsWithRoller.contains(oldRolle.organizationNumber)) {
+					log.debug("User $id lost $rolle on ${oldRolle.organizationNumber}")
+					rolleRepository.invalidateRolle(oldRolle.id)
 				}
 			}
 
-			oranizationsWithRight.forEach { orgRight ->
-				if (oldRights.find { it.organizationNumber == orgRight } == null) {
-					log.debug("User $id got $right on $orgRight")
-					rolleRepository.createRolle(id, orgRight, right)
+			oranizationsWithRoller.forEach { orgRolle ->
+				if (oldRoller.find { it.organizationNumber == orgRolle } == null) {
+					log.debug("User $id got $rolle on $orgRolle")
+					rolleRepository.createRolle(id, orgRolle, rolle)
 				}
 			}
 		}
 
 		personRepository.setSynchronized(norskIdent)
 		val duration = Duration.between(start, Instant.now())
-		log.info("Updated rights for person with id $id in ${duration.toMillis()} ms")
+		log.info("Updated roller for person with id $id in ${duration.toMillis()} ms")
 	}
 
-	private fun map(rights: List<RolleDbo>): List<RollerInOrganization> {
-		val rollerPerOrganization = rights.associateBy(
+	private fun map(roller: List<RolleDbo>): List<RollerInOrganization> {
+		val rollerPerOrganization = roller.associateBy(
 			{ it.organizationNumber },
-			{ rights.filter { r -> r.organizationNumber == it.organizationNumber } })
+			{ roller.filter { r -> r.organizationNumber == it.organizationNumber } })
 
 		return rollerPerOrganization.map { org ->
 			RollerInOrganization(
