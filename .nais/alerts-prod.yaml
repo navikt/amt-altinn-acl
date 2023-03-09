@@ -1,26 +1,36 @@
-apiVersion: "nais.io/v1"
-kind: "Alert"
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
 metadata:
   name: amt-altinn-acl-alerts
   namespace: amt
   labels:
     team: amt
 spec:
-  receivers:
-    slack:
-      channel: 'team_komet_alerts'
-      prependText: '<!here> | '
-  alerts:
-    - alert: applikasjon nede
-      expr: kube_deployment_status_replicas_available{deployment="amt-altinn-acl"} == 0
-      for: 2m
-      description: "App amt-altinn-acl er nede i namespace amt"
-      action: "`kubectl describe pod {{ $labels.kubernetes_pod_name }} -n {{ $labels.kubernetes_namespace }}` for events, og `kubectl logs {{ $labels.kubernetes_pod_name }} -n {{ $labels.kubernetes_namespace }}` for logger"
-    - alert: høy feilrate i logger
-      expr: (100 * sum by (log_app, log_namespace) (rate(logd_messages_total{log_app="amt-altinn-acl",log_level=~"Warning|Error"}[3m])) / sum by (log_app, log_namespace) (rate(logd_messages_total{log_app="amt-altinn-acl"}[3m]))) > 10
-      for: 3m
-      action: "Sjekk loggene til amt-altinn-acl i namespace amt, for å se hvorfor det er så mye feil"
-    - alert: feil logges
-      expr: sum by(log_app, log_namespace) (increase(logd_messages_total{log_app="amt-altinn-acl",log_level=~"Error"}[5m])) > 0
-      for: 5m
-      action: "Sjekk loggene til amt-altinn-acl i namespace amt, for å se hva som feiler"
+  groups:
+    - name: amt-altinn-acl-alerts
+      rules:
+        - alert: applikasjon nede
+          expr: kube_deployment_status_replicas_available{deployment="amt-altinn-acl"} == 0
+          for: 2m
+          annotations:
+            summary: "App {{ $labels.deployment }} er nede i namespace {{ $labels.namespace }}"
+            action: "`kubectl describe pod -l app={{ $labels.deployment}}` -> `kubectl logs -l app={{ $labels.deployment}}`"
+          labels:
+            namespace: amt
+            severity: critical
+        - alert: høy feilrate i logger
+          expr: (100 * sum by (log_app, log_namespace) (rate(logd_messages_total{log_app="amt-altinn-acl",log_level=~"Warning|Error"}[3m])) / sum by (log_app, log_namespace) (rate(logd_messages_total{log_app="amt-altinn-acl"}[3m]))) > 10
+          for: 3m
+          annotations:
+            action: "Sjekk loggene til app amt-altinn-acl i namespace amt, for å se hvorfor det er så mye feil"
+          labels:
+            namespace: amt
+            severity: warning
+        - alert: feil logges
+          expr: sum by(log_app, log_namespace) (increase(logd_messages_total{log_app="amt-altinn-acl",log_level=~"Error"}[5m])) > 0
+          for: 5m
+          annotations:
+            action: "Sjekk loggene til app amt-altinn-acl i namespace amt, for å se hva som feiler"
+          labels:
+            namespace: amt
+            severity: warning
