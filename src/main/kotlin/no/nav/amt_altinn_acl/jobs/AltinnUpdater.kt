@@ -13,7 +13,7 @@ class AltinnUpdater(
 	private val leaderElection: LeaderElection
 ) {
 
-	@Scheduled(cron = "0 0/15 * * * *")
+	@Scheduled(cron = "@hourly")
 	@SchedulerLock(name = "synkroniser_altinn_rettigheter", lockAtMostFor = "120m")
 	fun update() {
 		if (leaderElection.isLeader()) {
