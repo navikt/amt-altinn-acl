@@ -50,7 +50,7 @@ class RolleServiceTest : IntegrationTest() {
 		hasRolle(roller, organisasjonsnummer, VEILEDER) shouldBe true
 		hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
 
-		val databasePerson = personRepository.getOrCreate(norskIdent)
+		val databasePerson = personRepository.get(norskIdent)!!
 		databasePerson.lastSynchronized.days() shouldBe ZonedDateTime.now().days()
 
 		hasRolleInDatabase(databasePerson.id, organisasjonsnummer, VEILEDER) shouldBe true
@@ -58,11 +58,25 @@ class RolleServiceTest : IntegrationTest() {
 	}
 
 	@Test
+	internal fun `getRollerForPerson - not exist and no roller in Altinn - don't save person`() {
+		val norskIdent = UUID.randomUUID().toString()
+
+		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, emptyList())
+		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, emptyList())
+
+		val roller = rolleService.getRollerForPerson(norskIdent)
+
+		mockAltinnHttpClient.requestCount() shouldBe 2
+		roller.size shouldBe 0
+		personRepository.get(norskIdent) shouldBe null
+	}
+
+	@Test
 	internal fun `getRollerForPerson - exists - has rolle - return cached rolle if under cacheTime`() {
 		val norskIdent = UUID.randomUUID().toString()
 		val organisasjonsnummer = UUID.randomUUID().toString()
 
-		val personDbo = personRepository.getOrCreate(norskIdent)
+		val personDbo = personRepository.create(norskIdent)
 		personRepository.setSynchronized(norskIdent)
 
 		rolleRepository.createRolle(
@@ -80,7 +94,7 @@ class RolleServiceTest : IntegrationTest() {
 		val norskIdent = UUID.randomUUID().toString()
 		val organisasjonsnummer = UUID.randomUUID().toString()
 
-		personRepository.getOrCreate(norskIdent)
+		personRepository.create(norskIdent)
 		personRepository.setSynchronized(norskIdent)
 
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf(organisasjonsnummer))
@@ -99,7 +113,7 @@ class RolleServiceTest : IntegrationTest() {
 		val norskIdent = UUID.randomUUID().toString()
 		val organisasjonsnummer = UUID.randomUUID().toString()
 
-		val personDbo = personRepository.getOrCreate(norskIdent)
+		val personDbo = personRepository.create(norskIdent)
 		rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
 		rolleRepository.createRolle(personDbo.id, organisasjonsnummer, VEILEDER)
 
@@ -121,7 +135,7 @@ class RolleServiceTest : IntegrationTest() {
 		val norskIdent = UUID.randomUUID().toString()
 		val organisasjonsnummer = UUID.randomUUID().toString()
 
-		val personDbo = personRepository.getOrCreate(norskIdent)
+		val personDbo = personRepository.create(norskIdent)
 		rolleRepository.createRolle(personDbo.id, organisasjonsnummer, VEILEDER)
 
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organisasjonsnummer))
@@ -138,7 +152,7 @@ class RolleServiceTest : IntegrationTest() {
 		val norskIdent = UUID.randomUUID().toString()
 		val organisasjonsnummer = UUID.randomUUID().toString()
 
-		val personDbo = personRepository.getOrCreate(norskIdent)
+		val personDbo = personRepository.create(norskIdent)
 		rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
 
 		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf())
@@ -167,7 +181,7 @@ class RolleServiceTest : IntegrationTest() {
 	internal fun `getRollerForPerson - Altinn down - returns cached roller`() {
 		val norskIdent = UUID.randomUUID().toString()
 		val organisasjonsnummer = UUID.randomUUID().toString()
-		val personDbo = personRepository.getOrCreate(norskIdent)
+		val personDbo = personRepository.create(norskIdent)
 
 		rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
 
@@ -179,9 +193,9 @@ class RolleServiceTest : IntegrationTest() {
 		mockAltinnHttpClient.requestCount() shouldBe 1
 		hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
 
-		val updatedPersonDbo = personRepository.getOrCreate(norskIdent)
+		val updatedPersonDbo = personRepository.get(norskIdent)
 
-		updatedPersonDbo.lastSynchronized.days() shouldNotBe ZonedDateTime.now().days()
+		updatedPersonDbo!!.lastSynchronized.days() shouldNotBe ZonedDateTime.now().days()
 	}
 
 	private fun hasRolleInDatabase(personId: Long, organisasjonsnummerNumber: String, rolle: RolleType): Boolean {

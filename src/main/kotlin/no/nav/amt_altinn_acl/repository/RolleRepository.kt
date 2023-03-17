@@ -66,6 +66,17 @@ class RolleRepository(
 		return template.query(sql, sqlParameters("person_id" to personId), rowMapper)
 	}
 
+	fun hentRollerForPerson(norskIdent: String): List<RolleDbo> {
+		val sql = """
+			SELECT *
+			FROM rolle r
+					 INNER JOIN person p ON p.id = r.person_id
+			WHERE norsk_ident = :norsk_ident;
+		""".trimIndent()
+
+		return template.query(sql, sqlParameters("norsk_ident" to norskIdent), rowMapper)
+	}
+
 	private fun get(id: Long): RolleDbo {
 		return template.query(
 			"SELECT * FROM rolle WHERE id = :id",

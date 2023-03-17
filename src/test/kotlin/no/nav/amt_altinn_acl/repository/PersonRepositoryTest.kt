@@ -11,7 +11,6 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
-import java.util.*
 
 class PersonRepositoryTest {
 
@@ -24,10 +23,10 @@ class PersonRepositoryTest {
 	}
 
 	@Test
-	internal fun `getOrCreate - not exist - should create new person`() {
+	internal fun `create - not exist - should create new person`() {
 		val norskIdent = "123456789"
 
-		val personDbo = repository.getOrCreate(norskIdent)
+		val personDbo = repository.create(norskIdent)
 
 		personDbo.norskIdent shouldBe norskIdent
 		personDbo.lastSynchronized.truncatedTo(ChronoUnit.DAYS) shouldBe
@@ -35,13 +34,13 @@ class PersonRepositoryTest {
 	}
 
 	@Test
-	internal fun `getOrCreate - exist - should return existing person`() {
+	internal fun `createAndSetSynchronized - not exist - should create new person and set synchronized`() {
 		val norskIdent = "123456789"
+		val lastSynchronized = ZonedDateTime.now().minusDays(4)
 
-		val createdPerson = repository.getOrCreate(norskIdent)
-		val gottenPerson = repository.getOrCreate(norskIdent)
+		val createdPerson = repository.createAndSetSynchronized(norskIdent, lastSynchronized)
 
-		createdPerson.id shouldBe gottenPerson.id
+		createdPerson.lastSynchronized.truncatedTo(ChronoUnit.DAYS) shouldBe lastSynchronized.truncatedTo(ChronoUnit.DAYS)
 	}
 
 	@Test
@@ -50,11 +49,11 @@ class PersonRepositoryTest {
 
 		val today = ZonedDateTime.of(LocalDate.now().atStartOfDay(), ZoneId.systemDefault())
 
-		val createdPerson = repository.getOrCreate(norskIdent)
+		val createdPerson = repository.create(norskIdent)
 		createdPerson.lastSynchronized.truncatedTo(ChronoUnit.DAYS) shouldNotBe today
 
 		repository.setSynchronized(norskIdent)
-		val updatedPerson = repository.getOrCreate(norskIdent)
-		updatedPerson.lastSynchronized.truncatedTo(ChronoUnit.DAYS) shouldBe today
+		val updatedPerson = repository.get(norskIdent)
+		updatedPerson?.lastSynchronized?.truncatedTo(ChronoUnit.DAYS) shouldBe today
 	}
 }

@@ -46,7 +46,7 @@ class AltinnUpdaterTests {
 		val organisasjonsnummer = "2131"
 		val personligIdent = Random.nextLong().toString()
 
-		personRepository.getOrCreate(personligIdent)
+		personRepository.create(personligIdent)
 
 		every {
 			altinnClient.hentOrganisasjoner(personligIdent, KOORDINATOR.serviceCode)

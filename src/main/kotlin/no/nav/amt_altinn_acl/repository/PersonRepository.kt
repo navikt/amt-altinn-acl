@@ -23,11 +23,6 @@ class PersonRepository(
 		)
 	}
 
-	fun getOrCreate(norskIdent: String): PersonDbo {
-		return get(norskIdent)
-			?: create(norskIdent)
-	}
-
 	fun setSynchronized(norskIdent: String, lastSynchronized: ZonedDateTime = ZonedDateTime.now()) {
 		val sql = """
 			UPDATE person
@@ -61,7 +56,7 @@ class PersonRepository(
 		return template.query(sql, parameters, rowMapper)
 	}
 
-	private fun get(norskIdent: String): PersonDbo? {
+	fun get(norskIdent: String): PersonDbo? {
 		return template.query(
 			"SELECT * FROM person WHERE norsk_ident = :norsk_ident",
 			sqlParameters("norsk_ident" to norskIdent),
@@ -69,7 +64,7 @@ class PersonRepository(
 		).firstOrNull()
 	}
 
-	private fun create(norskIdent: String): PersonDbo {
+	fun create(norskIdent: String): PersonDbo {
 		val sql = """
 			INSERT INTO person(norsk_ident)
 			VALUES (:norsk_ident)
@@ -82,4 +77,19 @@ class PersonRepository(
 		return get(norskIdent) ?: throw NoSuchElementException("Person ikke funnet")
 	}
 
+	fun createAndSetSynchronized(norskIdent: String, lastSynchronized: ZonedDateTime = ZonedDateTime.now()): PersonDbo {
+		val sql = """
+			INSERT INTO person(norsk_ident, last_synchronized)
+			VALUES (:norsk_ident, :last_synchronized)
+		""".trimIndent()
+
+		val params = sqlParameters(
+			"norsk_ident" to norskIdent,
+			"last_synchronized" to LocalDateTime.from(lastSynchronized)
+		)
+
+		template.update(sql, params)
+
+		return get(norskIdent) ?: throw NoSuchElementException("Person ikke funnet")
+	}
 }

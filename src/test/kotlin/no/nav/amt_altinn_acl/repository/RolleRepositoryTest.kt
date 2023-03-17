@@ -22,7 +22,7 @@ class RolleRepositoryTest {
 	@BeforeEach
 	internal fun setUp() {
 		DbTestDataUtils.cleanDatabase(dataSource)
-		val person = personRepository.getOrCreate("12345678")
+		val person = personRepository.create("12345678")
 		personId = person.id
 	}
 
