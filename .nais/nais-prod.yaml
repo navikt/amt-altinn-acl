@@ -52,6 +52,7 @@ spec:
         databases:
           - name: amt-altinn-acl
             envVarPrefix: DB
+  leaderElection: true
   env:
     - name: ALTINN_KOORDINATOR_SERVICE_CODE
       value: "5858"

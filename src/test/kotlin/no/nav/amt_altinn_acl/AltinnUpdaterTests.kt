@@ -9,6 +9,7 @@ import no.nav.amt_altinn_acl.domain.RolleType.KOORDINATOR
 import no.nav.amt_altinn_acl.domain.RolleType.VEILEDER
 import no.nav.amt_altinn_acl.domain.RollerIOrganisasjon
 import no.nav.amt_altinn_acl.jobs.AltinnUpdater
+import no.nav.amt_altinn_acl.jobs.leaderelection.LeaderElection
 import no.nav.amt_altinn_acl.repository.PersonRepository
 import no.nav.amt_altinn_acl.repository.RolleRepository
 import no.nav.amt_altinn_acl.service.RolleService
@@ -26,11 +27,14 @@ class AltinnUpdaterTests {
 
 	private lateinit var altinnUpdater: AltinnUpdater
 	private lateinit var altinnClient: AltinnClient
+	private lateinit var leaderElection: LeaderElection
 	private val dataSource = SingletonPostgresContainer.getDataSource()
 
 	@BeforeEach
 	fun setup() {
 		altinnClient = mockk()
+		leaderElection = mockk()
+		every { leaderElection.isLeader() } returns true
 
 		val template = NamedParameterJdbcTemplate(dataSource)
 		personRepository = PersonRepository(template)
@@ -38,7 +42,7 @@ class AltinnUpdaterTests {
 
 		rolleService = RolleService(personRepository, rolleRepository, altinnClient)
 
-		altinnUpdater = AltinnUpdater(rolleService)
+		altinnUpdater = AltinnUpdater(rolleService, leaderElection)
 	}
 
 	@Test

@@ -35,6 +35,7 @@ spec:
     requests:
       cpu: 250m
       memory: 512Mi
+  leaderElection: true
   env:
     - name: ALTINN_KOORDINATOR_SERVICE_CODE
       value: "5858"
