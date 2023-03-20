@@ -5,12 +5,15 @@ import no.nav.common.rest.client.RestClient
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Component
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.InetAddress
 
+@Component
 class LeaderElection(
 	private val client: OkHttpClient = RestClient.baseClient(),
-	private val electorPath: String
+	@Value("\${elector.path}") private val electorPath: String
 ) {
 
 	private val log = LoggerFactory.getLogger(javaClass)
