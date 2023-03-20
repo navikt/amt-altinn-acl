@@ -6,7 +6,7 @@ metadata:
   labels:
     team: amt
 spec:
-  image: ghcr.io/navikt/amt-altinn-acl/amt-altinn-acl:{{version}}
+  image: {{image}}
   port: 8080
   ingresses:
     - https://amt-altinn-acl.dev.intern.nav.no
