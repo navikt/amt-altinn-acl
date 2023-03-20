@@ -12,10 +12,9 @@ import java.net.InetAddress
 
 @Component
 class LeaderElection(
-	private val client: OkHttpClient = RestClient.baseClient(),
 	@Value("\${elector.path}") private val electorPath: String
 ) {
-
+	private val client: OkHttpClient = RestClient.baseClient()
 	private val log = LoggerFactory.getLogger(javaClass)
 
 	fun isLeader(): Boolean {
