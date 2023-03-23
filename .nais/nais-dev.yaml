@@ -9,7 +9,6 @@ spec:
   image: {{image}}
   port: 8080
   ingresses:
-    - https://amt-altinn-acl.dev.intern.nav.no
     - https://amt-altinn-acl.intern.dev.nav.no
 
   prometheus:
