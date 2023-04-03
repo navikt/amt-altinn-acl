@@ -57,6 +57,7 @@ spec:
     inbound:
       rules:
         - application: amt-tiltak
+        - application: amt-tiltaksarrangor-bff
   gcp:
     sqlInstances:
       - name: amt-altinn-acl
