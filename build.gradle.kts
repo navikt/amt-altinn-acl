@@ -1,10 +1,10 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.0.2"
+    id("org.springframework.boot") version "3.0.4"
     id("io.spring.dependency-management") version "1.1.0"
-    kotlin("jvm") version "1.6.21"
-    kotlin("plugin.spring") version "1.6.21"
+    kotlin("jvm") version "1.8.10"
+    kotlin("plugin.spring") version "1.8.10"
 }
 
 group = "no.nav.amt-altinn-acl"
@@ -16,8 +16,15 @@ repositories {
     maven { setUrl("https://jitpack.io") }
 }
 
-val commonVersion = "2023.02.08_14.02-e5f1a7a4b9e4"
+val commonVersion = "3.2023.04.11_09.05-411b59915166"
 val testcontainersVersion = "1.17.6"
+val logstashEncoderVersion = "7.3"
+val shedlockVersion = "5.2.0"
+val tokenSupportVersion = "3.0.10"
+val okHttpVersion = "4.10.0"
+val mockkVersion = "1.13.4"
+val kotestVersion = "5.5.5"
+val mockOauth2ServerVersion = "0.5.8"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
@@ -34,29 +41,27 @@ dependencies {
 
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("org.flywaydb:flyway-core")
-    implementation("net.logstash.logback:logstash-logback-encoder:7.2")
-    implementation("net.javacrumbs.shedlock:shedlock-spring:4.44.0")
+    implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
+    implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
 
-    implementation("com.github.navikt.common-java-modules:rest:$commonVersion") {
-        exclude("com.github.navikt.common-java-modules", "log")
-    }
+    implementation("com.github.navikt.common-java-modules:rest:$commonVersion")
     implementation("com.github.navikt.common-java-modules:token-client:$commonVersion")
-    implementation("com.github.navikt.common-java-modules:job:$commonVersion") {
-        exclude("com.github.navikt.common-java-modules", "log")
-    }
+    implementation("com.github.navikt.common-java-modules:job:$commonVersion")
 
-    implementation("no.nav.security:token-validation-spring:3.0.2")
-    implementation("com.squareup.okhttp3:okhttp:4.9.3")
+    implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
+    implementation("com.squareup.okhttp3:okhttp:$okHttpVersion")
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("io.mockk:mockk:1.12.0")
+    testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
-    testImplementation("io.kotest:kotest-assertions-core-jvm:5.3.0")
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.9.3")
-    testImplementation("no.nav.security:mock-oauth2-server:0.4.7")
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
+    testImplementation("com.squareup.okhttp3:mockwebserver:$okHttpVersion")
+    testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
+    testImplementation("org.springframework.boot:spring-boot-starter-test") {
+        exclude("com.vaadin.external.google", "android-json")
+    }
 }
 
 tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
