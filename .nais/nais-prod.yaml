@@ -44,6 +44,9 @@ spec:
     inbound:
       rules:
         - application: amt-tiltak
+    outbound:
+      external:
+        - host: www.altinn.no
   gcp:
     sqlInstances:
       - name: amt-altinn-acl
