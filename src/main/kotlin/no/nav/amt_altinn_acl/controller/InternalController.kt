@@ -38,7 +38,7 @@ class InternalController(
 		secureLog.info("Reached /altinn/organisasjoner")
 		if (isInternal(servlet)) {
 			secureLog.info("Passed internal /altinn/organisasjoner")
-			return altinnClient.hentOrganisasjoner(fnr, serviceCode).getOrThrow()
+			return altinnClient.hentAlleOrganisasjoner(fnr, serviceCode)
 		}
 		secureLog.error("Attempted external access to /altinn/organisasjoner")
 		throw RuntimeException("No access")
