@@ -8,6 +8,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.slf4j.LoggerFactory
 
+const val pagineringSize = 500
+
 class AltinnClientImpl(
 	private val baseUrl: String,
 	private val altinnApiKey: String,
@@ -15,37 +17,6 @@ class AltinnClientImpl(
 	private val client: OkHttpClient = RestClient.baseClient(),
 ) : AltinnClient {
 	private val log = LoggerFactory.getLogger(javaClass)
-	private val pagineringSize = 500
-
-	override fun hentOrganisasjoner(norskIdent: String, serviceCode: String): Result<List<String>> {
-		val request = Request.Builder()
-			.url("$baseUrl/api/serviceowner/reportees?subject=$norskIdent&serviceCode=$serviceCode&serviceEdition=1")
-			.addHeader("APIKEY", altinnApiKey)
-			.addHeader("Authorization", "Bearer ${maskinportenTokenProvider.invoke()}")
-			.get()
-			.build()
-
-		client.newCall(request).execute().use { response ->
-			if (!response.isSuccessful) {
-				secureLog.error("Klarte ikke å hente organisasjoner for serviceCode=$serviceCode norskIdent=$norskIdent message=${response.message}, code=${response.code}, body=${response.body?.string()}")
-				log.error("Klarte ikke hente organisasjoner for $serviceCode. response: ${response.code}")
-				return Result.failure(RuntimeException("Klarte ikke å hente organisasjoner code=${response.code}"))
-			}
-
-			val body = response.body?.string()
-				?: return Result.failure(Exception("Body is missing"))
-
-			if (!response.headers["X-Warning-LimitReached"].isNullOrEmpty()) {
-				secureLog.warn("Bruker med norskIdent=$norskIdent har for mange tilganger for $serviceCode, kunne ikke hente alle")
-			}
-
-			val data = fromJsonString<List<ReporteeResponseEntity.Reportee>>(body)
-				.filter { it.organisasjonsnummer != null }
-				.mapNotNull { it.organisasjonsnummer }
-
-			return Result.success(data)
-		}
-	}
 
 	override fun hentAlleOrganisasjoner(norskIdent: String, serviceCode: String): List<String> {
 		val organisasjoner = HashSet<String>()

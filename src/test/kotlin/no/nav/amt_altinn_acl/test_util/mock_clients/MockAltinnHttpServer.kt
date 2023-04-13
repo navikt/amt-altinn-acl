@@ -1,5 +1,6 @@
 package no.nav.amt_altinn_acl.test_util.mock_clients
 
+import no.nav.amt_altinn_acl.client.altinn.pagineringSize
 import okhttp3.mockwebserver.MockResponse
 
 class MockAltinnHttpServer : MockHttpServer(name = "Altinn Mock Server") {
@@ -18,7 +19,7 @@ class MockAltinnHttpServer : MockHttpServer(name = "Altinn Mock Server") {
 		organisasjonnummer: List<String>
 	) {
 		addResponseHandler(
-			path = "/api/serviceowner/reportees?subject=$personIdent&serviceCode=$serviceCode&serviceEdition=1",
+			path = "/api/serviceowner/reportees?subject=$personIdent&serviceCode=$serviceCode&serviceEdition=1&\$top=$pagineringSize&\$skip=0",
 			generateReporteeResponse(organisasjonnummer)
 		)
 	}
@@ -29,7 +30,7 @@ class MockAltinnHttpServer : MockHttpServer(name = "Altinn Mock Server") {
 		resoponseCode: Int
 	) {
 		addResponseHandler(
-			path = "/api/serviceowner/reportees?subject=$personIdent&serviceCode=$serviceCode&serviceEdition=1",
+			path = "/api/serviceowner/reportees?subject=$personIdent&serviceCode=$serviceCode&serviceEdition=1&\$top=$pagineringSize&\$skip=0",
 			response = MockResponse().setResponseCode(resoponseCode)
 		)
 	}

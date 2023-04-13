@@ -29,77 +29,6 @@ class AltinnClientImplTest {
 	}
 
 	@Test
-	fun `HentOrganisasjoner - skal lage riktig request og parse response`() {
-		val serviceCode = "5858"
-		val altinnClient = AltinnClientImpl(
-			baseUrl = mockServerUrl(),
-			altinnApiKey = "api-key",
-			maskinportenTokenProvider = {"TOKEN"}
-		)
-
-		val jsonResponse = """
-			[
-				{
-					"Name": "LAGSPORT PLUTSELIG ",
-					"Type": "Person",
-					"SocialSecurityNumber": "11111111111"
-				},
-				{
-					"Name": "NONFIGURATIV KOMFORTABEL HUND DA",
-					"Type": "Enterprise",
-					"OrganizationNumber": "999987004",
-					"OrganizationForm": "DA",
-					"Status": "Active"
-				},
-				{
-					"Name": "NONFIGURATIV KOMFORTABEL HUND DA",
-					"Type": "Business",
-					"OrganizationNumber": "999919596",
-					"ParentOrganizationNumber": "999987004",
-					"OrganizationForm": "BEDR",
-					"Status": "Active"
-				},
-				{
-					"Name": "NØDVENDIG NESTE KATT INDUSTRI",
-					"Type": "Enterprise",
-					"OrganizationNumber": "999906097",
-					"OrganizationForm": "ENK",
-					"Status": "Active"
-				},
-				{
-					"Name": "NØDVENDIG NESTE KATT INDUSTRI",
-					"Type": "Business",
-					"OrganizationNumber": "999928026",
-					"ParentOrganizationNumber": "999906097",
-					"OrganizationForm": "BEDR",
-					"Status": "Active"
-				}
-			]
-		""".trimIndent()
-
-		mockServer.enqueue(
-			MockResponse()
-				.setBody(jsonResponse)
-				.setHeader("Content-Type", "application/json")
-		)
-
-		val norskIdent = "123456"
-
-		val organisasjonerResult = altinnClient.hentOrganisasjoner(norskIdent, serviceCode)
-		val organisasjoner = organisasjonerResult.getOrThrow()
-
-		val request = mockServer.takeRequest()
-
-		request.method shouldBe "GET"
-		request.path shouldBe "/api/serviceowner/reportees?subject=$norskIdent&serviceCode=$serviceCode&serviceEdition=1"
-		request.headers["APIKEY"] shouldBe "api-key"
-		request.headers["Authorization"] shouldBe "Bearer TOKEN"
-
-
-		organisasjoner shouldHaveSize 4
-	}
-
-	@Test
 	fun `hentAlleOrganisasjoner - 4 tilganger - kun et kall til Altinn`() {
 		val serviceCode = "5858"
 		val altinnClient = AltinnClientImpl(
@@ -161,7 +90,7 @@ class AltinnClientImplTest {
 		val request = mockServer.takeRequest()
 
 		request.method shouldBe "GET"
-		request.path shouldBe "/api/serviceowner/reportees?subject=$norskIdent&serviceCode=$serviceCode&serviceEdition=1&\$top=500&\$skip=0"
+		request.path shouldBe "/api/serviceowner/reportees?subject=$norskIdent&serviceCode=$serviceCode&serviceEdition=1&\$top=$pagineringSize&\$skip=0"
 		request.headers["APIKEY"] shouldBe "api-key"
 		request.headers["Authorization"] shouldBe "Bearer TOKEN"
 
