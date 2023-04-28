@@ -23,7 +23,7 @@ val shedlockVersion = "5.2.0"
 val tokenSupportVersion = "3.0.10"
 val okHttpVersion = "4.10.0"
 val mockkVersion = "1.13.4"
-val kotestVersion = "5.5.5"
+val kotestVersion = "5.6.1"
 val mockOauth2ServerVersion = "0.5.8"
 
 dependencies {
