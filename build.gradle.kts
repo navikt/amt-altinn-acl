@@ -3,8 +3,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("org.springframework.boot") version "3.1.0"
     id("io.spring.dependency-management") version "1.1.0"
-    kotlin("jvm") version "1.8.21"
-    kotlin("plugin.spring") version "1.8.21"
+    kotlin("jvm") version "1.8.22"
+    kotlin("plugin.spring") version "1.8.22"
 }
 
 group = "no.nav.amt-altinn-acl"
@@ -17,9 +17,9 @@ repositories {
 }
 
 val commonVersion = "3.2023.05.08_11.05-d13adbef1e85"
-val testcontainersVersion = "1.18.2"
+val testcontainersVersion = "1.18.3"
 val logstashEncoderVersion = "7.3"
-val shedlockVersion = "5.3.0"
+val shedlockVersion = "5.4.0"
 val tokenSupportVersion = "3.1.0"
 val okHttpVersion = "4.11.0"
 val mockkVersion = "1.13.5"
