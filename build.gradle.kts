@@ -1,10 +1,10 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.1.1"
-    id("io.spring.dependency-management") version "1.1.0"
-    kotlin("jvm") version "1.8.22"
-    kotlin("plugin.spring") version "1.8.22"
+    id("org.springframework.boot") version "3.1.2"
+    id("io.spring.dependency-management") version "1.1.2"
+    kotlin("jvm") version "1.9.0"
+    kotlin("plugin.spring") version "1.9.0"
 }
 
 group = "no.nav.amt-altinn-acl"
@@ -19,12 +19,12 @@ repositories {
 val commonVersion = "3.2023.05.08_11.05-d13adbef1e85"
 val testcontainersVersion = "1.18.3"
 val logstashEncoderVersion = "7.4"
-val shedlockVersion = "5.5.0"
+val shedlockVersion = "5.6.0"
 val tokenSupportVersion = "3.1.0"
 val okHttpVersion = "4.11.0"
 val mockkVersion = "1.13.5"
 val kotestVersion = "5.6.2"
-val mockOauth2ServerVersion = "0.5.9"
+val mockOauth2ServerVersion = "1.0.0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
