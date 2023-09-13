@@ -24,7 +24,7 @@ val tokenSupportVersion = "3.1.5"
 val okHttpVersion = "4.11.0"
 val mockkVersion = "1.13.7"
 val kotestVersion = "5.7.2"
-val mockOauth2ServerVersion = "1.0.0"
+val mockOauth2ServerVersion = "2.0.0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
