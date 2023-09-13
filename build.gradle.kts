@@ -13,10 +13,10 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 
 repositories {
     mavenCentral()
-    maven { setUrl("https://jitpack.io") }
+    maven { setUrl("https://github-package-registry-mirror.gc.nav.no/cached/maven-release") }
 }
 
-val commonVersion = "3.2023.05.08_11.05-d13adbef1e85"
+val commonVersion = "3.2023.09.13_04.55-a8ff452fbd94"
 val testcontainersVersion = "1.19.0"
 val logstashEncoderVersion = "7.4"
 val shedlockVersion = "5.7.0"
@@ -44,9 +44,9 @@ dependencies {
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
     implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
 
-    implementation("com.github.navikt.common-java-modules:rest:$commonVersion")
-    implementation("com.github.navikt.common-java-modules:token-client:$commonVersion")
-    implementation("com.github.navikt.common-java-modules:job:$commonVersion")
+    implementation("no.nav.common:rest:$commonVersion")
+    implementation("no.nav.common:token-client:$commonVersion")
+    implementation("no.nav.common:job:$commonVersion")
 
     implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
     implementation("com.squareup.okhttp3:okhttp:$okHttpVersion")
