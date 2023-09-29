@@ -3,11 +3,14 @@ package no.nav.amt_altinn_acl.controller
 import io.kotest.matchers.shouldBe
 import no.nav.amt_altinn_acl.domain.RolleType
 import no.nav.amt_altinn_acl.test_util.IntegrationTest
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import java.util.*
 
 class RolleControllerIntegrationTest : IntegrationTest() {
+	private val mediaTypeJson = "application/json".toMediaType()
 
 	@AfterEach
 	internal fun tearDown() {
@@ -17,8 +20,9 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 	@Test
 	fun `hentTiltaksarrangorRoller - should return 401 when not authenticated`() {
 		val response = sendRequest(
-			method = "GET",
-			path = "/api/v1/rolle/tiltaksarrangor?norskIdent=4273684",
+			method = "POST",
+			path = "/api/v1/rolle/tiltaksarrangor",
+			body = """{"personident": "foo"}""".toRequestBody(mediaTypeJson)
 		)
 
 		response.code shouldBe 401
@@ -27,8 +31,9 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 	@Test
 	fun `hentTiltaksarrangorRoller - should return 403 when not machine-to-machine request`() {
 		val response = sendRequest(
-			method = "GET",
-			path = "/api/v1/rolle/tiltaksarrangor?norskIdent=4273684",
+			method = "POST",
+			path = "/api/v1/rolle/tiltaksarrangor",
+			body = """{"personident": "foo"}""".toRequestBody(mediaTypeJson),
 			headers = mapOf("Authorization" to "Bearer ${oAuthServer.issueAzureAdToken()}")
 		)
 
@@ -47,8 +52,9 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 
 
 		val response = sendRequest(
-			method = "GET",
-			path = "/api/v1/rolle/tiltaksarrangor?norskIdent=$norskIdent",
+			method = "POST",
+			path = "/api/v1/rolle/tiltaksarrangor",
+			body = """{"personident": "$norskIdent"}""".toRequestBody(mediaTypeJson),
 			headers = mapOf("Authorization" to "Bearer ${oAuthServer.issueAzureAdM2MToken()}")
 		)
 
@@ -71,14 +77,16 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 		mockAltinnHttpClient.addReporteeResponse(personIdent, RolleType.VEILEDER.serviceCode, emptyList())
 
 		val response1 = sendRequest(
-			method = "GET",
-			path = "/api/v1/rolle/tiltaksarrangor?norskIdent=$personIdent",
+			method = "POST",
+			path = "/api/v1/rolle/tiltaksarrangor",
+			body = """{"personident": "$personIdent"}""".toRequestBody(mediaTypeJson),
 			headers = mapOf("Authorization" to "Bearer ${oAuthServer.issueAzureAdM2MToken()}")
 		)
 
 		val response2 = sendRequest(
-			method = "GET",
-			path = "/api/v1/rolle/tiltaksarrangor?norskIdent=$personIdent",
+			method = "POST",
+			path = "/api/v1/rolle/tiltaksarrangor",
+			body = """{"personident": "$personIdent"}""".toRequestBody(mediaTypeJson),
 			headers = mapOf("Authorization" to "Bearer ${oAuthServer.issueAzureAdM2MToken()}")
 		)
 

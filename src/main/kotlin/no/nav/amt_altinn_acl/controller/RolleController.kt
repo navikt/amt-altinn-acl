@@ -6,6 +6,8 @@ import no.nav.amt_altinn_acl.service.RolleService
 import no.nav.amt_altinn_acl.utils.Issuer
 import no.nav.security.token.support.core.api.ProtectedWithClaims
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -17,9 +19,10 @@ class RolleController(
 	private val rolleService: RolleService
 ) {
 
+	@Deprecated("Endepunktet vil snart bli slettet. Bytt til POST request",)
 	@GetMapping("/tiltaksarrangor")
 	@ProtectedWithClaims(issuer = Issuer.AZURE_AD)
-	fun hentTiltaksarrangorRoller(@RequestParam norskIdent: String): HentRollerResponse {
+	fun hentTiltaksarrangorRollerDeprecated(@RequestParam norskIdent: String): HentRollerResponse {
 		authService.verifyRequestIsMachineToMachine()
 
 		val roller = rolleService.getRollerForPerson(norskIdent)
@@ -27,6 +30,19 @@ class RolleController(
 			roller.map { rolle -> HentRollerResponse.TiltaksarrangorRoller(rolle.organisasjonsnummer, rolle.roller.map { it.rolleType }) }
 		)
 	}
+
+	@PostMapping("/tiltaksarrangor")
+	@ProtectedWithClaims(issuer = Issuer.AZURE_AD)
+	fun hentTiltaksarrangorRoller(@RequestBody hentRollerRequest: HentRollerRequest): HentRollerResponse {
+		authService.verifyRequestIsMachineToMachine()
+
+		val roller = rolleService.getRollerForPerson(hentRollerRequest.personident)
+		return HentRollerResponse(
+			roller.map { rolle -> HentRollerResponse.TiltaksarrangorRoller(rolle.organisasjonsnummer, rolle.roller.map { it.rolleType }) }
+		)
+	}
+
+	data class HentRollerRequest(val personident: String)
 
 	data class HentRollerResponse(
 		val roller: List<TiltaksarrangorRoller>
@@ -36,5 +52,6 @@ class RolleController(
 			val roller: List<RolleType>,
 		)
 	}
+
 
 }
