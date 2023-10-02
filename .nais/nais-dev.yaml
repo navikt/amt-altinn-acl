@@ -56,7 +56,6 @@ spec:
   accessPolicy:
     inbound:
       rules:
-        - application: amt-tiltak
         - application: amt-arrangor
     outbound:
       external:
