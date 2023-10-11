@@ -51,7 +51,7 @@ dependencies {
 
     implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
     implementation("com.squareup.okhttp3:okhttp:$okHttpVersion")
-    implementation("com.squareup.okio:okio:3.4.0")//overstyrer sårbar dependency
+    implementation("com.squareup.okio:okio:3.6.0")//overstyrer sårbar dependency
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
