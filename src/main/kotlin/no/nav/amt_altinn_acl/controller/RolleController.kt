@@ -21,6 +21,7 @@ class RolleController(
 	@ProtectedWithClaims(issuer = Issuer.AZURE_AD)
 	fun hentTiltaksarrangorRoller(@RequestBody hentRollerRequest: HentRollerRequest): HentRollerResponse {
 		authService.verifyRequestIsMachineToMachine()
+		hentRollerRequest.validatePersonident()
 
 		val roller = rolleService.getRollerForPerson(hentRollerRequest.personident)
 		return HentRollerResponse(
@@ -28,7 +29,13 @@ class RolleController(
 		)
 	}
 
-	data class HentRollerRequest(val personident: String)
+	data class HentRollerRequest(val personident: String) {
+		fun validatePersonident() {
+			if (personident.trim().length != 11 || !personident.trim().matches("""\d{11}""".toRegex())) {
+				throw IllegalArgumentException("Ugyldig personident")
+			}
+		}
+	}
 
 	data class HentRollerResponse(
 		val roller: List<TiltaksarrangorRoller>

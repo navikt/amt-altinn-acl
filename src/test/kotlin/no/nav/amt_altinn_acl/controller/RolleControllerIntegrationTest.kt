@@ -22,7 +22,7 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 		val response = sendRequest(
 			method = "POST",
 			path = "/api/v1/rolle/tiltaksarrangor",
-			body = """{"personident": "foo"}""".toRequestBody(mediaTypeJson)
+			body = """{"personident": "12345678910"}""".toRequestBody(mediaTypeJson)
 		)
 
 		response.code shouldBe 401
@@ -33,7 +33,7 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 		val response = sendRequest(
 			method = "POST",
 			path = "/api/v1/rolle/tiltaksarrangor",
-			body = """{"personident": "foo"}""".toRequestBody(mediaTypeJson),
+			body = """{"personident": "12345678910"}""".toRequestBody(mediaTypeJson),
 			headers = mapOf("Authorization" to "Bearer ${oAuthServer.issueAzureAdToken()}")
 		)
 
@@ -41,8 +41,22 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 	}
 
 	@Test
+	fun `hentTiltaksarrangorRoller - returnerer 400 hvis personident har feil format`() {
+		val norskIdent = "1234567891K"
+
+		val response = sendRequest(
+			method = "POST",
+			path = "/api/v1/rolle/tiltaksarrangor",
+			body = """{"personident": "$norskIdent"}""".toRequestBody(mediaTypeJson),
+			headers = mapOf("Authorization" to "Bearer ${oAuthServer.issueAzureAdM2MToken()}")
+		)
+
+		response.code shouldBe 400
+	}
+
+	@Test
 	fun `hentTiltaksarrangorRoller - should return 200 with correct response`() {
-		val norskIdent = UUID.randomUUID().toString()
+		val norskIdent = "12345678910"
 		val orgnr = "1234567"
 
 		mockMaskinportenHttpClient.enqueueTokenResponse()
@@ -68,7 +82,7 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 
 	@Test
 	fun `hentTiltaksarrangorRoller - should return cached response from altinn`() {
-		val personIdent = UUID.randomUUID().toString()
+		val personIdent = "12345678910"
 		val orgnr = "1234567"
 
 		mockMaskinportenHttpClient.enqueueTokenResponse()
