@@ -16,10 +16,10 @@ repositories {
     maven { setUrl("https://github-package-registry-mirror.gc.nav.no/cached/maven-release") }
 }
 
-val commonVersion = "3.2023.09.13_04.55-a8ff452fbd94"
+val commonVersion = "3.2023.10.18_13.28-58db82ecb1a5"
 val testcontainersVersion = "1.19.1"
 val logstashEncoderVersion = "7.4"
-val shedlockVersion = "5.9.0"
+val shedlockVersion = "5.9.1"
 val tokenSupportVersion = "3.1.7"
 val okHttpVersion = "4.12.0"
 val mockkVersion = "1.13.8"
@@ -51,7 +51,6 @@ dependencies {
 
     implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
     implementation("com.squareup.okhttp3:okhttp:$okHttpVersion")
-    implementation("com.squareup.okio:okio:3.6.0")//overstyrer sårbar dependency
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
