@@ -18,7 +18,7 @@ repositories {
     maven { setUrl("https://github-package-registry-mirror.gc.nav.no/cached/maven-release") }
 }
 
-val commonVersion = "3.2023.10.18_13.28-58db82ecb1a5"
+val commonVersion = "3.2023.12.12_13.53-510909d4aa1a"
 val testcontainersVersion = "1.19.3"
 val logstashEncoderVersion = "7.4"
 val shedlockVersion = "5.10.2"
@@ -26,7 +26,7 @@ val tokenSupportVersion = "3.2.0"
 val okHttpVersion = "4.12.0"
 val mockkVersion = "1.13.8"
 val kotestVersion = "5.8.0"
-val mockOauth2ServerVersion = "2.0.1"
+val mockOauth2ServerVersion = "2.1.0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
