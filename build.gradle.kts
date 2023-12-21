@@ -28,6 +28,8 @@ val mockkVersion = "1.13.8"
 val kotestVersion = "5.8.0"
 val mockOauth2ServerVersion = "2.1.0"
 
+extra["logback.version"] = "1.4.14"
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
