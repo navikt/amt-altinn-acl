@@ -22,10 +22,9 @@ class AuthService(
 
 	private fun isRequestFromMachine(): Boolean {
 		val roles = tokenValidationContextHolder
-			.tokenValidationContext
+			.getTokenValidationContext()
 			.anyValidClaims
-			.map { claims -> claims.getAsList("roles") ?: emptyList() }
-			.orElse(emptyList())
+			?.getAsList("roles") ?: emptyList()
 
 		return roles.contains(ACCESS_AS_APPLICATION_ROLE)
 	}
