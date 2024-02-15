@@ -26,7 +26,7 @@ val tokenSupportVersion = "4.1.3"
 val okHttpVersion = "4.12.0"
 val mockkVersion = "1.13.9"
 val kotestVersion = "5.8.0"
-val mockOauth2ServerVersion = "2.1.1"
+val mockOauth2ServerVersion = "2.1.2"
 
 extra["logback.version"] = "1.4.14"
 
