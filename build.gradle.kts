@@ -28,7 +28,7 @@ val mockkVersion = "1.13.9"
 val kotestVersion = "5.8.0"
 val mockOauth2ServerVersion = "2.1.2"
 
-extra["logback.version"] = "1.4.14"
+extra["postgresql.version"] = "42.7.2"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
