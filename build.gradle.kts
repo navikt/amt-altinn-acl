@@ -26,7 +26,7 @@ val tokenSupportVersion = "5.0.2"
 val okHttpVersion = "4.12.0"
 val mockkVersion = "1.13.12"
 val kotestVersion = "5.9.1"
-val mockOauth2ServerVersion = "2.1.8"
+val mockOauth2ServerVersion = "2.1.9"
 
 extra["postgresql.version"] = "42.7.2"
 extra["jackson-bom.version"] = "2.17.0"
