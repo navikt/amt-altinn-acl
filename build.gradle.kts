@@ -28,9 +28,6 @@ val mockkVersion = "1.13.12"
 val kotestVersion = "5.9.1"
 val mockOauth2ServerVersion = "2.1.9"
 
-extra["postgresql.version"] = "42.7.2"
-extra["jackson-bom.version"] = "2.17.0"
-
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
