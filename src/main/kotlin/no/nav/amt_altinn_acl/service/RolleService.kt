@@ -62,7 +62,7 @@ class RolleService(
 
 		val rolleMap: Map<RolleType, List<String>> = RolleType.values().associateWith { rolle ->
 			val organisasjonerMedRolle = try {
-				altinnClient.hentAlleOrganisasjoner(norskIdent, rolle.serviceCode)
+				altinnClient.hentAlleOrganisasjoner(norskIdent, rolle)
 			} catch (e: Exception) {
 				log.warn("Klarte ikke hente rolle $rolle for ny bruker", e)
 				return@associateWith emptyList()
@@ -95,7 +95,7 @@ class RolleService(
 
 		RolleType.values().forEach { rolle ->
 			val organisasjonerMedRolle = try {
-				altinnClient.hentAlleOrganisasjoner(norskIdent, rolle.serviceCode)
+				altinnClient.hentAlleOrganisasjoner(norskIdent, rolle)
 			} catch (e: Exception) {
 				log.warn("Klarte ikke oppdatere roller for bruker $id og roller $rolle, bruker lagrede roller om eksisterer", e)
 				return

@@ -53,12 +53,12 @@ class AltinnUpdaterTests {
 		personRepository.create(personligIdent)
 
 		every {
-			altinnClient.hentAlleOrganisasjoner(personligIdent, KOORDINATOR.serviceCode)
+			altinnClient.hentAlleOrganisasjoner(personligIdent, KOORDINATOR)
 		} returns listOf(organisasjonsnummer)
 
 
 		every {
-			altinnClient.hentAlleOrganisasjoner(personligIdent, VEILEDER.serviceCode)
+			altinnClient.hentAlleOrganisasjoner(personligIdent, VEILEDER)
 		} returns emptyList()
 
 		altinnUpdater.update()
