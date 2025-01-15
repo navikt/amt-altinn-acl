@@ -11,6 +11,9 @@ class AltinnClientConfig {
 	@Value("\${altinn.url}")
 	lateinit var altinnUrl: String
 
+	@Value("\${altinn3.url}")
+	lateinit var altinn3Url: String
+
 	@Value("\${altinn.api-key}")
 	lateinit var altinnApiKey: String
 

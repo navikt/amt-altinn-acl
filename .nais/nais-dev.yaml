@@ -44,6 +44,8 @@ spec:
       value: "5859"
     - name: ALTINN_URL
       value: https://tt02.altinn.no
+    - name: ALTINN3_URL
+      value: https://platform.tt02.altinn.no
     - name: MASKINPORTEN_URL
       value: https://ver2.maskinporten.no
   envFrom:
@@ -60,6 +62,7 @@ spec:
     outbound:
       external:
         - host: tt02.altinn.no
+        - host: platform.tt02.altinn.no
   gcp:
     sqlInstances:
       - name: amt-altinn-acl
