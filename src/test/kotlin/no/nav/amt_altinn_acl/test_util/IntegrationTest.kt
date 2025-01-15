@@ -58,6 +58,7 @@ class IntegrationTest {
 			registry.add("altinn.koordinator-service-code") { altinnKoordinatorServiceKode }
 			registry.add("altinn.veileder-service-code") { altinnVeilederServiceKode }
 			registry.add("altinn.url", mockAltinnHttpClient::serverUrl)
+			registry.add("altinn3.url", mockAltinnHttpClient::serverUrl)
 			registry.add("altinn.api-key") { "test-altinn-api-key" }
 
 			registry.add("maskinporten.scopes") { "scope1 scope2" }

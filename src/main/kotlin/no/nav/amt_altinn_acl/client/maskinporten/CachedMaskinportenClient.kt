@@ -6,12 +6,17 @@ class CachedMaskinportenClient(
 	private val maskinportenClient: MaskinportenClient
 ) : MaskinportenClient {
 
-	private val key = "altinn"
+	private val altinnKey = "altinn"
+	private val altinn3Key = "altinn3"
 
 	private val cache = CaffeineTokenCache()
 
 	override fun hentAltinnToken(): String {
-		return cache.getFromCacheOrTryProvider(key, maskinportenClient::hentAltinnToken)
+		return cache.getFromCacheOrTryProvider(altinnKey, maskinportenClient::hentAltinnToken)
+	}
+
+	override fun hentAltinn3Token(): String {
+		return cache.getFromCacheOrTryProvider(altinn3Key, maskinportenClient::hentAltinn3Token)
 	}
 
 }

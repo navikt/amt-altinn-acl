@@ -10,6 +10,9 @@ class MaskinportenClientConfig {
 	@Value("\${altinn.url}")
 	lateinit var altinnUrl: String
 
+	@Value("\${altinn3.url}")
+	lateinit var altinn3Url: String
+
 	@Value("\${maskinporten.scopes}")
 	lateinit var maskinportenScopes: String
 
@@ -31,6 +34,7 @@ class MaskinportenClientConfig {
 			clientId = maskinportenClientId,
 			issuer = maskinportenIssuer,
 			altinnUrl = altinnUrl,
+			altinn3Url = altinn3Url,
 			scopes = maskinportenScopes.split(" "),
 			tokenEndpointUrl = maskinportenTokenEndpoint,
 			privateJwk = maskinportenClientJwk,

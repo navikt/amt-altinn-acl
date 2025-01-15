@@ -19,6 +19,7 @@ class MaskinportenClientImpl(
 	private val clientId: String,
 	private val issuer: String,
 	private val altinnUrl: String,
+	private val altinn3Url: String,
 	private val scopes: List<String>,
 	tokenEndpointUrl: String,
 	privateJwk: String,
@@ -39,14 +40,17 @@ class MaskinportenClientImpl(
 		privateJwkKeyId = rsaKey.keyID
 		assertionSigner = RSASSASigner(rsaKey)
 	}
+	override fun hentAltinnToken(): String = hentAltinnToken(altinnUrl)
 
-	override fun hentAltinnToken(): String {
+	override fun hentAltinn3Token(): String = hentAltinnToken(altinn3Url)
+
+	private fun hentAltinnToken(url: String): String {
 		val signedJwt = signedClientAssertion(
 			clientAssertionHeader(privateJwkKeyId),
 			clientAssertionClaims(
 				clientId,
 				issuer,
-				altinnUrl,
+				url,
 				scopes
 			),
 			assertionSigner
