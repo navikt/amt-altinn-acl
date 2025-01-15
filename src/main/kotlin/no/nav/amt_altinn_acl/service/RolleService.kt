@@ -18,7 +18,7 @@ import java.time.ZonedDateTime
 class RolleService(
 	private val personRepository: PersonRepository,
 	private val rolleRepository: RolleRepository,
-	private val altinnClient: AltinnClient
+	private val altinnClient: AltinnClient,
 ) {
 
 	private val log = LoggerFactory.getLogger(javaClass)
@@ -60,15 +60,12 @@ class RolleService(
 	private fun getAndSaveRollerFromAltinn(norskIdent: String): List<RolleDbo> {
 		val start = Instant.now()
 
-		val rolleMap: Map<RolleType, List<String>> = RolleType.values().associateWith { rolle ->
-			val organisasjonerMedRolle = try {
-				altinnClient.hentAlleOrganisasjoner(norskIdent, rolle)
-			} catch (e: Exception) {
-				log.warn("Klarte ikke hente rolle $rolle for ny bruker", e)
-				return@associateWith emptyList()
-			}
-			organisasjonerMedRolle
-		}.filterValues { it.isNotEmpty() }
+		val rolleMap: Map<RolleType, List<String>> = try {
+			altinnClient.hentAlleOrganisasjoner(norskIdent, RolleType.entries).filterValues { it.isNotEmpty() }
+		} catch (e: Exception) {
+			log.warn("Klarte ikke hente roller for ny bruker", e)
+			return emptyList()
+		}
 
 		if (rolleMap.isEmpty()) {
 			log.info("Bruker har ingen tilganger i Altinn")
@@ -93,14 +90,14 @@ class RolleService(
 
 		val allOldRoller = getGyldigeRoller(norskIdent)
 
-		RolleType.values().forEach { rolle ->
-			val organisasjonerMedRolle = try {
-				altinnClient.hentAlleOrganisasjoner(norskIdent, rolle)
-			} catch (e: Exception) {
-				log.warn("Klarte ikke oppdatere roller for bruker $id og roller $rolle, bruker lagrede roller om eksisterer", e)
-				return
-			}
+		val rolleMap: Map<RolleType, List<String>> = try {
+			altinnClient.hentAlleOrganisasjoner(norskIdent, RolleType.entries)
+		} catch (e: Exception) {
+			log.warn("Klarte ikke oppdatere roller for bruker $id, bruker lagrede roller om eksisterer", e)
+			return
+		}
 
+		rolleMap.forEach { (rolle, organisasjonerMedRolle) ->
 			val oldRoller = allOldRoller.filter { it.rolleType == rolle }
 
 			oldRoller.forEach { oldRolle ->

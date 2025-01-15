@@ -86,7 +86,7 @@ class AltinnClientImplTest {
 
 		val norskIdent = "123456"
 
-		val organisasjoner = altinnClient.hentAlleOrganisasjoner(norskIdent, rolle)
+		val organisasjoner = altinnClient.hentAlleOrganisasjoner(norskIdent, listOf(rolle))
 
 		val request = mockServer.takeRequest()
 
@@ -96,7 +96,7 @@ class AltinnClientImplTest {
 		request.headers["Authorization"] shouldBe "Bearer TOKEN"
 
 
-		organisasjoner shouldHaveSize 4
+		organisasjoner[rolle]!! shouldHaveSize 4
 	}
 
 	@Test
@@ -161,10 +161,10 @@ class AltinnClientImplTest {
 
 		val norskIdent = "123456"
 
-		val organisasjoner = altinnClient.hentAlleOrganisasjoner(norskIdent, rolle)
+		val organisasjoner = altinnClient.hentAlleOrganisasjoner(norskIdent, listOf(rolle))
 
 		mockServer.requestCount shouldBe 2
-		organisasjoner shouldHaveSize 505
+		organisasjoner[rolle]!! shouldHaveSize 505
 	}
 }
 

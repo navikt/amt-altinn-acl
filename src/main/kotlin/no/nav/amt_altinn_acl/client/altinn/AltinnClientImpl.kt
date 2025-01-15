@@ -19,18 +19,20 @@ class AltinnClientImpl(
 ) : AltinnClient {
 	private val log = LoggerFactory.getLogger(javaClass)
 
-	override fun hentAlleOrganisasjoner(norskIdent: String, rolle: RolleType): List<String> {
-		val organisasjoner = HashSet<String>()
-		var ferdig = false
-		var i = 0
-		while (!ferdig) {
-			val skip = pagineringSize * i++
-			log.info("Henter organisasjoner fra Altinn, skip: $skip")
-			val hentedeOrganisasjoner = hentAlleOrganisasjonerFraAltinn(norskIdent, rolle.serviceCode, skip)
-			organisasjoner.addAll(hentedeOrganisasjoner)
-			ferdig = hentedeOrganisasjoner.size < pagineringSize
+	override fun hentAlleOrganisasjoner(norskIdent: String, roller: List<RolleType>): Map<RolleType, List<String>> {
+		return roller.associateWith {
+			val organisasjoner = HashSet<String>()
+			var ferdig = false
+			var i = 0
+			while (!ferdig) {
+				val skip = pagineringSize * i++
+				log.info("Henter organisasjoner fra Altinn, skip: $skip")
+				val hentedeOrganisasjoner = hentAlleOrganisasjonerFraAltinn(norskIdent, it.serviceCode, skip)
+				organisasjoner.addAll(hentedeOrganisasjoner)
+				ferdig = hentedeOrganisasjoner.size < pagineringSize
+			}
+			organisasjoner.toList()
 		}
-		return organisasjoner.toList()
 	}
 
 	private fun hentAlleOrganisasjonerFraAltinn(norskIdent: String, serviceCode: String, skip: Int): List<String> {

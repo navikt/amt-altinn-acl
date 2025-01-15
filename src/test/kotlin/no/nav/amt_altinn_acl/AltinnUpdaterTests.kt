@@ -53,13 +53,9 @@ class AltinnUpdaterTests {
 		personRepository.create(personligIdent)
 
 		every {
-			altinnClient.hentAlleOrganisasjoner(personligIdent, KOORDINATOR)
-		} returns listOf(organisasjonsnummer)
+			altinnClient.hentAlleOrganisasjoner(personligIdent, RolleType.entries)
+		} returns mapOf(KOORDINATOR to listOf(organisasjonsnummer), VEILEDER to emptyList())
 
-
-		every {
-			altinnClient.hentAlleOrganisasjoner(personligIdent, VEILEDER)
-		} returns emptyList()
 
 		altinnUpdater.update()
 
