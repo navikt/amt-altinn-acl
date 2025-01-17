@@ -20,13 +20,13 @@ class Altinn3ClientImplTest {
 
 	private val altinnClient = Altinn3ClientImpl(
 		baseUrl = mockServerUrl(),
-		altinnApiKey = "api-key",
+		//altinnApiKey = "api-key",
 		maskinportenTokenProvider = { "TOKEN" }
 	)
 
 	@Test
 	fun `hentAlleOrganisasjoner - flere tilganger - parser response riktig`() {
-		val resourceIds = listOf(KOORDINATOR_RESOURCE_ID, VEILEDER_RESOURCE_ID, "resource3")
+		val resourceIds = listOf(RolleType.KOORDINATOR.resourceId, RolleType.VEILEDER.resourceId, "resource3")
 		val jsonResponse = """
 			[
 			  {

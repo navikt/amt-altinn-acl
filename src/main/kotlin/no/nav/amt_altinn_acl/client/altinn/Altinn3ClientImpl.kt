@@ -22,15 +22,9 @@ class Altinn3ClientImpl(
 
 	override fun hentAlleOrganisasjoner(norskIdent: String, roller: List<RolleType>): Map<RolleType, List<String>> {
 		val parties = hentAuthorizedParties(norskIdent)
+		val resourceIds = roller.map { it.resourceId }.toSet()
 
-		val resourceIds = roller.map { rolle ->
-			when (rolle) {
-				RolleType.KOORDINATOR -> KOORDINATOR_RESOURCE_ID
-				RolleType.VEILEDER -> VEILEDER_RESOURCE_ID
-			}
-		}
-
-		return parties.flatMap { it.finnTilganger(resourceIds.toSet()) }
+		return parties.flatMap { it.finnTilganger(resourceIds) }
 			.groupBy({ it.rolle }, { it.organisasjonsnummer })
 	}
 
@@ -70,20 +64,18 @@ class Altinn3ClientImpl(
 		val authorizedResources: Set<String>,
 		val subunits: List<AuthorizedParty>,
 	) {
-		fun finnTilganger(tilgangId: Set<String>): List<Tilgang> {
+		fun finnTilganger(resourceIds: Set<String>): List<Tilgang> {
 			val tilganger = organizationNumber
-				?.let { authorizedResources.intersect(tilgangId).map { Tilgang(it.toRolleType(), organizationNumber) } }
+				?.let {
+					authorizedResources
+						.intersect(resourceIds)
+						.map { Tilgang(RolleType.fromResourceId(it), organizationNumber) }
+				}
 				?: emptyList()
 
-			val underenhetTilganger = subunits.flatMap { it.finnTilganger(tilgangId) }
+			val underenhetTilganger = subunits.flatMap { it.finnTilganger(resourceIds) }
 
 			return tilganger + underenhetTilganger
-		}
-
-		private fun String.toRolleType() = when (this) {
-			KOORDINATOR_RESOURCE_ID -> RolleType.KOORDINATOR
-			VEILEDER_RESOURCE_ID -> RolleType.VEILEDER
-			else -> throw IllegalArgumentException("Ukjent resurssid $this")
 		}
 	}
 
@@ -92,6 +84,3 @@ class Altinn3ClientImpl(
 		val organisasjonsnummer: String,
 	)
 }
-
-const val KOORDINATOR_RESOURCE_ID = "placeholder-koordinator-resource-id"
-const val VEILEDER_RESOURCE_ID = "placeholder-veileder-resource-id"
