@@ -1,5 +1,7 @@
 package no.nav.amt_altinn_acl.test_util
 
+import io.getunleash.FakeUnleash
+import io.getunleash.Unleash
 import no.nav.amt_altinn_acl.test_util.Constants.TEST_JWK
 import no.nav.amt_altinn_acl.test_util.mock_clients.MockAltinnHttpServer
 import no.nav.amt_altinn_acl.test_util.mock_clients.MockMaskinportenHttpClient
@@ -11,7 +13,10 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Profile
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -95,4 +100,15 @@ class IntegrationTest {
 		return client.newCall(reqBuilder.build()).execute()
 	}
 
+}
+
+@Profile("test")
+@Configuration
+class UnleashConfig {
+	@Bean
+	open fun fakeUnleashClient(): Unleash {
+		val fakeUnleash = FakeUnleash()
+		fakeUnleash.disableAll()
+		return fakeUnleash
+	}
 }

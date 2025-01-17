@@ -50,6 +50,7 @@ spec:
       value: https://ver2.maskinporten.no
   envFrom:
     - secret: altinn-api-key
+    - secret: amt-tiltaksarrangor-bff-unleash-api-token
   azure:
     application:
       enabled: true
@@ -63,6 +64,7 @@ spec:
       external:
         - host: tt02.altinn.no
         - host: platform.tt02.altinn.no
+        - host: amt-unleash-api.nav.cloud.nais.io
   gcp:
     sqlInstances:
       - name: amt-altinn-acl
@@ -77,6 +79,7 @@ spec:
       consumes:
         - name: "altinn:serviceowner/reportees"
         - name: "altinn:serviceowner/rolesandrights"
+        - name: "altinn:accessmanagement/authorizedparties.resourceowner"
 
   observability:
     autoInstrumentation:
