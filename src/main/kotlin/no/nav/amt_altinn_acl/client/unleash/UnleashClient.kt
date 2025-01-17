@@ -1,7 +1,7 @@
-package no.nav.amt_altinn_acl.client.unleash;
+package no.nav.amt_altinn_acl.client.unleash
 
 import io.getunleash.Unleash
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Component
 
 @Component
 class UnleashClient (

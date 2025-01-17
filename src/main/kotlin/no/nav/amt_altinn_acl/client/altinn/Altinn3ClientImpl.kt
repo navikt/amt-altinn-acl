@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 
 class Altinn3ClientImpl(
 	private val baseUrl: String,
-	private val altinnApiKey: String,
+	//private val altinnApiKey: String,
 	private val maskinportenTokenProvider: () -> String,
 	private val client: OkHttpClient = RestClient.baseClient(),
 ) : AltinnClient {
@@ -31,7 +31,7 @@ class Altinn3ClientImpl(
 	private fun hentAuthorizedParties(norskIdent: String): List<AuthorizedParty> {
 		val request = Request.Builder()
 			.url("$baseUrl/accessmanagement/api/v1/resourceowner/authorizedparties")
-			.addHeader("Ocp-Apim-Subscription-Key", altinnApiKey)
+			//.addHeader("Ocp-Apim-Subscription-Key", altinnApiKey)
 			.addHeader("Authorization", "Bearer ${maskinportenTokenProvider.invoke()}")
 			.post(requestBody(norskIdent))
 			.build()

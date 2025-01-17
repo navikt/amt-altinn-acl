@@ -28,7 +28,7 @@ class AltinnClientConfig {
 		)
 		val altinn3Client = Altinn3ClientImpl(
 			baseUrl = altinn3Url,
-			altinnApiKey = "altinn3-api-key", // TODO: api-key
+			//altinnApiKey = "altinn3-api-key", // TODO: api-key?
 			maskinportenTokenProvider = maskinportenClient::hentAltinn3Token
 		)
 
