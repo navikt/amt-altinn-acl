@@ -24,8 +24,11 @@ class Altinn3ClientImpl(
 		val parties = hentAuthorizedParties(norskIdent)
 		val resourceIds = roller.map { it.resourceId }.toSet()
 
-		return parties.flatMap { it.finnTilganger(resourceIds) }
-			.groupBy({ it.rolle }, { it.organisasjonsnummer })
+		return roller.associateWith { rolle ->
+			parties.flatMap { it.finnTilganger(resourceIds) }
+				.filter { it.rolle == rolle }
+				.map { it.organisasjonsnummer }
+		}
 	}
 
 	private fun hentAuthorizedParties(norskIdent: String): List<AuthorizedParty> {
