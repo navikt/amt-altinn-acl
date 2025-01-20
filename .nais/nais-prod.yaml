@@ -71,7 +71,7 @@ spec:
       value: https://maskinporten.no
   envFrom:
     - secret: altinn-api-key
-    - secret: amt-tiltaksarrangor-bff-unleash-api-token
+    - secret: amt-altinn-acl-unleash-api-token
   maskinporten:
     enabled: true
     scopes:

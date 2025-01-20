@@ -50,7 +50,7 @@ spec:
       value: https://ver2.maskinporten.no
   envFrom:
     - secret: altinn-api-key
-    - secret: amt-tiltaksarrangor-bff-unleash-api-token
+    - secret: amt-altinn-acl-unleash-api-token
   azure:
     application:
       enabled: true
