@@ -38,12 +38,11 @@ class RolleServiceTest : IntegrationTest() {
 		val norskIdent = UUID.randomUUID().toString()
 		val organisasjonsnummer = UUID.randomUUID().toString()
 
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf(organisasjonsnummer))
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organisasjonsnummer))
+		mockAltinnHttpClient.addAuthorizedPartiesResponse(norskIdent, listOf(KOORDINATOR, VEILEDER), listOf(organisasjonsnummer))
 
 		val roller = rolleService.getRollerForPerson(norskIdent)
 
-		mockAltinnHttpClient.requestCount() shouldBe 2
+		mockAltinnHttpClient.requestCount() shouldBe 1
 
 		roller.size shouldBe 1
 
@@ -61,12 +60,11 @@ class RolleServiceTest : IntegrationTest() {
 	internal fun `getRollerForPerson - not exist and no roller in Altinn - don't save person`() {
 		val norskIdent = UUID.randomUUID().toString()
 
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, emptyList())
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, emptyList())
+		mockAltinnHttpClient.addAuthorizedPartiesResponse(norskIdent, listOf(VEILEDER, VEILEDER), listOf())
 
 		val roller = rolleService.getRollerForPerson(norskIdent)
 
-		mockAltinnHttpClient.requestCount() shouldBe 2
+		mockAltinnHttpClient.requestCount() shouldBe 1
 		roller.size shouldBe 0
 		personRepository.get(norskIdent) shouldBe null
 	}
@@ -97,15 +95,14 @@ class RolleServiceTest : IntegrationTest() {
 		personRepository.create(norskIdent)
 		personRepository.setSynchronized(norskIdent)
 
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf(organisasjonsnummer))
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organisasjonsnummer))
+		mockAltinnHttpClient.addAuthorizedPartiesResponse(norskIdent, listOf(KOORDINATOR, VEILEDER), listOf(organisasjonsnummer))
 
 		val roller = rolleService.getRollerForPerson(norskIdent)
 
 		hasRolle(roller, organisasjonsnummer, VEILEDER) shouldBe true
 		hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
 
-		mockAltinnHttpClient.requestCount() shouldBe 2
+		mockAltinnHttpClient.requestCount() shouldBe 1
 	}
 
 	@Test
@@ -117,8 +114,7 @@ class RolleServiceTest : IntegrationTest() {
 		rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
 		rolleRepository.createRolle(personDbo.id, organisasjonsnummer, VEILEDER)
 
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organisasjonsnummer))
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf())
+		mockAltinnHttpClient.addAuthorizedPartiesResponse(norskIdent, listOf(KOORDINATOR), listOf(organisasjonsnummer))
 
 		val roller = rolleService.getRollerForPerson(norskIdent)
 
@@ -138,8 +134,7 @@ class RolleServiceTest : IntegrationTest() {
 		val personDbo = personRepository.create(norskIdent)
 		rolleRepository.createRolle(personDbo.id, organisasjonsnummer, VEILEDER)
 
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organisasjonsnummer))
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf(organisasjonsnummer))
+		mockAltinnHttpClient.addAuthorizedPartiesResponse(norskIdent, listOf(KOORDINATOR, VEILEDER), listOf(organisasjonsnummer))
 
 		val roller = rolleService.getRollerForPerson(norskIdent)
 
@@ -155,16 +150,14 @@ class RolleServiceTest : IntegrationTest() {
 		val personDbo = personRepository.create(norskIdent)
 		rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
 
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf())
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf())
+		mockAltinnHttpClient.addAuthorizedPartiesResponse(norskIdent, listOf(KOORDINATOR, VEILEDER), listOf())
 
 		val roller = rolleService.getRollerForPerson(norskIdent)
 
 		roller.isEmpty() shouldBe true
 
 		mockAltinnHttpClient.resetHttpServer()
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, KOORDINATOR.serviceCode, listOf(organisasjonsnummer))
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, VEILEDER.serviceCode, listOf())
+		mockAltinnHttpClient.addAuthorizedPartiesResponse(norskIdent, listOf(KOORDINATOR), listOf(organisasjonsnummer))
 
 		val updatedRoller = rolleService.getRollerForPerson(norskIdent)
 
@@ -185,8 +178,8 @@ class RolleServiceTest : IntegrationTest() {
 
 		rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
 
-		mockAltinnHttpClient.addFailureResponse(norskIdent, KOORDINATOR.serviceCode, 500)
-		mockAltinnHttpClient.addFailureResponse(norskIdent, VEILEDER.serviceCode, 500)
+		mockAltinnHttpClient.addFailureResponse(500)
+		mockAltinnHttpClient.addFailureResponse(500)
 
 		val roller = rolleService.getRollerForPerson(norskIdent)
 

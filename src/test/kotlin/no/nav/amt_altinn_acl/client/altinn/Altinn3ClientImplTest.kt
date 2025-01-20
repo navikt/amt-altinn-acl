@@ -3,11 +3,8 @@ package no.nav.amt_altinn_acl.client.altinn
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.amt_altinn_acl.domain.RolleType
-import no.nav.amt_altinn_acl.utils.JsonUtils
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class Altinn3ClientImplTest {

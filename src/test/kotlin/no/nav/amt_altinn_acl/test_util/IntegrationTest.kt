@@ -108,7 +108,7 @@ class UnleashConfig {
 	@Bean
 	open fun fakeUnleashClient(): Unleash {
 		val fakeUnleash = FakeUnleash()
-		fakeUnleash.disableAll()
+		fakeUnleash.enableAll()
 		return fakeUnleash
 	}
 }

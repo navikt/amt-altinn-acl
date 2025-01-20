@@ -9,6 +9,13 @@ import okhttp3.mockwebserver.RecordedRequest
 import org.slf4j.LoggerFactory
 import java.util.*
 
+
+private val requestBodyCache = mutableMapOf<RecordedRequest, String>()
+
+fun RecordedRequest.getBodyAsString(): String {
+	return requestBodyCache.getOrPut(this) { this.body.readUtf8() }
+}
+
 abstract class MockHttpServer(
 	private val name: String
 ) {
@@ -47,7 +54,7 @@ abstract class MockHttpServer(
 		}
 	}
 
-	protected fun addResponseHandler(
+	private fun addResponseHandler(
 		predicate: (req: RecordedRequest) -> Boolean,
 		response: (req: RecordedRequest) -> MockResponse
 	): UUID {
@@ -56,7 +63,12 @@ abstract class MockHttpServer(
 		return id
 	}
 
-	protected fun addResponseHandler(path: String, response: MockResponse): UUID {
+
+	fun addResponseHandler(predicate: (req: RecordedRequest) -> Boolean, response: MockResponse): UUID {
+		return addResponseHandler(predicate) { response }
+	}
+
+	fun addResponseHandler(path: String, response: MockResponse): UUID {
 		val predicate = { req: RecordedRequest -> req.path == path }
 		return addResponseHandler(predicate) { response }
 	}
