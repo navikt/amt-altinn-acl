@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Profile
 @Configuration
 class UnleashConfig {
 	@Bean
-	fun unleashClient(
+	fun defaultUnleash(
 		@Value("\${app.env.unleashUrl}") unleashUrl: String,
 		@Value("\${app.env.unleashApiToken}") unleashApiToken: String,
 	): DefaultUnleash {
