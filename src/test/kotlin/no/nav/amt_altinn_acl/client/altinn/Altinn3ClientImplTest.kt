@@ -17,7 +17,6 @@ class Altinn3ClientImplTest {
 
 	private val altinnClient = Altinn3ClientImpl(
 		baseUrl = mockServerUrl(),
-		//altinnApiKey = "api-key",
 		maskinportenTokenProvider = { "TOKEN" }
 	)
 
