@@ -108,7 +108,7 @@ class RolleService(
 			}
 
 			organisasjonerMedRolle.forEach { orgRolle ->
-				if (oldRoller.find { it.organisasjonsnummer == orgRolle } == null) {
+				if (oldRoller.none { it.organisasjonsnummer == orgRolle && it.erGyldig() }) {
 					log.debug("User $id got $rolle on $orgRolle")
 					rolleRepository.createRolle(id, orgRolle, rolle)
 				}
