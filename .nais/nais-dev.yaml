@@ -44,10 +44,13 @@ spec:
       value: "5859"
     - name: ALTINN_URL
       value: https://tt02.altinn.no
+    - name: ALTINN3_URL
+      value: https://platform.tt02.altinn.no
     - name: MASKINPORTEN_URL
       value: https://ver2.maskinporten.no
   envFrom:
     - secret: altinn-api-key
+    - secret: amt-altinn-acl-unleash-api-token
   azure:
     application:
       enabled: true
@@ -60,6 +63,8 @@ spec:
     outbound:
       external:
         - host: tt02.altinn.no
+        - host: platform.tt02.altinn.no
+        - host: amt-unleash-api.nav.cloud.nais.io
   gcp:
     sqlInstances:
       - name: amt-altinn-acl
@@ -74,6 +79,7 @@ spec:
       consumes:
         - name: "altinn:serviceowner/reportees"
         - name: "altinn:serviceowner/rolesandrights"
+        - name: "altinn:accessmanagement/authorizedparties.resourceowner"
 
   observability:
     autoInstrumentation:

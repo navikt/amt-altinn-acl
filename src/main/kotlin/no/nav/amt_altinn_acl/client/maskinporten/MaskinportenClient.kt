@@ -4,4 +4,6 @@ interface MaskinportenClient {
 
 	fun hentAltinnToken(): String
 
+	fun hentAltinn3Token(): String
+
 }

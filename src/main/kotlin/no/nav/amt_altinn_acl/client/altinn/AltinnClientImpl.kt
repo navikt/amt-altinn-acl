@@ -1,6 +1,7 @@
 package no.nav.amt_altinn_acl.client.altinn
 
 import com.fasterxml.jackson.annotation.JsonAlias
+import no.nav.amt_altinn_acl.domain.RolleType
 import no.nav.amt_altinn_acl.utils.JsonUtils.fromJsonString
 import no.nav.amt_altinn_acl.utils.SecureLog.secureLog
 import no.nav.common.rest.client.RestClient
@@ -18,18 +19,20 @@ class AltinnClientImpl(
 ) : AltinnClient {
 	private val log = LoggerFactory.getLogger(javaClass)
 
-	override fun hentAlleOrganisasjoner(norskIdent: String, serviceCode: String): List<String> {
-		val organisasjoner = HashSet<String>()
-		var ferdig = false
-		var i = 0
-		while (!ferdig) {
-			val skip = pagineringSize * i++
-			log.info("Henter organisasjoner fra Altinn, skip: $skip")
-			val hentedeOrganisasjoner = hentAlleOrganisasjonerFraAltinn(norskIdent, serviceCode, skip)
-			organisasjoner.addAll(hentedeOrganisasjoner)
-			ferdig = hentedeOrganisasjoner.size < pagineringSize
+	override fun hentAlleOrganisasjoner(norskIdent: String, roller: List<RolleType>): Map<RolleType, List<String>> {
+		return roller.associateWith {
+			val organisasjoner = HashSet<String>()
+			var ferdig = false
+			var i = 0
+			while (!ferdig) {
+				val skip = pagineringSize * i++
+				log.info("Henter organisasjoner fra Altinn, skip: $skip")
+				val hentedeOrganisasjoner = hentAlleOrganisasjonerFraAltinn(norskIdent, it.serviceCode, skip)
+				organisasjoner.addAll(hentedeOrganisasjoner)
+				ferdig = hentedeOrganisasjoner.size < pagineringSize
+			}
+			organisasjoner.toList()
 		}
-		return organisasjoner.toList()
 	}
 
 	private fun hentAlleOrganisasjonerFraAltinn(norskIdent: String, serviceCode: String, skip: Int): List<String> {

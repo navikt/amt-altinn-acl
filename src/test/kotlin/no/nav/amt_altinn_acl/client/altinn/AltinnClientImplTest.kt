@@ -2,6 +2,7 @@ package no.nav.amt_altinn_acl.client.altinn
 
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import no.nav.amt_altinn_acl.domain.RolleType
 import no.nav.amt_altinn_acl.utils.JsonUtils
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -30,7 +31,7 @@ class AltinnClientImplTest {
 
 	@Test
 	fun `hentAlleOrganisasjoner - 4 tilganger - kun et kall til Altinn`() {
-		val serviceCode = "5858"
+		val rolle = RolleType.KOORDINATOR
 		val altinnClient = AltinnClientImpl(
 			baseUrl = mockServerUrl(),
 			altinnApiKey = "api-key",
@@ -85,22 +86,22 @@ class AltinnClientImplTest {
 
 		val norskIdent = "123456"
 
-		val organisasjoner = altinnClient.hentAlleOrganisasjoner(norskIdent, serviceCode)
+		val organisasjoner = altinnClient.hentAlleOrganisasjoner(norskIdent, listOf(rolle))
 
 		val request = mockServer.takeRequest()
 
 		request.method shouldBe "GET"
-		request.path shouldBe "/api/serviceowner/reportees?subject=$norskIdent&serviceCode=$serviceCode&serviceEdition=1&\$top=$pagineringSize&\$skip=0"
+		request.path shouldBe "/api/serviceowner/reportees?subject=$norskIdent&serviceCode=${rolle.serviceCode}&serviceEdition=1&\$top=$pagineringSize&\$skip=0"
 		request.headers["APIKEY"] shouldBe "api-key"
 		request.headers["Authorization"] shouldBe "Bearer TOKEN"
 
 
-		organisasjoner shouldHaveSize 4
+		organisasjoner[rolle]!! shouldHaveSize 4
 	}
 
 	@Test
 	fun `hentAlleOrganisasjoner - 505 tilganger - to kall til Altinn`() {
-		val serviceCode = "5858"
+		val rolle = RolleType.KOORDINATOR
 		val altinnClient = AltinnClientImpl(
 			baseUrl = mockServerUrl(),
 			altinnApiKey = "api-key",
@@ -160,10 +161,10 @@ class AltinnClientImplTest {
 
 		val norskIdent = "123456"
 
-		val organisasjoner = altinnClient.hentAlleOrganisasjoner(norskIdent, serviceCode)
+		val organisasjoner = altinnClient.hentAlleOrganisasjoner(norskIdent, listOf(rolle))
 
 		mockServer.requestCount shouldBe 2
-		organisasjoner shouldHaveSize 505
+		organisasjoner[rolle]!! shouldHaveSize 505
 	}
 }
 

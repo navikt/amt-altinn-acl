@@ -27,6 +27,7 @@ val okHttpVersion = "4.12.0"
 val mockkVersion = "1.13.16"
 val kotestVersion = "5.9.1"
 val mockOauth2ServerVersion = "2.1.10"
+val unleashVersion = "9.2.6"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
@@ -54,6 +55,8 @@ dependencies {
     implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
     implementation("com.squareup.okhttp3:okhttp:$okHttpVersion")
     runtimeOnly("org.postgresql:postgresql")
+
+    implementation("io.getunleash:unleash-client-java:$unleashVersion")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.mockk:mockk:$mockkVersion")

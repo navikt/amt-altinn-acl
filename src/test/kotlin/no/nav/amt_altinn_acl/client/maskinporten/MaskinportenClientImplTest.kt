@@ -45,6 +45,7 @@ class MaskinportenClientImplTest {
 			clientId = "client-id",
 			issuer = "issuer",
 			altinnUrl = "https://tt02.altinn.no",
+			altinn3Url = "https://platform.tt02.altinn.no",
 			scopes = listOf(scope1, scope2),
 			tokenEndpointUrl = mockServerUrl() + "/token",
 			privateJwk = TEST_JWK

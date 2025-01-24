@@ -47,6 +47,8 @@ spec:
     outbound:
       external:
         - host: www.altinn.no
+        - host: platform.altinn.no
+        - host: amt-unleash-api.nav.cloud.nais.io
   gcp:
     sqlInstances:
       - name: amt-altinn-acl
@@ -63,16 +65,20 @@ spec:
       value: "5859"
     - name: ALTINN_URL
       value: https://www.altinn.no
+    - name: ALTINN3_URL
+      value: https://platform.altinn.no
     - name: MASKINPORTEN_URL
       value: https://maskinporten.no
   envFrom:
     - secret: altinn-api-key
+    - secret: amt-altinn-acl-unleash-api-token
   maskinporten:
     enabled: true
     scopes:
       consumes:
         - name: "altinn:serviceowner/reportees"
         - name: "altinn:serviceowner/rolesandrights"
+        - name: "altinn:accessmanagement/authorizedparties.resourceowner"
 
   observability:
     autoInstrumentation:

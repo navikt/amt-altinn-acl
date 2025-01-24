@@ -19,6 +19,7 @@ class MaskinportenClientImpl(
 	private val clientId: String,
 	private val issuer: String,
 	private val altinnUrl: String,
+	private val altinn3Url: String,
 	private val scopes: List<String>,
 	tokenEndpointUrl: String,
 	privateJwk: String,
@@ -40,13 +41,20 @@ class MaskinportenClientImpl(
 		assertionSigner = RSASSASigner(rsaKey)
 	}
 
-	override fun hentAltinnToken(): String {
+
+	override fun hentAltinnToken(): String =
+		hentAltinnToken(altinnUrl, scopes.filterNot { it.contains("authorizedparties") })
+
+	override fun hentAltinn3Token(): String =
+		hentAltinnToken(altinn3Url, scopes.filter { it.contains("authorizedparties") })
+
+	private fun hentAltinnToken(url: String, scopes: List<String>): String {
 		val signedJwt = signedClientAssertion(
 			clientAssertionHeader(privateJwkKeyId),
 			clientAssertionClaims(
 				clientId,
 				issuer,
-				altinnUrl,
+				url,
 				scopes
 			),
 			assertionSigner
@@ -78,8 +86,8 @@ class MaskinportenClientImpl(
 	private fun signedClientAssertion(
 		assertionHeader: JWSHeader,
 		assertionClaims: JWTClaimsSet,
-		signer: JWSSigner
-	): SignedJWT {
+		signer: JWSSigner,
+    ): SignedJWT {
 		val signedJWT = SignedJWT(assertionHeader, assertionClaims)
 		signedJWT.sign(signer)
 		return signedJWT
@@ -97,8 +105,8 @@ class MaskinportenClientImpl(
 		clientId: String,
 		issuer: String,
 		altinnUrl: String,
-		scopes: List<String>
-	): JWTClaimsSet {
+		scopes: List<String>,
+    ): JWTClaimsSet {
 		val now = Instant.now()
 		val expire = now.plusSeconds(30)
 

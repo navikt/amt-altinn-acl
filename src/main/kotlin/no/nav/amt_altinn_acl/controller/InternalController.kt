@@ -2,6 +2,7 @@ package no.nav.amt_altinn_acl.controller
 
 import jakarta.servlet.http.HttpServletRequest
 import no.nav.amt_altinn_acl.client.altinn.AltinnClient
+import no.nav.amt_altinn_acl.domain.RolleType
 import no.nav.amt_altinn_acl.jobs.AltinnUpdater
 import no.nav.amt_altinn_acl.utils.SecureLog.secureLog
 import no.nav.security.token.support.core.api.Unprotected
@@ -36,9 +37,12 @@ class InternalController(
 		@RequestParam("serviceCode") serviceCode: String,
 	) : List<String> {
 		secureLog.info("Reached /altinn/organisasjoner")
+
+		val rolle = RolleType.fromServiceCode(serviceCode)
+
 		if (isInternal(servlet)) {
 			secureLog.info("Passed internal /altinn/organisasjoner")
-			return altinnClient.hentAlleOrganisasjoner(fnr, serviceCode)
+			return altinnClient.hentAlleOrganisasjoner(fnr, listOf(rolle))[rolle] ?: emptyList()
 		}
 		secureLog.error("Attempted external access to /altinn/organisasjoner")
 		throw RuntimeException("No access")

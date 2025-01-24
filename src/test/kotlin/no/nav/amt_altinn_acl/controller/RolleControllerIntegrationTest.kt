@@ -60,9 +60,7 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 
 		mockMaskinportenHttpClient.enqueueTokenResponse()
 
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, RolleType.KOORDINATOR.serviceCode, listOf(orgnr))
-		mockAltinnHttpClient.addReporteeResponse(norskIdent, RolleType.VEILEDER.serviceCode, listOf(orgnr))
-
+		mockAltinnHttpClient.addAuthorizedPartiesResponse(norskIdent, listOf(RolleType.KOORDINATOR, RolleType.VEILEDER), listOf(orgnr))
 
 		val response = sendRequest(
 			method = "POST",
@@ -86,8 +84,7 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 
 		mockMaskinportenHttpClient.enqueueTokenResponse()
 
-		mockAltinnHttpClient.addReporteeResponse(personIdent, RolleType.KOORDINATOR.serviceCode, listOf(orgnr))
-		mockAltinnHttpClient.addReporteeResponse(personIdent, RolleType.VEILEDER.serviceCode, emptyList())
+		mockAltinnHttpClient.addAuthorizedPartiesResponse(personIdent, listOf(RolleType.KOORDINATOR), listOf(orgnr))
 
 		val response1 = sendRequest(
 			method = "POST",
@@ -113,7 +110,7 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 		response2.code shouldBe 200
 		response2.body?.string() shouldBe expectedJson
 
-		mockAltinnHttpClient.requestCount() shouldBe 2
+		mockAltinnHttpClient.requestCount() shouldBe 1
 	}
 
 }

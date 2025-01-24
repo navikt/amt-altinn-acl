@@ -1,71 +1,55 @@
 package no.nav.amt_altinn_acl.test_util.mock_clients
 
-import no.nav.amt_altinn_acl.client.altinn.pagineringSize
+import no.nav.amt_altinn_acl.client.altinn.Altinn3ClientImpl
+import no.nav.amt_altinn_acl.domain.RolleType
+import no.nav.amt_altinn_acl.utils.JsonUtils
 import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.RecordedRequest
 
 class MockAltinnHttpServer : MockHttpServer(name = "Altinn Mock Server") {
 
-	private val personJson = """
-		{
-			"Name": "LAGSPORT PLUTSELIG ",
-			"Type": "Person",
-			"SocialSecurityNumber": "11111111111"
-		}
-	""".trimIndent()
-
-	fun addReporteeResponse(
+	fun addAuthorizedPartiesResponse(
 		personIdent: String,
-		serviceCode: String,
-		organisasjonnummer: List<String>
-	) {
+		roller: List<RolleType>,
+		organisasjonnummer: List<String>,
+    ) {
+		val authorizedPartiesRequest = Altinn3ClientImpl.AuthorizedPartiesRequest(personIdent)
+
+		val requestPredicate = { req: RecordedRequest ->
+			req.path == "/accessmanagement/api/v1/resourceowner/authorizedparties"
+				&& req.method == "POST"
+				&& req.getBodyAsString() == JsonUtils.objectMapper.writeValueAsString(authorizedPartiesRequest)
+		}
+
 		addResponseHandler(
-			path = "/api/serviceowner/reportees?subject=$personIdent&serviceCode=$serviceCode&serviceEdition=1&\$top=$pagineringSize&\$skip=0",
-			generateReporteeResponse(organisasjonnummer)
+			predicate = requestPredicate,
+			generateAuthorizedpartiesResponse(organisasjonnummer, roller)
 		)
+
 	}
 
 	fun addFailureResponse(
-		personIdent: String,
-		serviceCode: String,
-		resoponseCode: Int
-	) {
+		responseCode: Int,
+    ) {
 		addResponseHandler(
-			path = "/api/serviceowner/reportees?subject=$personIdent&serviceCode=$serviceCode&serviceEdition=1&\$top=$pagineringSize&\$skip=0",
-			response = MockResponse().setResponseCode(resoponseCode)
+			path = "$/accessmanagement/api/v1/resourceowner/authorizedparties",
+			response = MockResponse().setResponseCode(responseCode)
 		)
 	}
 
-	private fun generateReporteeResponse(organisasjonnummer: List<String>): MockResponse {
-		val body = if (organisasjonnummer.isEmpty()) {
-			"""
-				[
-					$personJson
-				]
-			""".trimIndent()
-		} else {
-			StringBuilder()
-				.append("[")
-				.append(personJson)
-				.append(",")
-				.append(organisasjonnummer.joinToString(",") {
-					"""
-					{
-						"Name": "NAV NORGE AS",
-						"Type": "Business",
-						"OrganizationNumber": "$it",
-						"ParentOrganizationNumber": "5235325325",
-						"OrganizationForm": "AAFY",
-						"Status": "Active"
-					}
-					""".trimIndent()
-				})
-				.append("]")
-				.toString()
+	private fun generateAuthorizedpartiesResponse(organisasjonnummer: List<String>, roller: List<RolleType>): MockResponse {
+		val parties = organisasjonnummer.map {
+			Altinn3ClientImpl.AuthorizedParty(
+				organizationNumber = it,
+				authorizedResources = roller.map { it.resourceId }.toSet(),
+				emptyList()
+			)
 		}
 
 		return MockResponse()
 			.setResponseCode(200)
-			.setBody(body)
+			.setBody(JsonUtils.objectMapper.writeValueAsString(parties))
 	}
+
 
 }
