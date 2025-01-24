@@ -1,5 +1,6 @@
 name: Deploy unleash-apitoken
 on:
+  workflow_dispatch:
   push:
     paths:
       - ".nais/unleash-apitoken-dev.yaml"
