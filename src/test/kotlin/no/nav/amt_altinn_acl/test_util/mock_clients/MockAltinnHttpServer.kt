@@ -16,7 +16,7 @@ class MockAltinnHttpServer : MockHttpServer(name = "Altinn Mock Server") {
 		val authorizedPartiesRequest = Altinn3ClientImpl.AuthorizedPartiesRequest(personIdent)
 
 		val requestPredicate = { req: RecordedRequest ->
-			req.path == "/accessmanagement/api/v1/resourceowner/authorizedparties"
+			req.path == "/accessmanagement/api/v1/resourceowner/authorizedparties?includeAltinn2=true"
 				&& req.method == "POST"
 				&& req.getBodyAsString() == JsonUtils.objectMapper.writeValueAsString(authorizedPartiesRequest)
 		}

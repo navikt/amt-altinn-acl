@@ -38,7 +38,7 @@ class Altinn3ClientImpl(
 
 	private fun hentAuthorizedParties(norskIdent: String): List<AuthorizedParty> {
 		val request = Request.Builder()
-			.url("$baseUrl/accessmanagement/api/v1/resourceowner/authorizedparties")
+			.url("$baseUrl/accessmanagement/api/v1/resourceowner/authorizedparties?includeAltinn2=true")
 			.addHeader("Authorization", "Bearer ${maskinportenTokenProvider.invoke()}")
 			.post(requestBody(norskIdent))
 			.build()
