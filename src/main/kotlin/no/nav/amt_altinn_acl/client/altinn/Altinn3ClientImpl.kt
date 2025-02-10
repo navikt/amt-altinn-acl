@@ -52,6 +52,8 @@ class Altinn3ClientImpl(
 
 			val body = response.body?.string() ?: throw RuntimeException("Body is missing")
 
+			log.info("altinn3 body ->\n$body")
+
 			return fromJsonString<List<AuthorizedParty>>(body)
 		}
 	}
