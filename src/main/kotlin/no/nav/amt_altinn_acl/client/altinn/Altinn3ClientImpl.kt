@@ -23,6 +23,9 @@ class Altinn3ClientImpl(
 		val parties = hentAuthorizedParties(norskIdent)
 		val resourceIds = roller.map { it.resourceId }.toSet()
 
+		parties.forEach {
+			log.info("parties: $it")
+		}
 
 		return roller.associateWith { rolle ->
 			parties.flatMap { it.finnTilganger(resourceIds) }
