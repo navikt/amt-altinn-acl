@@ -7,9 +7,6 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class MaskinportenClientConfig {
 
-	@Value("\${altinn.url}")
-	lateinit var altinnUrl: String
-
 	@Value("\${altinn3.url}")
 	lateinit var altinn3Url: String
 
@@ -33,7 +30,6 @@ class MaskinportenClientConfig {
 		val client = MaskinportenClientImpl(
 			clientId = maskinportenClientId,
 			issuer = maskinportenIssuer,
-			altinnUrl = altinnUrl,
 			altinn3Url = altinn3Url,
 			scopes = maskinportenScopes.split(" "),
 			tokenEndpointUrl = maskinportenTokenEndpoint,

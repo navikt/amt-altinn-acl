@@ -18,7 +18,6 @@ import java.util.*
 class MaskinportenClientImpl(
 	private val clientId: String,
 	private val issuer: String,
-	private val altinnUrl: String,
 	private val altinn3Url: String,
 	private val scopes: List<String>,
 	tokenEndpointUrl: String,
@@ -41,20 +40,13 @@ class MaskinportenClientImpl(
 		assertionSigner = RSASSASigner(rsaKey)
 	}
 
-
-	override fun hentAltinnToken(): String =
-		hentAltinnToken(altinnUrl, scopes.filterNot { it.contains("authorizedparties") })
-
-	override fun hentAltinn3Token(): String =
-		hentAltinnToken(altinn3Url, scopes.filter { it.contains("authorizedparties") })
-
-	private fun hentAltinnToken(url: String, scopes: List<String>): String {
+	override fun hentAltinn3Token(): String {
 		val signedJwt = signedClientAssertion(
 			clientAssertionHeader(privateJwkKeyId),
 			clientAssertionClaims(
 				clientId,
 				issuer,
-				url,
+				altinn3Url,
 				scopes
 			),
 			assertionSigner
