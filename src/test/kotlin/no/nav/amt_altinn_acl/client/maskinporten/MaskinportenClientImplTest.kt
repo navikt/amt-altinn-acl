@@ -44,14 +44,13 @@ class MaskinportenClientImplTest {
 		val client = MaskinportenClientImpl(
 			clientId = "client-id",
 			issuer = "issuer",
-			altinnUrl = "https://tt02.altinn.no",
 			altinn3Url = "https://platform.tt02.altinn.no",
 			scopes = listOf(scope1, scope2),
 			tokenEndpointUrl = mockServerUrl() + "/token",
 			privateJwk = TEST_JWK
 		)
 
-		val token = client.hentAltinnToken()
+		val token = client.hentAltinn3Token()
 		val recordedRequest = mockServer.takeRequest()
 		val data: Map<String, String> = parseFormData(recordedRequest.body.readUtf8())
 

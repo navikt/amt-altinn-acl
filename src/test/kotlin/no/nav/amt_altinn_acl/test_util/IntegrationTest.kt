@@ -1,7 +1,5 @@
 package no.nav.amt_altinn_acl.test_util
 
-import io.getunleash.FakeUnleash
-import io.getunleash.Unleash
 import no.nav.amt_altinn_acl.test_util.Constants.TEST_JWK
 import no.nav.amt_altinn_acl.test_util.mock_clients.MockAltinnHttpServer
 import no.nav.amt_altinn_acl.test_util.mock_clients.MockMaskinportenHttpClient
@@ -13,10 +11,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
-import org.springframework.context.annotation.Profile
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -42,9 +37,6 @@ class IntegrationTest {
 	}
 
 	companion object {
-		const val altinnKoordinatorServiceKode = "99999"
-		const val altinnVeilederServiceKode = "88888"
-
 		val oAuthServer = MockOAuthServer()
 		val mockAltinnHttpClient = MockAltinnHttpServer()
 		val mockMaskinportenHttpClient = MockMaskinportenHttpClient()
@@ -60,11 +52,7 @@ class IntegrationTest {
 			registry.add("no.nav.security.jwt.issuer.azuread.discovery-url", oAuthServer::getDiscoveryUrl)
 			registry.add("no.nav.security.jwt.issuer.azuread.accepted-audience") { "test-aud" }
 
-			registry.add("altinn.koordinator-service-code") { altinnKoordinatorServiceKode }
-			registry.add("altinn.veileder-service-code") { altinnVeilederServiceKode }
-			registry.add("altinn.url", mockAltinnHttpClient::serverUrl)
 			registry.add("altinn3.url", mockAltinnHttpClient::serverUrl)
-			registry.add("altinn.api-key") { "test-altinn-api-key" }
 
 			registry.add("maskinporten.scopes") { "scope1 scope2" }
 			registry.add("maskinporten.client-id") { "abc123" }
@@ -100,15 +88,4 @@ class IntegrationTest {
 		return client.newCall(reqBuilder.build()).execute()
 	}
 
-}
-
-@Profile("test")
-@Configuration
-class UnleashConfig {
-	@Bean
-	open fun fakeUnleashClient(): Unleash {
-		val fakeUnleash = FakeUnleash()
-		fakeUnleash.enableAll()
-		return fakeUnleash
-	}
 }

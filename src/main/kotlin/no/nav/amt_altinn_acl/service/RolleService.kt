@@ -61,7 +61,7 @@ class RolleService(
 		val start = Instant.now()
 
 		val rolleMap: Map<RolleType, List<String>> = try {
-			altinnClient.hentAlleOrganisasjoner(norskIdent, RolleType.entries).filterValues { it.isNotEmpty() }
+			altinnClient.hentRoller(norskIdent, RolleType.entries).filterValues { it.isNotEmpty() }
 		} catch (e: Exception) {
 			log.warn("Klarte ikke hente roller for ny bruker", e)
 			return emptyList()
@@ -91,7 +91,7 @@ class RolleService(
 		val allOldRoller = getGyldigeRoller(norskIdent)
 
 		val rolleMap: Map<RolleType, List<String>> = try {
-			altinnClient.hentAlleOrganisasjoner(norskIdent, RolleType.entries)
+			altinnClient.hentRoller(norskIdent, RolleType.entries)
 		} catch (e: Exception) {
 			log.warn("Klarte ikke oppdatere roller for bruker $id, bruker lagrede roller om eksisterer", e)
 			return
