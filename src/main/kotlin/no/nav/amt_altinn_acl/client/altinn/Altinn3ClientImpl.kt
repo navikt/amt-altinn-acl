@@ -19,7 +19,7 @@ class Altinn3ClientImpl(
 ) : AltinnClient {
 	private val log = LoggerFactory.getLogger(javaClass)
 
-	override fun hentAlleOrganisasjoner(norskIdent: String, roller: List<RolleType>): Map<RolleType, List<String>> {
+	override fun hentRoller(norskIdent: String, roller: List<RolleType>): Map<RolleType, List<String>> {
 		val parties = hentAuthorizedParties(norskIdent)
 		val resourceIds = roller.map { it.resourceId }.toSet()
 

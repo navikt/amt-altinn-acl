@@ -21,7 +21,7 @@ class Altinn3ClientImplTest {
 	)
 
 	@Test
-	fun `hentAlleOrganisasjoner - flere tilganger - parser response riktig`() {
+	fun `hentRoller - flere tilganger - parser response riktig`() {
 		val resourceIds = listOf(RolleType.KOORDINATOR.resourceId, RolleType.VEILEDER.resourceId, "resource3")
 		val jsonResponse = """
 			[
@@ -69,7 +69,7 @@ class Altinn3ClientImplTest {
 
 		val norskIdent = "123456"
 
-		val organisasjoner = altinnClient.hentAlleOrganisasjoner(norskIdent, RolleType.entries)
+		val organisasjoner = altinnClient.hentRoller(norskIdent, RolleType.entries)
 
 		val request = mockServer.takeRequest()
 
