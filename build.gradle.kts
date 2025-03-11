@@ -27,7 +27,7 @@ val okHttpVersion = "4.12.0"
 val mockkVersion = "1.13.17"
 val kotestVersion = "5.9.1"
 val mockOauth2ServerVersion = "2.1.10"
-val unleashVersion = "10.1.0"
+val unleashVersion = "10.1.1"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
