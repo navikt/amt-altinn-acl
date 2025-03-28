@@ -21,7 +21,7 @@ repositories {
 val commonVersion = "3.2024.10.25_13.44-9db48a0dbe67"
 val testcontainersVersion = "1.20.6"
 val logstashEncoderVersion = "8.0"
-val shedlockVersion = "6.3.0"
+val shedlockVersion = "6.3.1"
 val tokenSupportVersion = "5.0.19"
 val okHttpVersion = "4.12.0"
 val mockkVersion = "1.13.17"
