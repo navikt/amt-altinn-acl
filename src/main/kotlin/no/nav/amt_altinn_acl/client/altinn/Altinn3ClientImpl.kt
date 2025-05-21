@@ -3,7 +3,6 @@ package no.nav.amt_altinn_acl.client.altinn
 import no.nav.amt_altinn_acl.domain.RolleType
 import no.nav.amt_altinn_acl.utils.JsonUtils
 import no.nav.amt_altinn_acl.utils.JsonUtils.fromJsonString
-import no.nav.amt_altinn_acl.utils.SecureLog.secureLog
 import no.nav.common.rest.client.RestClient
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -42,8 +41,7 @@ class Altinn3ClientImpl(
 
 		client.newCall(request).execute().use { response ->
 			if (!response.isSuccessful) {
-				secureLog.error("Klarte ikke å hente organisasjoner for norskIdent=$norskIdent message=${response.message}, code=${response.code}, body=${response.body?.string()}")
-				log.error("Klarte ikke hente organisasjoner ${response.code}")
+				log.error("Klarte ikke hente organisasjoner ${response.code}, body=${response.body?.string()?.maskerFnr()}")
 				throw RuntimeException("Klarte ikke å hente organisasjoner code=${response.code}")
 			}
 
@@ -88,3 +86,5 @@ class Altinn3ClientImpl(
 		val organisasjonsnummer: String,
 	)
 }
+
+private fun String.maskerFnr() = this.replace(Regex("(?<!\\d)\\d{11}(?!\\d)"), "***********")
