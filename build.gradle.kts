@@ -1,7 +1,7 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    val kotlinVersion = "2.1.21"
+    val kotlinVersion = "2.2.0"
 
     id("org.springframework.boot") version "3.5.3"
     id("io.spring.dependency-management") version "1.1.7"
@@ -24,7 +24,7 @@ val logstashEncoderVersion = "8.1"
 val shedlockVersion = "6.9.0"
 val tokenSupportVersion = "5.0.30"
 val okHttpVersion = "4.12.0"
-val mockkVersion = "1.14.2"
+val mockkVersion = "1.14.4"
 val kotestVersion = "5.9.1"
 val mockOauth2ServerVersion = "2.1.11"
 val unleashVersion = "11.0.0"
@@ -74,11 +74,12 @@ tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar
     this.archiveFileName.set("${archiveBaseName.get()}.${archiveExtension.get()}")
 }
 
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = "21"
-    }
+kotlin {
+	compilerOptions {
+		freeCompilerArgs.add("-Xjsr305=strict")
+		freeCompilerArgs.add("-Xannotation-default-target=param-property")
+		jvmTarget = JvmTarget.JVM_21
+	}
 }
 
 tasks.withType<Test> {
