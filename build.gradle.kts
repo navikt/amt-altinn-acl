@@ -19,15 +19,15 @@ repositories {
 }
 
 val commonVersion = "3.2024.10.25_13.44-9db48a0dbe67"
-val testcontainersVersion = "1.21.2"
+val testcontainersVersion = "1.21.3"
 val logstashEncoderVersion = "8.1"
 val shedlockVersion = "6.9.0"
 val tokenSupportVersion = "5.0.30"
-val okHttpVersion = "4.12.0"
+val okHttpVersion = "5.0.0"
 val mockkVersion = "1.14.4"
 val kotestVersion = "5.9.1"
 val mockOauth2ServerVersion = "2.1.11"
-val unleashVersion = "11.0.0"
+val unleashVersion = "11.0.1"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
