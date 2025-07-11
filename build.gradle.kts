@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     val kotlinVersion = "2.2.0"
 
@@ -28,6 +26,14 @@ val mockkVersion = "1.14.4"
 val kotestVersion = "5.9.1"
 val mockOauth2ServerVersion = "2.1.11"
 val unleashVersion = "11.0.2"
+val springmockkVersion = "4.0.2"
+
+dependencyManagement {
+    dependencies {
+        dependency("com.squareup.okhttp3:okhttp:$okHttpVersion")
+        dependency("com.squareup.okhttp3:mockwebserver:$okHttpVersion")
+    }
+}
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
@@ -53,35 +59,41 @@ dependencies {
     implementation("no.nav.common:job:$commonVersion")
 
     implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
-    implementation("com.squareup.okhttp3:okhttp:$okHttpVersion")
     runtimeOnly("org.postgresql:postgresql")
 
     implementation("io.getunleash:unleash-client-java:$unleashVersion")
 
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
-    testImplementation("com.squareup.okhttp3:mockwebserver:$okHttpVersion")
     testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude("com.vaadin.external.google", "android-json")
     }
-}
-
-tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
-    this.archiveFileName.set("${archiveBaseName.get()}.${archiveExtension.get()}")
+    testImplementation("com.ninja-squad:springmockk:${springmockkVersion}")
 }
 
 kotlin {
-	compilerOptions {
-		freeCompilerArgs.add("-Xjsr305=strict")
-		freeCompilerArgs.add("-Xannotation-default-target=param-property")
-		jvmTarget = JvmTarget.JVM_21
-	}
+    jvmToolchain(21)
+    compilerOptions {
+        freeCompilerArgs.addAll(
+            "-Xjsr305=strict",
+            "-Xannotation-default-target=param-property",
+        )
+    }
 }
 
-tasks.withType<Test> {
+tasks.jar {
+    enabled = false
+}
+
+tasks.test {
     useJUnitPlatform()
+    jvmArgs(
+        "-Xshare:off",
+        "-XX:+EnableDynamicAgentLoading",
+    )
 }

@@ -1,8 +1,8 @@
 package no.nav.amt_altinn_acl
 
+import com.ninjasquad.springmockk.MockkBean
 import io.kotest.matchers.shouldBe
 import io.mockk.every
-import io.mockk.mockk
 import no.nav.amt_altinn_acl.client.altinn.AltinnClient
 import no.nav.amt_altinn_acl.domain.RolleType
 import no.nav.amt_altinn_acl.domain.RolleType.KOORDINATOR
@@ -11,38 +11,33 @@ import no.nav.amt_altinn_acl.domain.RollerIOrganisasjon
 import no.nav.amt_altinn_acl.jobs.AltinnUpdater
 import no.nav.amt_altinn_acl.jobs.leaderelection.LeaderElection
 import no.nav.amt_altinn_acl.repository.PersonRepository
-import no.nav.amt_altinn_acl.repository.RolleRepository
 import no.nav.amt_altinn_acl.service.RolleService
-import no.nav.amt_altinn_acl.test_util.SingletonPostgresContainer
+import no.nav.amt_altinn_acl.test_util.IntegrationTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import org.springframework.beans.factory.annotation.Autowired
 import kotlin.random.Random
 
-class AltinnUpdaterTests {
-	private lateinit var personRepository: PersonRepository
-	private lateinit var rolleRepository: RolleRepository
 
+class AltinnUpdaterTests : IntegrationTest() {
+	@Autowired
+	private lateinit var personRepository: PersonRepository
+
+	@Autowired
 	private lateinit var rolleService: RolleService
 
+	@Autowired
 	private lateinit var altinnUpdater: AltinnUpdater
+
+	@MockkBean
 	private lateinit var altinnClient: AltinnClient
+
+	@MockkBean
 	private lateinit var leaderElection: LeaderElection
-	private val dataSource = SingletonPostgresContainer.getDataSource()
 
 	@BeforeEach
 	fun setup() {
-		altinnClient = mockk()
-		leaderElection = mockk()
 		every { leaderElection.isLeader() } returns true
-
-		val template = NamedParameterJdbcTemplate(dataSource)
-		personRepository = PersonRepository(template)
-		rolleRepository = RolleRepository(template)
-
-		rolleService = RolleService(personRepository, rolleRepository, altinnClient)
-
-		altinnUpdater = AltinnUpdater(rolleService, leaderElection)
 	}
 
 	@Test
@@ -67,7 +62,4 @@ class AltinnUpdaterTests {
 		return list.find { it.organisasjonsnummer == organizationNumber }
 			?.roller?.find { it.rolleType == rolle } != null
 	}
-
-
-
 }

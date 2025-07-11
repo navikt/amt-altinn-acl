@@ -2,31 +2,26 @@ package no.nav.amt_altinn_acl.repository
 
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import no.nav.amt_altinn_acl.test_util.DbTestDataUtils
-import no.nav.amt_altinn_acl.test_util.SingletonPostgresContainer
-import org.junit.jupiter.api.AfterEach
+import no.nav.amt_altinn_acl.test_util.RepositoryTestBase
 import org.junit.jupiter.api.Test
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
-class PersonRepositoryTest {
+@SpringBootTest(classes = [PersonRepository::class])
+class PersonRepositoryTest : RepositoryTestBase() {
 
-	private val dataSource = SingletonPostgresContainer.getDataSource()
-	private val repository = PersonRepository(NamedParameterJdbcTemplate(dataSource))
-
-	@AfterEach
-	internal fun tearDown() {
-		DbTestDataUtils.cleanDatabase(dataSource)
-	}
+	@Autowired
+	private lateinit var personRepository: PersonRepository
 
 	@Test
 	internal fun `create - not exist - should create new person`() {
 		val norskIdent = "123456789"
 
-		val personDbo = repository.create(norskIdent)
+		val personDbo = personRepository.create(norskIdent)
 
 		personDbo.norskIdent shouldBe norskIdent
 		personDbo.lastSynchronized.truncatedTo(ChronoUnit.DAYS) shouldBe
@@ -38,7 +33,7 @@ class PersonRepositoryTest {
 		val norskIdent = "123456789"
 		val lastSynchronized = ZonedDateTime.now().minusDays(4)
 
-		val createdPerson = repository.createAndSetSynchronized(norskIdent, lastSynchronized)
+		val createdPerson = personRepository.createAndSetSynchronized(norskIdent, lastSynchronized)
 
 		createdPerson.lastSynchronized.truncatedTo(ChronoUnit.DAYS) shouldBe lastSynchronized.truncatedTo(ChronoUnit.DAYS)
 	}
@@ -49,11 +44,11 @@ class PersonRepositoryTest {
 
 		val today = ZonedDateTime.of(LocalDate.now().atStartOfDay(), ZoneId.systemDefault())
 
-		val createdPerson = repository.create(norskIdent)
+		val createdPerson = personRepository.create(norskIdent)
 		createdPerson.lastSynchronized.truncatedTo(ChronoUnit.DAYS) shouldNotBe today
 
-		repository.setSynchronized(norskIdent)
-		val updatedPerson = repository.get(norskIdent)
+		personRepository.setSynchronized(norskIdent)
+		val updatedPerson = personRepository.get(norskIdent)
 		updatedPerson?.lastSynchronized?.truncatedTo(ChronoUnit.DAYS) shouldBe today
 	}
 }

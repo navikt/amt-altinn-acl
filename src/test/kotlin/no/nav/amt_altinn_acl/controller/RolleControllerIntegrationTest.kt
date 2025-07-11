@@ -74,7 +74,7 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 		""".trimIndent()
 
 		response.code shouldBe 200
-		response.body?.string() shouldBe expectedJson
+		response.body.string() shouldBe expectedJson
 	}
 
 	@Test
@@ -105,10 +105,10 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 		""".trimIndent()
 
 		response1.code shouldBe 200
-		response1.body?.string() shouldBe expectedJson
+		response1.body.string() shouldBe expectedJson
 
 		response2.code shouldBe 200
-		response2.body?.string() shouldBe expectedJson
+		response2.body.string() shouldBe expectedJson
 
 		mockAltinnHttpClient.requestCount() shouldBe 1
 	}
