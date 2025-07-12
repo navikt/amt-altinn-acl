@@ -7,22 +7,16 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.Response
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.context.annotation.Import
-import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.time.Duration
 
-@ActiveProfiles("test")
 @Import(TestConfig::class)
-@ExtendWith(SpringExtension::class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class IntegrationTest {
+abstract class IntegrationTest : RepositoryTestBase() {
 
 	@LocalServerPort
 	private var port: Int = 0
@@ -31,19 +25,14 @@ class IntegrationTest {
 		.callTimeout(Duration.ofMinutes(5))
 		.build()
 
-	@AfterEach
-	fun cleanDatabase() {
-		DbTestDataUtils.cleanDatabase(postgresDataSource)
-	}
-
 	companion object {
 		val oAuthServer = MockOAuthServer()
 		val mockAltinnHttpClient = MockAltinnHttpServer()
 		val mockMaskinportenHttpClient = MockMaskinportenHttpClient()
-		val postgresDataSource = SingletonPostgresContainer.getDataSource()
 
 		@JvmStatic
 		@DynamicPropertySource
+		@Suppress("unused")
 		fun registerProperties(registry: DynamicPropertyRegistry) {
 			oAuthServer.start()
 			mockAltinnHttpClient.start()
@@ -59,19 +48,12 @@ class IntegrationTest {
 			registry.add("maskinporten.issuer") { "https://test-issuer" }
 			registry.add("maskinporten.token-endpoint") { mockMaskinportenHttpClient.serverUrl() }
 			registry.add("maskinporten.client-jwk") { TEST_JWK }
-
-			val container = SingletonPostgresContainer.getContainer()
-
-			registry.add("spring.datasource.url") { container.jdbcUrl }
-			registry.add("spring.datasource.username") { container.username }
-			registry.add("spring.datasource.password") { container.password }
-			registry.add("spring.datasource.hikari.maximum-pool-size") { 3 }
 		}
 	}
 
 	fun serverUrl() = "http://localhost:$port"
 
-	fun sendRequest(
+	protected fun sendRequest(
 		method: String,
 		path: String,
 		body: RequestBody? = null,
@@ -87,5 +69,4 @@ class IntegrationTest {
 
 		return client.newCall(reqBuilder.build()).execute()
 	}
-
 }

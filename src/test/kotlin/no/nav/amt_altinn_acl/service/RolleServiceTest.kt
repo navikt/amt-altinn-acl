@@ -11,21 +11,15 @@ import no.nav.amt_altinn_acl.repository.RolleRepository
 import no.nav.amt_altinn_acl.test_util.IntegrationTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.UUID
 
-class RolleServiceTest : IntegrationTest() {
-
-	@Autowired
-	lateinit var rolleService: RolleService
-
-	@Autowired
-	lateinit var personRepository: PersonRepository
-
-	@Autowired
-	lateinit var rolleRepository: RolleRepository
+class RolleServiceTest(
+	private val rolleService: RolleService,
+	private val personRepository: PersonRepository,
+	private val rolleRepository: RolleRepository
+) : IntegrationTest() {
 
 	@BeforeEach
 	internal fun setUp() {
