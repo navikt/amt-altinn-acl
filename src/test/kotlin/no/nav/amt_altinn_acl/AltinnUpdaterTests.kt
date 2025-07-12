@@ -15,25 +15,16 @@ import no.nav.amt_altinn_acl.service.RolleService
 import no.nav.amt_altinn_acl.test_util.IntegrationTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import kotlin.random.Random
 
 
-class AltinnUpdaterTests : IntegrationTest() {
-	@Autowired
-	private lateinit var personRepository: PersonRepository
-
-	@Autowired
-	private lateinit var rolleService: RolleService
-
-	@Autowired
-	private lateinit var altinnUpdater: AltinnUpdater
-
-	@MockkBean
-	private lateinit var altinnClient: AltinnClient
-
-	@MockkBean
-	private lateinit var leaderElection: LeaderElection
+class AltinnUpdaterTests(
+	private val personRepository: PersonRepository,
+	private val rolleService: RolleService,
+	private val altinnUpdater: AltinnUpdater,
+	@MockkBean private val altinnClient: AltinnClient,
+	@MockkBean private val leaderElection: LeaderElection
+) : IntegrationTest() {
 
 	@BeforeEach
 	fun setup() {

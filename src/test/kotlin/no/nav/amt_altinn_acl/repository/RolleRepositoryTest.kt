@@ -2,22 +2,18 @@ package no.nav.amt_altinn_acl.repository
 
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import no.nav.amt_altinn_acl.test_util.RepositoryTestBase
 import no.nav.amt_altinn_acl.domain.RolleType
+import no.nav.amt_altinn_acl.test_util.RepositoryTestBase
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.util.UUID
 
 @SpringBootTest(classes = [RolleRepository::class, PersonRepository::class])
-class RolleRepositoryTest : RepositoryTestBase() {
-
-	@Autowired
-	private lateinit var personRepository: PersonRepository
-
-	@Autowired
-	private lateinit var rolleRepository: RolleRepository
+class RolleRepositoryTest(
+	private val personRepository: PersonRepository,
+	private val rolleRepository: RolleRepository
+) : RepositoryTestBase() {
 
 	private var personId: Long = Long.MIN_VALUE
 
