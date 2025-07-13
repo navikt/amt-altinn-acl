@@ -1,5 +1,6 @@
 package no.nav.amt_altinn_acl.service
 
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.amt_altinn_acl.domain.RolleType
@@ -32,7 +33,11 @@ class RolleServiceTest(
 		val norskIdent = UUID.randomUUID().toString()
 		val organisasjonsnummer = UUID.randomUUID().toString()
 
-		mockAltinnHttpClient.addAuthorizedPartiesResponse(norskIdent, listOf(KOORDINATOR, VEILEDER), listOf(organisasjonsnummer))
+		mockAltinnHttpClient.addAuthorizedPartiesResponse(
+			norskIdent,
+			listOf(KOORDINATOR, VEILEDER),
+			listOf(organisasjonsnummer)
+		)
 
 		val roller = rolleService.getRollerForPerson(norskIdent)
 
@@ -43,7 +48,8 @@ class RolleServiceTest(
 		hasRolle(roller, organisasjonsnummer, VEILEDER) shouldBe true
 		hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
 
-		val databasePerson = personRepository.get(norskIdent)!!
+		val databasePerson = personRepository.get(norskIdent)
+		databasePerson.shouldNotBeNull()
 		databasePerson.lastSynchronized.days() shouldBe ZonedDateTime.now().days()
 
 		hasRolleInDatabase(databasePerson.id, organisasjonsnummer, VEILEDER) shouldBe true
@@ -89,7 +95,11 @@ class RolleServiceTest(
 		personRepository.create(norskIdent)
 		personRepository.setSynchronized(norskIdent)
 
-		mockAltinnHttpClient.addAuthorizedPartiesResponse(norskIdent, listOf(KOORDINATOR, VEILEDER), listOf(organisasjonsnummer))
+		mockAltinnHttpClient.addAuthorizedPartiesResponse(
+			norskIdent,
+			listOf(KOORDINATOR, VEILEDER),
+			listOf(organisasjonsnummer)
+		)
 
 		val roller = rolleService.getRollerForPerson(norskIdent)
 
@@ -115,7 +125,7 @@ class RolleServiceTest(
 		hasRolle(roller, organisasjonsnummer, VEILEDER) shouldBe false
 		hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
 
-		val invalidVeileder = rolleRepository.hentRollerForPerson(personDbo.id).find { it.rolleType == VEILEDER }!!
+		val invalidVeileder = rolleRepository.hentRollerForPerson(personDbo.id).first { it.rolleType == VEILEDER }
 
 		invalidVeileder.validTo shouldNotBe null
 	}
@@ -128,7 +138,11 @@ class RolleServiceTest(
 		val personDbo = personRepository.create(norskIdent)
 		rolleRepository.createRolle(personDbo.id, organisasjonsnummer, VEILEDER)
 
-		mockAltinnHttpClient.addAuthorizedPartiesResponse(norskIdent, listOf(KOORDINATOR, VEILEDER), listOf(organisasjonsnummer))
+		mockAltinnHttpClient.addAuthorizedPartiesResponse(
+			norskIdent,
+			listOf(KOORDINATOR, VEILEDER),
+			listOf(organisasjonsnummer)
+		)
 
 		val roller = rolleService.getRollerForPerson(norskIdent)
 
@@ -181,8 +195,8 @@ class RolleServiceTest(
 		hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
 
 		val updatedPersonDbo = personRepository.get(norskIdent)
-
-		updatedPersonDbo!!.lastSynchronized.days() shouldNotBe ZonedDateTime.now().days()
+		updatedPersonDbo.shouldNotBeNull()
+		updatedPersonDbo.lastSynchronized.days() shouldNotBe ZonedDateTime.now().days()
 	}
 
 	private fun hasRolleInDatabase(personId: Long, organisasjonsnummerNumber: String, rolle: RolleType): Boolean {
@@ -191,7 +205,11 @@ class RolleServiceTest(
 			.find { it.organisasjonsnummer == organisasjonsnummerNumber && it.rolleType == rolle } != null
 	}
 
-	private fun hasRolle(list: List<RollerIOrganisasjon>, organisasjonsnummerNumber: String, rolle: RolleType): Boolean {
+	private fun hasRolle(
+		list: List<RollerIOrganisasjon>,
+		organisasjonsnummerNumber: String,
+		rolle: RolleType
+	): Boolean {
 		return list.find { it.organisasjonsnummer == organisasjonsnummerNumber }
 			?.roller?.find { it.rolleType == rolle } != null
 	}

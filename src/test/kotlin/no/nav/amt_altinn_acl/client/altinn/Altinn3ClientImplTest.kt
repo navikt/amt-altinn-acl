@@ -1,6 +1,7 @@
 package no.nav.amt_altinn_acl.client.altinn
 
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import no.nav.amt_altinn_acl.domain.RolleType
 import okhttp3.mockwebserver.MockResponse
@@ -75,7 +76,12 @@ class Altinn3ClientImplTest {
 
 		request.method shouldBe "POST"
 
-		organisasjoner[RolleType.KOORDINATOR]!! shouldHaveSize 3
-		organisasjoner[RolleType.VEILEDER]!! shouldHaveSize 3
+		val koordinatorRoller = organisasjoner[RolleType.KOORDINATOR]
+		koordinatorRoller.shouldNotBeNull()
+		koordinatorRoller shouldHaveSize 3
+
+		val veilederRoller = organisasjoner[RolleType.VEILEDER]
+		veilederRoller.shouldNotBeNull()
+		veilederRoller shouldHaveSize 3
 	}
 }

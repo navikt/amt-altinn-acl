@@ -1,7 +1,7 @@
 package no.nav.amt_altinn_acl.test_util
 
 import io.kotest.matchers.date.shouldBeWithin
-import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.nulls.shouldNotBeNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import java.time.Duration
@@ -15,8 +15,8 @@ object DbTestDataUtils {
 	private const val FLYWAY_SCHEMA_HISTORY_TABLE_NAME = "flyway_schema_history"
 
 	infix fun ZonedDateTime.shouldBeEqualTo(expected: ZonedDateTime?) {
-		expected shouldNotBe null
-		expected!!.shouldBeWithin(Duration.ofSeconds(1), this)
+		expected.shouldNotBeNull()
+		expected.shouldBeWithin(Duration.ofSeconds(1), this)
 	}
 
 	fun runScript(dataSource: DataSource, script: String) {
