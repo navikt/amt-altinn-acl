@@ -8,8 +8,6 @@ import org.springframework.context.annotation.Bean
 class TestConfig {
 
 	@Bean
-	fun machineToMachineTokenClient(): MachineToMachineTokenClient {
-		return MachineToMachineTokenClient { "TOKEN" }
-	}
+	fun machineToMachineTokenClient() = MachineToMachineTokenClient { "TOKEN" }
 }
 
