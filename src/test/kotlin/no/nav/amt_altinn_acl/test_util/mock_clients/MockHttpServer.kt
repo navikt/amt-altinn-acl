@@ -7,7 +7,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.slf4j.LoggerFactory
-import java.util.*
+import java.util.UUID
 
 
 private val requestBodyCache = mutableMapOf<RecordedRequest, String>()
@@ -19,13 +19,10 @@ fun RecordedRequest.getBodyAsString(): String {
 abstract class MockHttpServer(
 	private val name: String
 ) {
-
-	private val server = MockWebServer()
-
 	private val log = LoggerFactory.getLogger(javaClass)
 
+	private val server = MockWebServer()
 	private var lastRequestCount = 0
-
 	private val responses = mutableMapOf<(request: RecordedRequest) -> Boolean, ResponseHolder>()
 
 	fun start() {
@@ -46,10 +43,8 @@ abstract class MockHttpServer(
 					log.info("Responding [${request.method}: ${request.path}]: ${response.toString(request)}")
 					return response.response.invoke(request)
 				}
-
 			}
-
-		} catch (e: IllegalArgumentException) {
+		} catch (_: IllegalArgumentException) {
 			log.info("${javaClass.simpleName} is already started")
 		}
 	}
@@ -62,7 +57,6 @@ abstract class MockHttpServer(
 		responses[predicate] = ResponseHolder(id, response)
 		return id
 	}
-
 
 	fun addResponseHandler(predicate: (req: RecordedRequest) -> Boolean, response: MockResponse): UUID {
 		return addResponseHandler(predicate) { response }
@@ -86,10 +80,8 @@ abstract class MockHttpServer(
 		return server.requestCount - lastRequestCount
 	}
 
-	private fun printHeaders(headers: Headers): String {
-		return headers.map { "		${it.first} : ${it.second}" }
-			.joinToString("\n")
-	}
+	private fun printHeaders(headers: Headers): String =
+		headers.joinToString("\n") { "		${it.first} : ${it.second}" }
 
 	private data class ResponseHolder(
 		val id: UUID,
@@ -99,19 +91,18 @@ abstract class MockHttpServer(
 		fun toString(request: RecordedRequest): String {
 			val invokedResponse = response.invoke(request)
 
-			val responseBody = invokedResponse.getBody()?.let { buffer ->
-				buffer.copy()
-					.asResponseBody()
-					.string()
-					.replace("\n", "")
-					.replace("  ", "")
-					.replace("	", "")
-					.trim()
-
-			}
+			val responseBody =
+				invokedResponse.getBody()
+					?.copy()
+					?.asResponseBody()
+					?.string()
+					?.replace("\n", "")
+					?.replace("  ", "")
+					?.replace("	", "")
+					?.trim()
 
 			return "$id: count=$count status=${invokedResponse.status} body=$responseBody"
 		}
-
 	}
 }
+

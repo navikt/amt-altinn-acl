@@ -11,5 +11,5 @@ class TestConfig {
 	fun machineToMachineTokenClient(): MachineToMachineTokenClient {
 		return MachineToMachineTokenClient { "TOKEN" }
 	}
-
 }
+

@@ -4,10 +4,8 @@ import no.nav.amt_altinn_acl.service.AuthService
 import no.nav.security.mock.oauth2.MockOAuth2Server
 import org.slf4j.LoggerFactory
 
-open class MockOAuthServer {
-
+class MockOAuthServer {
 	private val azureAdIssuer = "azuread"
-
 	private val log = LoggerFactory.getLogger(javaClass)
 
 	companion object {
@@ -17,17 +15,13 @@ open class MockOAuthServer {
 	fun start() {
 		try {
 			server.start()
-		} catch (e: IllegalArgumentException) {
+		} catch (_: IllegalArgumentException) {
 			log.info("${javaClass.simpleName} is already started")
 		}
 	}
 
 	fun getDiscoveryUrl(issuer: String = azureAdIssuer): String {
 		return server.wellKnownUrl(issuer).toString()
-	}
-
-	fun shutdown() {
-		server.shutdown()
 	}
 
 	fun issueAzureAdToken(
@@ -48,5 +42,4 @@ open class MockOAuthServer {
 
 		return server.issueToken(azureAdIssuer, subject, audience, claimsWithRoles).serialize()
 	}
-
 }

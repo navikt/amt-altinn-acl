@@ -7,12 +7,11 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
 
 class MockAltinnHttpServer : MockHttpServer(name = "Altinn Mock Server") {
-
 	fun addAuthorizedPartiesResponse(
 		personIdent: String,
 		roller: List<RolleType>,
 		organisasjonnummer: List<String>,
-    ) {
+	) {
 		val authorizedPartiesRequest = Altinn3ClientImpl.AuthorizedPartiesRequest(personIdent)
 
 		val requestPredicate = { req: RecordedRequest ->
@@ -25,23 +24,25 @@ class MockAltinnHttpServer : MockHttpServer(name = "Altinn Mock Server") {
 			predicate = requestPredicate,
 			generateAuthorizedpartiesResponse(organisasjonnummer, roller)
 		)
-
 	}
 
 	fun addFailureResponse(
 		responseCode: Int,
-    ) {
+	) {
 		addResponseHandler(
 			path = "$/accessmanagement/api/v1/resourceowner/authorizedparties",
 			response = MockResponse().setResponseCode(responseCode)
 		)
 	}
 
-	private fun generateAuthorizedpartiesResponse(organisasjonnummer: List<String>, roller: List<RolleType>): MockResponse {
+	private fun generateAuthorizedpartiesResponse(
+		organisasjonnummer: List<String>,
+		roller: List<RolleType>
+	): MockResponse {
 		val parties = organisasjonnummer.map {
 			Altinn3ClientImpl.AuthorizedParty(
 				organizationNumber = it,
-				authorizedResources = roller.map { it.resourceId }.toSet(),
+				authorizedResources = roller.map { rolleType -> rolleType.resourceId }.toSet(),
 				emptyList()
 			)
 		}
@@ -50,6 +51,5 @@ class MockAltinnHttpServer : MockHttpServer(name = "Altinn Mock Server") {
 			.setResponseCode(200)
 			.setBody(JsonUtils.objectMapper.writeValueAsString(parties))
 	}
-
-
 }
+
