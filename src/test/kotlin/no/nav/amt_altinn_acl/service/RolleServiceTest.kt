@@ -199,22 +199,19 @@ class RolleServiceTest(
 		updatedPersonDbo.lastSynchronized.days() shouldNotBe ZonedDateTime.now().days()
 	}
 
-	private fun hasRolleInDatabase(personId: Long, organisasjonsnummerNumber: String, rolle: RolleType): Boolean {
-		return rolleRepository.hentRollerForPerson(personId)
+	private fun hasRolleInDatabase(
+		personId: Long, organisasjonsnummerNumber: String, rolle: RolleType
+	): Boolean =
+		rolleRepository.hentRollerForPerson(personId)
 			.filter { it.erGyldig() }
 			.find { it.organisasjonsnummer == organisasjonsnummerNumber && it.rolleType == rolle } != null
-	}
 
 	private fun hasRolle(
 		list: List<RollerIOrganisasjon>,
 		organisasjonsnummerNumber: String,
 		rolle: RolleType
-	): Boolean {
-		return list.find { it.organisasjonsnummer == organisasjonsnummerNumber }
-			?.roller?.find { it.rolleType == rolle } != null
-	}
+	): Boolean = list.find { it.organisasjonsnummer == organisasjonsnummerNumber }
+		?.roller?.find { it.rolleType == rolle } != null
 
-	private fun ZonedDateTime.days(): ZonedDateTime {
-		return this.truncatedTo(ChronoUnit.DAYS)
-	}
+	private fun ZonedDateTime.days(): ZonedDateTime = this.truncatedTo(ChronoUnit.DAYS)
 }

@@ -16,9 +16,7 @@ open class MockHttpClient {
 		}
 	}
 
-	fun serverUrl(): String {
-		return server.url("").toString().removeSuffix("/")
-	}
+	fun serverUrl(): String = server.url("").toString().removeSuffix("/")
 
 	fun enqueue(
 		responseCode: Int = 200,

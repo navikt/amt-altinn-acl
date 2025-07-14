@@ -9,12 +9,9 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.Test
 
 class Altinn3ClientImplTest {
-
 	private val mockServer: MockWebServer = MockWebServer()
 
-	private fun mockServerUrl(): String {
-		return mockServer.url("").toString().removeSuffix("/")
-	}
+	private fun mockServerUrl(): String = mockServer.url("").toString().removeSuffix("/")
 
 	private val altinnClient = Altinn3ClientImpl(
 		baseUrl = mockServerUrl(),

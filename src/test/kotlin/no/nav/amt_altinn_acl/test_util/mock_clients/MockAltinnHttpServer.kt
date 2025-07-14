@@ -52,4 +52,3 @@ class MockAltinnHttpServer : MockHttpServer(name = "Altinn Mock Server") {
 			.setBody(JsonUtils.objectMapper.writeValueAsString(parties))
 	}
 }
-

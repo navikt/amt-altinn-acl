@@ -49,8 +49,7 @@ class AltinnUpdaterTests(
 		hasRolle(oppdaterteRettigheter, organisasjonsnummer, KOORDINATOR) shouldBe true
 	}
 
-	private fun hasRolle(list: List<RollerIOrganisasjon>, organizationNumber: String, rolle: RolleType): Boolean {
-		return list.find { it.organisasjonsnummer == organizationNumber }
+	private fun hasRolle(list: List<RollerIOrganisasjon>, organizationNumber: String, rolle: RolleType): Boolean =
+		list.find { it.organisasjonsnummer == organizationNumber }
 			?.roller?.find { it.rolleType == rolle } != null
-	}
 }

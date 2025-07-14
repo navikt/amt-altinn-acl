@@ -12,9 +12,7 @@ import java.util.UUID
 
 private val requestBodyCache = mutableMapOf<RecordedRequest, String>()
 
-fun RecordedRequest.getBodyAsString(): String {
-	return requestBodyCache.getOrPut(this) { this.body.readUtf8() }
-}
+fun RecordedRequest.getBodyAsString(): String = requestBodyCache.getOrPut(this) { this.body.readUtf8() }
 
 abstract class MockHttpServer(
 	private val name: String
@@ -58,9 +56,8 @@ abstract class MockHttpServer(
 		return id
 	}
 
-	fun addResponseHandler(predicate: (req: RecordedRequest) -> Boolean, response: MockResponse): UUID {
-		return addResponseHandler(predicate) { response }
-	}
+	fun addResponseHandler(predicate: (req: RecordedRequest) -> Boolean, response: MockResponse): UUID =
+		addResponseHandler(predicate) { response }
 
 	fun addResponseHandler(path: String, response: MockResponse): UUID {
 		val predicate = { req: RecordedRequest -> req.path == path }
@@ -72,13 +69,9 @@ abstract class MockHttpServer(
 		lastRequestCount = server.requestCount
 	}
 
-	fun serverUrl(): String {
-		return server.url("").toString().removeSuffix("/")
-	}
+	fun serverUrl(): String = server.url("").toString().removeSuffix("/")
 
-	fun requestCount(): Int {
-		return server.requestCount - lastRequestCount
-	}
+	fun requestCount(): Int = server.requestCount - lastRequestCount
 
 	private fun printHeaders(headers: Headers): String =
 		headers.joinToString("\n") { "		${it.first} : ${it.second}" }
@@ -105,4 +98,3 @@ abstract class MockHttpServer(
 		}
 	}
 }
-

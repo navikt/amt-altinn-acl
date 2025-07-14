@@ -1,7 +1,6 @@
 package no.nav.amt_altinn_acl.test_util
 
 import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import javax.sql.DataSource
 
 object DbTestDataUtils {
@@ -20,10 +19,6 @@ object DbTestDataUtils {
 		sequences.forEach {
 			jdbcTemplate.update("ALTER SEQUENCE $it RESTART WITH 1")
 		}
-	}
-
-	fun <V> parameters(vararg pairs: Pair<String, V>): MapSqlParameterSource {
-		return MapSqlParameterSource().addValues(pairs.toMap())
 	}
 
 	private fun getAllTables(jdbcTemplate: JdbcTemplate, schema: String): List<String> {
