@@ -44,8 +44,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-configuration-processor")
 
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
     implementation("io.micrometer:micrometer-registry-prometheus")
@@ -65,8 +63,7 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("io.mockk:mockk:$mockkVersion")
-    testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
+    testImplementation("io.mockk:mockk-jvm:$mockkVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
     testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
