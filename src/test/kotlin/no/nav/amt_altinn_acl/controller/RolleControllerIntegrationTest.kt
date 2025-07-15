@@ -12,9 +12,7 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 	private val mediaTypeJson = "application/json".toMediaType()
 
 	@AfterEach
-	internal fun tearDown() {
-		mockAltinnHttpClient.resetHttpServer()
-	}
+	internal fun tearDown() = mockAltinnHttpClient.resetHttpServer()
 
 	@Test
 	fun `hentTiltaksarrangorRoller - should return 401 when not authenticated`() {
@@ -74,7 +72,7 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 		""".trimIndent()
 
 		response.code shouldBe 200
-		response.body?.string() shouldBe expectedJson
+		response.body.string() shouldBe expectedJson
 	}
 
 	@Test
@@ -105,10 +103,10 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 		""".trimIndent()
 
 		response1.code shouldBe 200
-		response1.body?.string() shouldBe expectedJson
+		response1.body.string() shouldBe expectedJson
 
 		response2.code shouldBe 200
-		response2.body?.string() shouldBe expectedJson
+		response2.body.string() shouldBe expectedJson
 
 		mockAltinnHttpClient.requestCount() shouldBe 1
 	}

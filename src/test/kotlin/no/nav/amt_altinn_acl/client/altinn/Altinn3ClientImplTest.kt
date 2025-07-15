@@ -1,6 +1,7 @@
 package no.nav.amt_altinn_acl.client.altinn
 
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import no.nav.amt_altinn_acl.domain.RolleType
 import okhttp3.mockwebserver.MockResponse
@@ -8,12 +9,9 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.Test
 
 class Altinn3ClientImplTest {
-
 	private val mockServer: MockWebServer = MockWebServer()
 
-	private fun mockServerUrl(): String {
-		return mockServer.url("").toString().removeSuffix("/")
-	}
+	private fun mockServerUrl(): String = mockServer.url("").toString().removeSuffix("/")
 
 	private val altinnClient = Altinn3ClientImpl(
 		baseUrl = mockServerUrl(),
@@ -75,7 +73,12 @@ class Altinn3ClientImplTest {
 
 		request.method shouldBe "POST"
 
-		organisasjoner[RolleType.KOORDINATOR]!! shouldHaveSize 3
-		organisasjoner[RolleType.VEILEDER]!! shouldHaveSize 3
+		val koordinatorRoller = organisasjoner[RolleType.KOORDINATOR]
+		koordinatorRoller.shouldNotBeNull()
+		koordinatorRoller shouldHaveSize 3
+
+		val veilederRoller = organisasjoner[RolleType.VEILEDER]
+		veilederRoller.shouldNotBeNull()
+		veilederRoller shouldHaveSize 3
 	}
 }

@@ -8,10 +8,11 @@ import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator
 import com.nimbusds.jwt.JWTClaimsSet
 import com.nimbusds.jwt.SignedJWT
-import java.util.*
+import java.util.Date
+import java.util.UUID
 
 class TokenCreator private constructor() {
-    private val rsaJWK: RSAKey = RSAKeyGenerator(2048)
+	private val rsaJWK: RSAKey = RSAKeyGenerator(2048)
 		.keyID(UUID.randomUUID().toString())
 		.generate()
 
@@ -24,27 +25,25 @@ class TokenCreator private constructor() {
 			if (tokenCreator == null) {
 				tokenCreator = TokenCreator()
 			}
-
 			return tokenCreator as TokenCreator
 		}
 	}
 
-    fun createToken(expireFromNowMs: Int = 60 * 1000): String {
-        val claimsSet: JWTClaimsSet = JWTClaimsSet.Builder()
-            .subject("test")
-            .issuer("https://example.com")
-            .jwtID(UUID.randomUUID().toString())
-            .expirationTime(Date(Date().time + expireFromNowMs))
-            .build()
+	fun createToken(expireFromNowMs: Int = 60 * 1000): String {
+		val claimsSet: JWTClaimsSet = JWTClaimsSet.Builder()
+			.subject("test")
+			.issuer("https://example.com")
+			.jwtID(UUID.randomUUID().toString())
+			.expirationTime(Date(Date().time + expireFromNowMs))
+			.build()
 
-        val signedJWT = SignedJWT(
-            JWSHeader.Builder(JWSAlgorithm.RS256).keyID(rsaJWK.keyID).build(),
-            claimsSet
-        )
+		val signedJWT = SignedJWT(
+			JWSHeader.Builder(JWSAlgorithm.RS256).keyID(rsaJWK.keyID).build(),
+			claimsSet
+		)
 
-        signedJWT.sign(signer)
+		signedJWT.sign(signer)
 
-        return signedJWT.serialize()
-    }
-
+		return signedJWT.serialize()
+	}
 }

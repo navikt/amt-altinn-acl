@@ -11,7 +11,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import java.util.*
+import java.util.Arrays
 
 class MaskinportenClientImplTest {
 
@@ -24,13 +24,9 @@ class MaskinportenClientImplTest {
 	}
 
 	@AfterEach
-	fun shutdown() {
-		mockServer.shutdown()
-	}
+	fun shutdown() = mockServer.shutdown()
 
-	private fun mockServerUrl(): String {
-		return mockServer.url("").toString().removeSuffix("/")
-	}
+	private fun mockServerUrl(): String = mockServer.url("").toString().removeSuffix("/")
 
 	@Test
 	fun `skal lage riktig request og parse response`() {
