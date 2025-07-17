@@ -16,17 +16,20 @@ class RolleController(
 	private val authService: AuthService,
 	private val rolleService: RolleService
 ) {
-
 	@PostMapping("/tiltaksarrangor")
 	@ProtectedWithClaims(issuer = Issuer.AZURE_AD)
 	fun hentTiltaksarrangorRoller(@RequestBody hentRollerRequest: HentRollerRequest): HentRollerResponse {
 		authService.verifyRequestIsMachineToMachine()
 		hentRollerRequest.validatePersonident()
 
-		val roller = rolleService.getRollerForPerson(hentRollerRequest.personident)
-		return HentRollerResponse(
-			roller.map { rolle -> HentRollerResponse.TiltaksarrangorRoller(rolle.organisasjonsnummer, rolle.roller.map { it.rolleType }) }
-		)
+		val tiltaksarrangorRoller = rolleService.getRollerForPerson(hentRollerRequest.personident)
+			.map { rolle ->
+				HentRollerResponse.TiltaksarrangorRoller(
+					rolle.organisasjonsnummer,
+					rolle.roller.map { it.rolleType })
+			}
+
+		return HentRollerResponse(tiltaksarrangorRoller)
 	}
 
 	data class HentRollerRequest(val personident: String) {
@@ -45,6 +48,4 @@ class RolleController(
 			val roller: List<RolleType>,
 		)
 	}
-
-
 }

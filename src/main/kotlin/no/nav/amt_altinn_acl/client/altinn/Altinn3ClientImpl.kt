@@ -22,13 +22,12 @@ class Altinn3ClientImpl(
 		val parties = hentAuthorizedParties(norskIdent)
 		val resourceIds = roller.map { it.resourceId }.toSet()
 
-
 		return roller.associateWith { rolle ->
 			parties.flatMap { it.finnTilganger(resourceIds) }
 				.filter { it.rolle == rolle }
 				.map { it.organisasjonsnummer }
 		}.also {
-			log.info("Hentet ${it.values.sumOf { it.size }} $roller tilganger fra Altinn 3")
+			log.info("Hentet ${it.values.sumOf { strings -> strings.size }} $roller tilganger fra Altinn 3")
 		}
 	}
 
@@ -41,12 +40,15 @@ class Altinn3ClientImpl(
 
 		client.newCall(request).execute().use { response ->
 			if (!response.isSuccessful) {
-				log.error("Klarte ikke hente organisasjoner ${response.code}, body=${response.body?.string()?.maskerFnr()}")
+				log.error(
+					"Klarte ikke hente organisasjoner ${response.code}, body=${
+						response.body.string().maskerFnr()
+					}"
+				)
 				throw RuntimeException("Klarte ikke å hente organisasjoner code=${response.code}")
 			}
 
-			val body = response.body?.string() ?: throw RuntimeException("Body is missing")
-
+			val body = response.body.string()
 			return fromJsonString<List<AuthorizedParty>>(body)
 		}
 	}
