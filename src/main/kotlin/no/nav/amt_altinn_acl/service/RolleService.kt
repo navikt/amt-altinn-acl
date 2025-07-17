@@ -20,28 +20,32 @@ class RolleService(
 	private val rolleRepository: RolleRepository,
 	private val altinnClient: AltinnClient,
 ) {
-
 	private val log = LoggerFactory.getLogger(javaClass)
 
 	fun getRollerForPerson(norskIdent: String): List<RollerIOrganisasjon> {
 		val person = personRepository.get(norskIdent)
-		val synchronizeIfBefore = ZonedDateTime.now().minusHours(1)
 
-		if (person == null) {
-			val roller = getAndSaveRollerFromAltinn(norskIdent)
-			return map(roller)
-		} else if (person.lastSynchronized.isBefore(synchronizeIfBefore)) {
-			updateRollerFromAltinn(person.id, norskIdent)
-			return map(getGyldigeRoller(norskIdent))
-		} else {
-			val roller = getGyldigeRoller(norskIdent).let {
-				if (it.isEmpty()) {
-					updateRollerFromAltinn(person.id, norskIdent)
-					return@let getGyldigeRoller(norskIdent)
-				}
-				return@let it
+		return when {
+			person == null -> {
+				val roller = getAndSaveRollerFromAltinn(norskIdent)
+				map(roller)
 			}
-			return map(roller)
+
+			person.lastSynchronized.isBefore(ZonedDateTime.now().minusHours(1)) -> {
+				updateRollerFromAltinn(person.id, norskIdent)
+				map(getGyldigeRoller(norskIdent))
+			}
+
+			else -> {
+				val roller = getGyldigeRoller(norskIdent)
+
+				if (roller.isEmpty()) {
+					updateRollerFromAltinn(person.id, norskIdent)
+					map(getGyldigeRoller(norskIdent))
+				} else {
+					map(roller)
+				}
+			}
 		}
 	}
 
@@ -79,6 +83,7 @@ class RolleService(
 				rolleRepository.createRolle(person.id, orgnummer, it.key)
 			}
 		}
+
 		val duration = Duration.between(start, Instant.now())
 		log.info("Saved roller for person with id ${person.id} in ${duration.toMillis()} ms")
 
@@ -87,7 +92,6 @@ class RolleService(
 
 	private fun updateRollerFromAltinn(id: Long, norskIdent: String) {
 		val start = Instant.now()
-
 		val allOldRoller = getGyldigeRoller(norskIdent)
 
 		val rolleMap: Map<RolleType, List<String>> = try {
@@ -102,14 +106,14 @@ class RolleService(
 
 			oldRoller.forEach { oldRolle ->
 				if (!organisasjonerMedRolle.contains(oldRolle.organisasjonsnummer)) {
-					log.debug("User $id lost $rolle on ${oldRolle.organisasjonsnummer}")
+					log.debug("User {} lost {} on {}", id, rolle, oldRolle.organisasjonsnummer)
 					rolleRepository.invalidateRolle(oldRolle.id)
 				}
 			}
 
 			organisasjonerMedRolle.forEach { orgRolle ->
 				if (oldRoller.none { it.organisasjonsnummer == orgRolle && it.erGyldig() }) {
-					log.debug("User $id got $rolle on $orgRolle")
+					log.debug("User {} got {} on {}", id, rolle, orgRolle)
 					rolleRepository.createRolle(id, orgRolle, rolle)
 				}
 			}
@@ -144,5 +148,4 @@ class RolleService(
 			)
 		}
 	}
-
 }
