@@ -29,6 +29,10 @@ val unleashVersion = "11.0.2"
 val springmockkVersion = "4.0.2"
 
 dependencyManagement {
+    imports {
+        mavenBom("org.testcontainers:testcontainers-bom:$testcontainersVersion")
+    }
+
     dependencies {
         dependency("com.squareup.okhttp3:okhttp:$okHttpVersion")
         dependency("com.squareup.okhttp3:mockwebserver:$okHttpVersion")
@@ -61,10 +65,9 @@ dependencies {
 
     implementation("io.getunleash:unleash-client-java:$unleashVersion")
 
-    testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.mockk:mockk-jvm:$mockkVersion")
-    testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
+    testImplementation("org.testcontainers:postgresql")
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
     testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
