@@ -4,25 +4,25 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 class MaskinportenClientConfig {
 
-	@Value("\${altinn3.url}")
+	@Value($$"${altinn3.url}")
 	lateinit var altinn3Url: String
 
-	@Value("\${maskinporten.scopes}")
+	@Value($$"${maskinporten.scopes}")
 	lateinit var maskinportenScopes: String
 
-	@Value("\${maskinporten.client-id}")
+	@Value($$"${maskinporten.client-id}")
 	lateinit var maskinportenClientId: String
 
-	@Value("\${maskinporten.issuer}")
+	@Value($$"${maskinporten.issuer}")
 	lateinit var maskinportenIssuer: String
 
-	@Value("\${maskinporten.token-endpoint}")
+	@Value($$"${maskinporten.token-endpoint}")
 	lateinit var maskinportenTokenEndpoint: String
 
-	@Value("\${maskinporten.client-jwk}")
+	@Value($$"${maskinporten.client-jwk}")
 	lateinit var maskinportenClientJwk: String
 
 	@Bean
@@ -38,5 +38,4 @@ class MaskinportenClientConfig {
 
 		return CachedMaskinportenClient(client)
 	}
-
 }
