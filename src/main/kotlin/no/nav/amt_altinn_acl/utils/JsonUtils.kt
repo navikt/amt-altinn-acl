@@ -13,7 +13,5 @@ object JsonUtils {
 		.registerModule(JavaTimeModule())
 		.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
-	inline fun <reified T> fromJsonString(jsonStr: String): T {
-		return objectMapper.readValue(jsonStr)
-	}
+	inline fun <reified T : Any> fromJsonString(jsonStr: String): T = objectMapper.readValue(jsonStr)
 }
