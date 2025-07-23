@@ -5,19 +5,15 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 class AltinnClientConfig {
 
-	@Value("\${altinn3.url}")
-	lateinit var altinn3Url: String
-
 	@Bean
-	fun altinnClient(maskinportenClient: MaskinportenClient): AltinnClient {
-		return Altinn3ClientImpl(
-			baseUrl = altinn3Url,
-			maskinportenTokenProvider = maskinportenClient::hentAltinn3Token
-		)
-
-	}
-
+	fun altinnClient(
+		maskinportenClient: MaskinportenClient,
+		@Value($$"${altinn3.url}")  altinn3Url: String
+	): AltinnClient = Altinn3ClientImpl(
+		baseUrl = altinn3Url,
+		maskinportenTokenProvider = maskinportenClient::hentAltinn3Token
+	)
 }

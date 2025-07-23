@@ -13,7 +13,6 @@ import java.time.ZonedDateTime
 class PersonRepository(
 	private val template: NamedParameterJdbcTemplate
 ) {
-
 	private val rowMapper = RowMapper { rs, _ ->
 		PersonDbo(
 			id = rs.getLong("id"),

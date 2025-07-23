@@ -16,16 +16,13 @@ class InternalController(
 	@GetMapping("/altinn/synkroniser")
 	fun synkroniserAltinnRettigheter(
 		servlet: HttpServletRequest,
-	) {
-		if (isInternal(servlet)) {
-			altinnUpdater.update()
-		} else {
-			throw RuntimeException("No access")
-		}
+	) = if (isInternal(servlet)) {
+		altinnUpdater.update()
+	} else {
+		throw RuntimeException("No access")
 	}
 
-	private fun isInternal(servlet: HttpServletRequest): Boolean {
-		return servlet.remoteAddr == "127.0.0.1"
+	companion object {
+		private fun isInternal(servlet: HttpServletRequest): Boolean = servlet.remoteAddr == "127.0.0.1"
 	}
-
 }

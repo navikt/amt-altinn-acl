@@ -14,7 +14,6 @@ import org.springframework.stereotype.Repository
 class RolleRepository(
 	private val template: NamedParameterJdbcTemplate
 ) {
-
 	private val rowMapper = RowMapper { rs, _ ->
 		RolleDbo(
 			id = rs.getLong("id"),

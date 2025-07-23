@@ -10,6 +10,6 @@ fun ResultSet.getNullableZonedDateTime(columnLabel: String): ZonedDateTime? {
 	return ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp.time), ZoneOffset.systemDefault())
 }
 
-fun ResultSet.getZonedDateTime(columnLabel: String): ZonedDateTime {
-	return getNullableZonedDateTime(columnLabel) ?: throw IllegalStateException("Expected $columnLabel not to be null")
-}
+fun ResultSet.getZonedDateTime(columnLabel: String): ZonedDateTime =
+	getNullableZonedDateTime(columnLabel)
+		?: throw IllegalStateException("Expected $columnLabel not to be null")

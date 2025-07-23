@@ -13,7 +13,8 @@ import com.nimbusds.oauth2.sdk.TokenResponse
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.time.Instant
-import java.util.*
+import java.util.Date
+import java.util.UUID
 
 class MaskinportenClientImpl(
 	private val clientId: String,
@@ -79,26 +80,24 @@ class MaskinportenClientImpl(
 		assertionHeader: JWSHeader,
 		assertionClaims: JWTClaimsSet,
 		signer: JWSSigner,
-    ): SignedJWT {
-		val signedJWT = SignedJWT(assertionHeader, assertionClaims)
-		signedJWT.sign(signer)
-		return signedJWT
+	) = SignedJWT(assertionHeader, assertionClaims).apply {
+		sign(signer)
 	}
 
-	private fun clientAssertionHeader(keyId: String): JWSHeader {
-		val headerClaims: MutableMap<String, Any> = HashMap()
-		headerClaims["kid"] = keyId
-		headerClaims["typ"] = "JWT"
-		headerClaims["alg"] = "RS256"
-		return JWSHeader.parse(headerClaims)
-	}
+	private fun clientAssertionHeader(keyId: String): JWSHeader = JWSHeader.parse(
+		mapOf(
+			"kid" to keyId,
+			"typ" to "JWT",
+			"alg" to "RS256",
+		)
+	)
 
 	private fun clientAssertionClaims(
 		clientId: String,
 		issuer: String,
 		altinnUrl: String,
 		scopes: List<String>,
-    ): JWTClaimsSet {
+	): JWTClaimsSet {
 		val now = Instant.now()
 		val expire = now.plusSeconds(30)
 
@@ -114,5 +113,4 @@ class MaskinportenClientImpl(
 			.jwtID(UUID.randomUUID().toString())
 			.build()
 	}
-
 }
