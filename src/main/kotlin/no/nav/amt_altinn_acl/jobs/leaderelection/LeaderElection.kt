@@ -43,10 +43,8 @@ class LeaderElection(
 				throw RuntimeException(message)
 			}
 
-			response.body.string().let {
-				val leader: Leader = fromJsonString<Leader>(it)
-				return leader.name == hostname
-			}
+			val leader: Leader = fromJsonString(response.body.string())
+			return leader.name == hostname
 		}
 	}
 

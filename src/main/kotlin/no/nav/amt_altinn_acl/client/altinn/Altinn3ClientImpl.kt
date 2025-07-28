@@ -40,16 +40,11 @@ class Altinn3ClientImpl(
 
 		client.newCall(request).execute().use { response ->
 			if (!response.isSuccessful) {
-				log.error(
-					"Klarte ikke hente organisasjoner ${response.code}, body=${
-						response.body.string().maskerFnr()
-					}"
-				)
+				log.error("Klarte ikke hente organisasjoner ${response.code}, body=${response.body.string().maskerFnr()}")
 				throw RuntimeException("Klarte ikke å hente organisasjoner code=${response.code}")
 			}
 
-			val body = response.body.string()
-			return fromJsonString<List<AuthorizedParty>>(body)
+			return fromJsonString<List<AuthorizedParty>>(response.body.string())
 		}
 	}
 
