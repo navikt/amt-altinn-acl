@@ -9,7 +9,6 @@ import org.springframework.web.server.ResponseStatusException
 class AuthService(
 	private val tokenValidationContextHolder: TokenValidationContextHolder
 ) {
-
 	companion object {
 		const val ACCESS_AS_APPLICATION_ROLE = "access_as_application"
 	}
@@ -28,5 +27,4 @@ class AuthService(
 
 		return roles.contains(ACCESS_AS_APPLICATION_ROLE)
 	}
-
 }

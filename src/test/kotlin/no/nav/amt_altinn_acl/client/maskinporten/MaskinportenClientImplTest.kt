@@ -14,7 +14,6 @@ import java.nio.charset.StandardCharsets
 import java.util.Arrays
 
 class MaskinportenClientImplTest {
-
 	private lateinit var mockServer: MockWebServer
 
 	@BeforeEach
@@ -79,5 +78,4 @@ class MaskinportenClientImplTest {
 			.setBody(body)
 			.setHeader("Content-Type", "application/json")
 	}
-
 }

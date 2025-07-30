@@ -7,18 +7,16 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.scheduling.annotation.EnableScheduling
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableScheduling
 @EnableJwtTokenValidation
 class ApplicationConfig {
 
 	@Bean
-	fun logFilterRegistrationBean(): FilterRegistrationBean<LogRequestFilter> {
-		val registration = FilterRegistrationBean<LogRequestFilter>()
-		registration.filter = LogRequestFilter("amt-altinn-acl", false)
-		registration.order = 1
-		registration.addUrlPatterns("/*")
-		return registration
-	}
-
+	fun logFilterRegistrationBean(): FilterRegistrationBean<LogRequestFilter> =
+		FilterRegistrationBean<LogRequestFilter>().apply {
+			filter = LogRequestFilter("amt-altinn-acl", false)
+			order = 1
+			addUrlPatterns("/*")
+		}
 }

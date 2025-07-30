@@ -7,7 +7,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 
 object JsonUtils {
-
 	val objectMapper: ObjectMapper = ObjectMapper()
 		.registerKotlinModule()
 		.registerModule(JavaTimeModule())

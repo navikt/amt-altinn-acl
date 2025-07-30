@@ -5,14 +5,14 @@ import no.nav.common.token_client.cache.CaffeineTokenCache
 class CachedMaskinportenClient(
 	private val maskinportenClient: MaskinportenClient,
 ) : MaskinportenClient {
-
-	private val altinn3Key = "altinn3"
-
 	private val cache = CaffeineTokenCache()
 
 	override fun hentAltinn3Token(): String = cache.getFromCacheOrTryProvider(
-		altinn3Key,
+		ALTINN3_KEY,
 		maskinportenClient::hentAltinn3Token
 	)
 
+	companion object {
+		private const val ALTINN3_KEY = "altinn3"
+	}
 }

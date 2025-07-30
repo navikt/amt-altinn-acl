@@ -22,13 +22,12 @@ class Altinn3ClientImpl(
 		val parties = hentAuthorizedParties(norskIdent)
 		val resourceIds = roller.map { it.resourceId }.toSet()
 
-
 		return roller.associateWith { rolle ->
 			parties.flatMap { it.finnTilganger(resourceIds) }
 				.filter { it.rolle == rolle }
 				.map { it.organisasjonsnummer }
 		}.also {
-			log.info("Hentet ${it.values.sumOf { it.size }} $roller tilganger fra Altinn 3")
+			log.info("Hentet ${it.values.sumOf { strings -> strings.size }} $roller tilganger fra Altinn 3")
 		}
 	}
 
