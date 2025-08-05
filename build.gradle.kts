@@ -65,6 +65,7 @@ dependencies {
 
     implementation("io.getunleash:unleash-client-java:$unleashVersion")
 
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.mockk:mockk-jvm:$mockkVersion")
     testImplementation("org.testcontainers:postgresql")
