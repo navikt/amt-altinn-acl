@@ -25,7 +25,7 @@ val okHttpVersion = "5.1.0"
 val mockkVersion = "1.14.5"
 val kotestVersion = "5.9.1"
 val mockOauth2ServerVersion = "2.1.11"
-val unleashVersion = "11.0.2"
+val unleashVersion = "11.1.0"
 val springmockkVersion = "4.0.2"
 
 dependencyManagement {
