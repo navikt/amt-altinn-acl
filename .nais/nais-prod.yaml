@@ -19,6 +19,7 @@ spec:
   liveness:
     path: /internal/health/liveness
     initialDelay: 30
+    timeout: 3
   startup:
     path: /internal/health/liveness
     initialDelay: 30
