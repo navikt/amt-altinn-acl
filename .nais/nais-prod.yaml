@@ -46,7 +46,7 @@ spec:
   gcp:
     sqlInstances:
       - name: amt-altinn-acl
-        type: POSTGRES_14
+        type: POSTGRES_17
         tier: db-g1-small
         databases:
           - name: amt-altinn-acl
