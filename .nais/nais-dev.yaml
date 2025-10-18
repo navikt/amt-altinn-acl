@@ -51,7 +51,7 @@ spec:
         - host: amt-unleash-api.nav.cloud.nais.io
   gcp:
     sqlInstances:
-      - name: amt-altinn-acl
+      - name: amt-altinn-acl-2
         type: POSTGRES_17
         tier: db-f1-micro
         databases:
