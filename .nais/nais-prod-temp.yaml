@@ -1,7 +1,7 @@
 kind: Application
 apiVersion: nais.io/v1alpha1
 metadata:
-  name: amt-altinn-acl
+  name: amt-altinn-acl-temp
   namespace: amt
   labels:
     team: amt
@@ -9,7 +9,7 @@ spec:
   image: {{image}}
   port: 8080
   ingresses:
-    - https://amt-altinn-acl.intern.nav.no
+    - https://amt-altinn-acl-temp.intern.nav.no
   prometheus:
     enabled: true
     path: /internal/prometheus
@@ -45,7 +45,7 @@ spec:
         - host: amt-unleash-api.nav.cloud.nais.io
   gcp:
     sqlInstances:
-      - name: amt-altinn-acl
+      - name: amt-altinn-acl-2
         type: POSTGRES_17
         tier: db-g1-small
         databases:
