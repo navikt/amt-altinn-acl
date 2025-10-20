@@ -9,7 +9,6 @@ plugins {
 
 group = "no.nav.amt-altinn-acl"
 version = "0.0.1-SNAPSHOT"
-java.sourceCompatibility = JavaVersion.VERSION_21
 
 repositories {
     mavenCentral()
@@ -78,7 +77,7 @@ dependencies {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(24)
     compilerOptions {
         freeCompilerArgs.addAll(
             "-Xjsr305=strict",
