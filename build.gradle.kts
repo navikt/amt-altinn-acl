@@ -87,9 +87,7 @@ kotlin {
     }
 }
 
-tasks.jar {
-    enabled = false
-}
+tasks.jar { enabled = false }
 
 tasks.test {
     useJUnitPlatform()
