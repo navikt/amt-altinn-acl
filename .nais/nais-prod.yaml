@@ -53,6 +53,8 @@ spec:
             envVarPrefix: DB
   leaderElection: true
   env:
+    - name: JDK_JAVA_OPTIONS
+      value: "-XX:MaxRAMPercentage=60.0"
     - name: ALTINN3_URL
       value: https://platform.altinn.no
     - name: MASKINPORTEN_URL
