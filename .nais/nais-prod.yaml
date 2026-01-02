@@ -29,9 +29,9 @@ spec:
   resources:
     requests:
       cpu: 10m
-      memory: 512Mi
+      memory: 800Mi
     limits:
-      memory: 1024Mi
+      memory: 1Gi
   azure:
     application:
       enabled: true
@@ -54,7 +54,7 @@ spec:
   leaderElection: true
   env:
     - name: JDK_JAVA_OPTIONS
-      value: "-XX:MaxRAMPercentage=70.0"
+      value: "-XX:MaxRAMPercentage=75.0"
     - name: ALTINN3_URL
       value: https://platform.altinn.no
     - name: MASKINPORTEN_URL
