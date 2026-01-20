@@ -29,7 +29,7 @@ spec:
   resources:
     requests:
       cpu: 10m
-      memory: 800Mi
+      memory: 600Mi
     limits:
       memory: 1Gi
   azure:
