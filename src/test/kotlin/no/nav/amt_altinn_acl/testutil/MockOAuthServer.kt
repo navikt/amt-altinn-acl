@@ -1,4 +1,4 @@
-package no.nav.amt_altinn_acl.test_util
+package no.nav.amt_altinn_acl.testutil
 
 import no.nav.amt_altinn_acl.service.AuthService
 import no.nav.security.mock.oauth2.MockOAuth2Server
@@ -25,13 +25,13 @@ class MockOAuthServer {
 	fun issueAzureAdToken(
 		subject: String = "test",
 		audience: String = "test-aud",
-		claims: Map<String, Any> = emptyMap()
+		claims: Map<String, Any> = emptyMap(),
 	): String = server.issueToken(AZURE_AD_ISSUER, subject, audience, claims).serialize()
 
 	fun issueAzureAdM2MToken(
 		subject: String = "test",
 		audience: String = "test-aud",
-		claims: Map<String, Any> = emptyMap()
+		claims: Map<String, Any> = emptyMap(),
 	): String {
 		val claimsWithRoles = claims.toMutableMap()
 		claimsWithRoles["roles"] = arrayOf(AuthService.ACCESS_AS_APPLICATION_ROLE)

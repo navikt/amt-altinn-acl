@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component
 @Component
 class AltinnUpdater(
 	private val rolleService: RolleService,
-	private val leaderElection: LeaderElection
+	private val leaderElection: LeaderElection,
 ) {
 	@Scheduled(cron = "@hourly")
 	@SchedulerLock(name = "synkroniser_altinn_rettigheter", lockAtMostFor = "120m")

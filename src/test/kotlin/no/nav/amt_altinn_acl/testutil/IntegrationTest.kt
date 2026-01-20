@@ -1,8 +1,8 @@
-package no.nav.amt_altinn_acl.test_util
+package no.nav.amt_altinn_acl.testutil
 
-import no.nav.amt_altinn_acl.test_util.Constants.TEST_JWK
-import no.nav.amt_altinn_acl.test_util.mock_clients.MockAltinnHttpServer
-import no.nav.amt_altinn_acl.test_util.mock_clients.MockMaskinportenHttpClient
+import no.nav.amt_altinn_acl.testutil.Constants.TEST_JWK
+import no.nav.amt_altinn_acl.testutil.mock_clients.MockAltinnHttpServer
+import no.nav.amt_altinn_acl.testutil.mock_clients.MockMaskinportenHttpClient
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
@@ -17,13 +17,14 @@ import java.time.Duration
 @Import(TestConfig::class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 abstract class IntegrationTest : RepositoryTestBase() {
-
 	@LocalServerPort
 	private var port: Int = 0
 
-	private val client = OkHttpClient.Builder()
-		.callTimeout(Duration.ofMinutes(5))
-		.build()
+	private val client =
+		OkHttpClient
+			.Builder()
+			.callTimeout(Duration.ofMinutes(5))
+			.build()
 
 	companion object {
 		val oAuthServer = MockOAuthServer()
@@ -57,11 +58,13 @@ abstract class IntegrationTest : RepositoryTestBase() {
 		method: String,
 		path: String,
 		body: RequestBody? = null,
-		headers: Map<String, String> = emptyMap()
+		headers: Map<String, String> = emptyMap(),
 	): Response {
-		val reqBuilder = Request.Builder()
-			.url("${serverUrl()}$path")
-			.method(method, body)
+		val reqBuilder =
+			Request
+				.Builder()
+				.url("${serverUrl()}$path")
+				.method(method, body)
 
 		headers.forEach {
 			reqBuilder.addHeader(it.key, it.value)

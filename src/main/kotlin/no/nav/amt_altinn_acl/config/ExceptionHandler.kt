@@ -4,29 +4,27 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestControllerAdvice
 
-@ControllerAdvice
+@RestControllerAdvice
 class ExceptionHandler {
-
 	private val log = LoggerFactory.getLogger(javaClass)
 
 	@ResponseStatus(HttpStatus.NOT_FOUND)
 	@ExceptionHandler(NoSuchElementException::class)
 	fun handleNotFoundException(e: NoSuchElementException): ResponseEntity<Response> {
 		log.info(e.message, e)
-		val status = HttpStatus.NOT_FOUND
 
 		return ResponseEntity
-			.status(status)
+			.status(notFoundStatus)
 			.body(
 				Response(
-					status = status.value(),
-					title = status,
+					status = notFoundStatus.value(),
+					title = notFoundStatus,
 					detail = e.message,
-				)
+				),
 			)
 	}
 
@@ -34,16 +32,15 @@ class ExceptionHandler {
 	@ExceptionHandler(IllegalArgumentException::class)
 	fun handleIllegalArgumentException(e: IllegalArgumentException): ResponseEntity<Response> {
 		log.info(e.message, e)
-		val status = HttpStatus.BAD_REQUEST
 
 		return ResponseEntity
-			.status(status)
+			.status(badRequestStatus)
 			.body(
 				Response(
-					status = status.value(),
-					title = status,
+					status = badRequestStatus.value(),
+					title = badRequestStatus,
 					detail = e.message,
-				)
+				),
 			)
 	}
 
@@ -53,4 +50,9 @@ class ExceptionHandler {
 		val title: HttpStatus,
 		val detail: String?,
 	)
+
+	companion object {
+		private val notFoundStatus = HttpStatus.NOT_FOUND
+		private val badRequestStatus = HttpStatus.BAD_REQUEST
+	}
 }

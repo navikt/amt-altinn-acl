@@ -1,57 +1,70 @@
 package no.nav.amt_altinn_acl.client.altinn
 
 import no.nav.amt_altinn_acl.domain.RolleType
-import no.nav.amt_altinn_acl.utils.JsonUtils
-import no.nav.amt_altinn_acl.utils.JsonUtils.fromJsonString
 import no.nav.common.rest.client.RestClient
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.slf4j.LoggerFactory
-
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.readValue
 
 class Altinn3ClientImpl(
 	private val baseUrl: String,
 	private val maskinportenTokenProvider: () -> String,
 	private val client: OkHttpClient = RestClient.baseClient(),
+	private val objectMapper: ObjectMapper,
 ) : AltinnClient {
 	private val log = LoggerFactory.getLogger(javaClass)
 
-	override fun hentRoller(norskIdent: String, roller: List<RolleType>): Map<RolleType, List<String>> {
+	override fun hentRoller(
+		norskIdent: String,
+		roller: List<RolleType>,
+	): Map<RolleType, List<String>> {
 		val parties = hentAuthorizedParties(norskIdent)
 		val resourceIds = roller.map { it.resourceId }.toSet()
 
-		return roller.associateWith { rolle ->
-			parties.flatMap { it.finnTilganger(resourceIds) }
-				.filter { it.rolle == rolle }
-				.map { it.organisasjonsnummer }
-		}.also {
-			log.info("Hentet ${it.values.sumOf { strings -> strings.size }} $roller tilganger fra Altinn 3")
-		}
+		return roller
+			.associateWith { rolle ->
+				parties
+					.flatMap { it.finnTilganger(resourceIds) }
+					.filter { it.rolle == rolle }
+					.map { it.organisasjonsnummer }
+			}.also {
+				log.info("Hentet ${it.values.sumOf { strings -> strings.size }} $roller tilganger fra Altinn 3")
+			}
 	}
 
 	private fun hentAuthorizedParties(norskIdent: String): List<AuthorizedParty> {
-		val request = Request.Builder()
-			.url("$baseUrl/accessmanagement/api/v1/resourceowner/authorizedparties")
-			.addHeader("Authorization", "Bearer ${maskinportenTokenProvider.invoke()}")
-			.post(requestBody(norskIdent))
-			.build()
+		val request =
+			Request
+				.Builder()
+				.url("$baseUrl/accessmanagement/api/v1/resourceowner/authorizedparties")
+				.addHeader(HttpHeaders.AUTHORIZATION, "Bearer ${maskinportenTokenProvider.invoke()}")
+				.post(requestBody(norskIdent))
+				.build()
 
 		client.newCall(request).execute().use { response ->
 			if (!response.isSuccessful) {
-				log.error("Klarte ikke hente organisasjoner ${response.code}, body=${response.body.string().maskerFnr()}")
+				log.error(
+					"Klarte ikke hente organisasjoner ${response.code}, body=${
+						response.body.string().maskerFnr()
+					}",
+				)
 				throw RuntimeException("Klarte ikke å hente organisasjoner code=${response.code}")
 			}
 
-			return fromJsonString<List<AuthorizedParty>>(response.body.string())
+			return objectMapper.readValue<List<AuthorizedParty>>(response.body.string())
 		}
 	}
 
-	private fun requestBody(norskIdent: String) = JsonUtils
-		.objectMapper
-		.writeValueAsString(AuthorizedPartiesRequest(norskIdent))
-		.toRequestBody("application/json".toMediaType())
+	private fun requestBody(norskIdent: String) =
+		objectMapper
+			.writeValueAsString(AuthorizedPartiesRequest(norskIdent))
+			.toRequestBody(MediaType.APPLICATION_JSON_VALUE.toMediaType())
 
 	data class AuthorizedPartiesRequest(
 		val value: String,
@@ -64,13 +77,14 @@ class Altinn3ClientImpl(
 		val subunits: List<AuthorizedParty>,
 	) {
 		fun finnTilganger(resourceIds: Set<String>): List<Tilgang> {
-			val tilganger = organizationNumber
-				?.let {
-					authorizedResources
-						.intersect(resourceIds)
-						.map { Tilgang(RolleType.fromResourceId(it), organizationNumber) }
-				}
-				?: emptyList()
+			val tilganger =
+				organizationNumber
+					?.let {
+						authorizedResources
+							.intersect(resourceIds)
+							.map { Tilgang(RolleType.fromResourceId(it), organizationNumber) }
+					}
+					?: emptyList()
 
 			val underenhetTilganger = subunits.flatMap { it.finnTilganger(resourceIds) }
 

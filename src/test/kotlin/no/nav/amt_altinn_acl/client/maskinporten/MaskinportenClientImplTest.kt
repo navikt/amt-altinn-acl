@@ -2,13 +2,15 @@ package no.nav.amt_altinn_acl.client.maskinporten
 
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import no.nav.amt_altinn_acl.test_util.Constants.TEST_JWK
-import no.nav.amt_altinn_acl.test_util.TokenCreator
+import no.nav.amt_altinn_acl.testutil.Constants.TEST_JWK
+import no.nav.amt_altinn_acl.testutil.TokenCreator
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.Arrays
@@ -36,14 +38,15 @@ class MaskinportenClientImplTest {
 		val scope1 = "scope1"
 		val scope2 = "scope2"
 
-		val client = MaskinportenClientImpl(
-			clientId = "client-id",
-			issuer = "issuer",
-			altinn3Url = "https://platform.tt02.altinn.no",
-			scopes = listOf(scope1, scope2),
-			tokenEndpointUrl = mockServerUrl() + "/token",
-			privateJwk = TEST_JWK
-		)
+		val client =
+			MaskinportenClientImpl(
+				clientId = "client-id",
+				issuer = "issuer",
+				altinn3Url = "https://platform.tt02.altinn.no",
+				scopes = listOf(scope1, scope2),
+				tokenEndpointUrl = mockServerUrl() + "/token",
+				privateJwk = TEST_JWK,
+			)
 
 		val token = client.hentAltinn3Token()
 		val recordedRequest = mockServer.takeRequest()
@@ -70,12 +73,13 @@ class MaskinportenClientImplTest {
 	}
 
 	private fun tokenMockResponse(accessToken: String): MockResponse {
-		val body = """
+		val body =
+			"""
 			{ "token_type": "Bearer", "access_token": "$accessToken", "expires": 3600 }
-		""".trimIndent()
+			""".trimIndent()
 
 		return MockResponse()
 			.setBody(body)
-			.setHeader("Content-Type", "application/json")
+			.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 	}
 }

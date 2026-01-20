@@ -11,11 +11,11 @@ import org.springframework.scheduling.annotation.EnableScheduling
 @EnableScheduling
 @EnableJwtTokenValidation
 class ApplicationConfig {
-
 	@Bean
 	fun logFilterRegistrationBean(): FilterRegistrationBean<LogRequestFilter> =
 		FilterRegistrationBean<LogRequestFilter>().apply {
-			filter = LogRequestFilter("amt-altinn-acl", false)
+			@Suppress("UsePropertyAccessSyntax")
+			setFilter(LogRequestFilter("amt-altinn-acl", false))
 			order = 1
 			addUrlPatterns("/*")
 		}

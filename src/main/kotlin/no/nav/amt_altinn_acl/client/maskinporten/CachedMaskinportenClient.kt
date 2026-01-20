@@ -7,10 +7,11 @@ class CachedMaskinportenClient(
 ) : MaskinportenClient {
 	private val cache = CaffeineTokenCache()
 
-	override fun hentAltinn3Token(): String = cache.getFromCacheOrTryProvider(
-		ALTINN3_KEY,
-		maskinportenClient::hentAltinn3Token
-	)
+	override fun hentAltinn3Token(): String =
+		cache.getFromCacheOrTryProvider(
+			ALTINN3_KEY,
+			maskinportenClient::hentAltinn3Token,
+		)
 
 	companion object {
 		private const val ALTINN3_KEY = "altinn3"

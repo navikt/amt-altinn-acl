@@ -2,7 +2,7 @@ package no.nav.amt_altinn_acl.repository
 
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import no.nav.amt_altinn_acl.test_util.RepositoryTestBase
+import no.nav.amt_altinn_acl.testutil.RepositoryTestBase
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
@@ -12,9 +12,8 @@ import java.time.temporal.ChronoUnit
 
 @SpringBootTest(classes = [PersonRepository::class])
 class PersonRepositoryTest(
-	private val personRepository: PersonRepository
+	private val personRepository: PersonRepository,
 ) : RepositoryTestBase() {
-
 	@Test
 	internal fun `create - not exist - should create new person`() {
 		val norskIdent = "123456789"

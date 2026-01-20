@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration(proxyBeanMethods = false)
 class MaskinportenClientConfig {
-
 	@Value($$"${altinn3.url}")
 	lateinit var altinn3Url: String
 
@@ -27,14 +26,15 @@ class MaskinportenClientConfig {
 
 	@Bean
 	fun maskinportenClient(): MaskinportenClient {
-		val client = MaskinportenClientImpl(
-			clientId = maskinportenClientId,
-			issuer = maskinportenIssuer,
-			altinn3Url = altinn3Url,
-			scopes = maskinportenScopes.split(" "),
-			tokenEndpointUrl = maskinportenTokenEndpoint,
-			privateJwk = maskinportenClientJwk,
-		)
+		val client =
+			MaskinportenClientImpl(
+				clientId = maskinportenClientId,
+				issuer = maskinportenIssuer,
+				altinn3Url = altinn3Url,
+				scopes = maskinportenScopes.split(" "),
+				tokenEndpointUrl = maskinportenTokenEndpoint,
+				privateJwk = maskinportenClientJwk,
+			)
 
 		return CachedMaskinportenClient(client)
 	}
