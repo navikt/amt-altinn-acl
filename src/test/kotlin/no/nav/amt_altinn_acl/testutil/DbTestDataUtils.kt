@@ -1,4 +1,4 @@
-package no.nav.amt_altinn_acl.test_util
+package no.nav.amt_altinn_acl.testutil
 
 import org.springframework.jdbc.core.JdbcTemplate
 import javax.sql.DataSource
@@ -21,16 +21,21 @@ object DbTestDataUtils {
 		}
 	}
 
-	private fun getAllTables(jdbcTemplate: JdbcTemplate, schema: String): List<String> {
+	private fun getAllTables(
+		jdbcTemplate: JdbcTemplate,
+		schema: String,
+	): List<String> {
 		val sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = ?"
 
 		return jdbcTemplate.query(sql, { rs, _ -> rs.getString(1) }, schema)
 	}
 
-	private fun getAllSequences(jdbcTemplate: JdbcTemplate, schema: String): List<String> {
+	private fun getAllSequences(
+		jdbcTemplate: JdbcTemplate,
+		schema: String,
+	): List<String> {
 		val sql = "SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = ?"
 
 		return jdbcTemplate.query(sql, { rs, _ -> rs.getString(1) }, schema)
 	}
 }
-

@@ -24,7 +24,6 @@ class MaskinportenClientImpl(
 	tokenEndpointUrl: String,
 	privateJwk: String,
 ) : MaskinportenClient {
-
 	private val log = LoggerFactory.getLogger(javaClass)
 
 	private val tokenEndpoint: URI
@@ -42,22 +41,24 @@ class MaskinportenClientImpl(
 	}
 
 	override fun hentAltinn3Token(): String {
-		val signedJwt = signedClientAssertion(
-			clientAssertionHeader(privateJwkKeyId),
-			clientAssertionClaims(
-				clientId,
-				issuer,
-				altinn3Url,
-				scopes
-			),
-			assertionSigner
-		)
+		val signedJwt =
+			signedClientAssertion(
+				clientAssertionHeader(privateJwkKeyId),
+				clientAssertionClaims(
+					clientId,
+					issuer,
+					altinn3Url,
+					scopes,
+				),
+				assertionSigner,
+			)
 
-		val request = TokenRequest(
-			tokenEndpoint,
-			JWTBearerGrant(signedJwt),
-			Scope(*scopes.toTypedArray()),
-		)
+		val request =
+			TokenRequest(
+				tokenEndpoint,
+				JWTBearerGrant(signedJwt),
+				Scope(*scopes.toTypedArray()),
+			)
 
 		val response = TokenResponse.parse(request.toHTTPRequest().send())
 
@@ -84,13 +85,14 @@ class MaskinportenClientImpl(
 		sign(signer)
 	}
 
-	private fun clientAssertionHeader(keyId: String): JWSHeader = JWSHeader.parse(
-		mapOf(
-			"kid" to keyId,
-			"typ" to "JWT",
-			"alg" to "RS256",
+	private fun clientAssertionHeader(keyId: String): JWSHeader =
+		JWSHeader.parse(
+			mapOf(
+				"kid" to keyId,
+				"typ" to "JWT",
+				"alg" to "RS256",
+			),
 		)
-	)
 
 	private fun clientAssertionClaims(
 		clientId: String,
@@ -101,7 +103,8 @@ class MaskinportenClientImpl(
 		val now = Instant.now()
 		val expire = now.plusSeconds(30)
 
-		return JWTClaimsSet.Builder()
+		return JWTClaimsSet
+			.Builder()
 			.subject(clientId)
 			.audience(issuer)
 			.issuer(clientId)

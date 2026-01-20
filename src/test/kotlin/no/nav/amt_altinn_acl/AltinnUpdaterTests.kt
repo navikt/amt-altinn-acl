@@ -12,20 +12,18 @@ import no.nav.amt_altinn_acl.jobs.AltinnUpdater
 import no.nav.amt_altinn_acl.jobs.leaderelection.LeaderElection
 import no.nav.amt_altinn_acl.repository.PersonRepository
 import no.nav.amt_altinn_acl.service.RolleService
-import no.nav.amt_altinn_acl.test_util.IntegrationTest
+import no.nav.amt_altinn_acl.testutil.IntegrationTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
-
 
 class AltinnUpdaterTests(
 	private val personRepository: PersonRepository,
 	private val rolleService: RolleService,
 	private val altinnUpdater: AltinnUpdater,
 	@MockkBean private val altinnClient: AltinnClient,
-	@MockkBean private val leaderElection: LeaderElection
+	@MockkBean private val leaderElection: LeaderElection,
 ) : IntegrationTest() {
-
 	@BeforeEach
 	fun setup() {
 		every { leaderElection.isLeader() } returns true
@@ -42,14 +40,19 @@ class AltinnUpdaterTests(
 			altinnClient.hentRoller(personligIdent, RolleType.entries)
 		} returns mapOf(KOORDINATOR to listOf(organisasjonsnummer), VEILEDER to emptyList())
 
-
 		altinnUpdater.update()
 
 		val oppdaterteRettigheter = rolleService.getRollerForPerson(personligIdent)
 		hasRolle(oppdaterteRettigheter, organisasjonsnummer, KOORDINATOR) shouldBe true
 	}
 
-	private fun hasRolle(list: List<RollerIOrganisasjon>, organizationNumber: String, rolle: RolleType): Boolean =
-		list.find { it.organisasjonsnummer == organizationNumber }
-			?.roller?.find { it.rolleType == rolle } != null
+	private fun hasRolle(
+		list: List<RollerIOrganisasjon>,
+		organizationNumber: String,
+		rolle: RolleType,
+	): Boolean =
+		list
+			.find { it.organisasjonsnummer == organizationNumber }
+			?.roller
+			?.find { it.rolleType == rolle } != null
 }

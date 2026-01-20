@@ -1,4 +1,4 @@
-package no.nav.amt_altinn_acl.test_util
+package no.nav.amt_altinn_acl.testutil
 
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -21,11 +21,12 @@ open class MockHttpClient {
 	fun enqueue(
 		responseCode: Int = 200,
 		headers: Map<String, String> = emptyMap(),
-		body: String
+		body: String,
 	) {
-		val response = MockResponse()
-			.setBody(body)
-			.setResponseCode(responseCode)
+		val response =
+			MockResponse()
+				.setBody(body)
+				.setResponseCode(responseCode)
 
 		headers.forEach {
 			response.addHeader(it.key, it.value)

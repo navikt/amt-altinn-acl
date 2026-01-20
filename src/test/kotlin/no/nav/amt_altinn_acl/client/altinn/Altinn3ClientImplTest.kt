@@ -7,21 +7,27 @@ import no.nav.amt_altinn_acl.domain.RolleType
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
+import tools.jackson.module.kotlin.jacksonObjectMapper
 
 class Altinn3ClientImplTest {
 	private val mockServer: MockWebServer = MockWebServer()
 
 	private fun mockServerUrl(): String = mockServer.url("").toString().removeSuffix("/")
 
-	private val altinnClient = Altinn3ClientImpl(
-		baseUrl = mockServerUrl(),
-		maskinportenTokenProvider = { "TOKEN" }
-	)
+	private val altinnClient =
+		Altinn3ClientImpl(
+			baseUrl = mockServerUrl(),
+			maskinportenTokenProvider = { "TOKEN" },
+			objectMapper = jacksonObjectMapper(),
+		)
 
 	@Test
 	fun `hentRoller - flere tilganger - parser response riktig`() {
 		val resourceIds = listOf(RolleType.KOORDINATOR.resourceId, RolleType.VEILEDER.resourceId, "resource3")
-		val jsonResponse = """
+		val jsonResponse =
+			"""
 			[
 			  {
 			    "organizationNumber": "123456789",
@@ -57,12 +63,12 @@ class Altinn3ClientImplTest {
 			    ]
 			  }
 			]
-		""".trimIndent()
+			""".trimIndent()
 
 		mockServer.enqueue(
 			MockResponse()
 				.setBody(jsonResponse)
-				.setHeader("Content-Type", "application/json")
+				.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE),
 		)
 
 		val norskIdent = "123456"

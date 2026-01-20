@@ -2,37 +2,41 @@ package no.nav.amt_altinn_acl.controller
 
 import io.kotest.matchers.shouldBe
 import no.nav.amt_altinn_acl.domain.RolleType
-import no.nav.amt_altinn_acl.test_util.IntegrationTest
+import no.nav.amt_altinn_acl.testutil.IntegrationTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 
 class RolleControllerIntegrationTest : IntegrationTest() {
-	private val mediaTypeJson = "application/json".toMediaType()
+	private val mediaTypeJson = MediaType.APPLICATION_JSON_VALUE.toMediaType()
 
 	@AfterEach
 	internal fun tearDown() = mockAltinnHttpClient.resetHttpServer()
 
 	@Test
 	fun `hentTiltaksarrangorRoller - should return 401 when not authenticated`() {
-		val response = sendRequest(
-			method = "POST",
-			path = "/api/v1/rolle/tiltaksarrangor",
-			body = """{"personident": "12345678910"}""".toRequestBody(mediaTypeJson)
-		)
+		val response =
+			sendRequest(
+				method = "POST",
+				path = "/api/v1/rolle/tiltaksarrangor",
+				body = """{"personident": "12345678910"}""".toRequestBody(mediaTypeJson),
+			)
 
 		response.code shouldBe 401
 	}
 
 	@Test
 	fun `hentTiltaksarrangorRoller - should return 403 when not machine-to-machine request`() {
-		val response = sendRequest(
-			method = "POST",
-			path = "/api/v1/rolle/tiltaksarrangor",
-			body = """{"personident": "12345678910"}""".toRequestBody(mediaTypeJson),
-			headers = mapOf("Authorization" to "Bearer ${oAuthServer.issueAzureAdToken()}")
-		)
+		val response =
+			sendRequest(
+				method = "POST",
+				path = "/api/v1/rolle/tiltaksarrangor",
+				body = """{"personident": "12345678910"}""".toRequestBody(mediaTypeJson),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${oAuthServer.issueAzureAdToken()}"),
+			)
 
 		response.code shouldBe 403
 	}
@@ -41,12 +45,13 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 	fun `hentTiltaksarrangorRoller - returnerer 400 hvis personident har feil format`() {
 		val norskIdent = "1234567891K"
 
-		val response = sendRequest(
-			method = "POST",
-			path = "/api/v1/rolle/tiltaksarrangor",
-			body = """{"personident": "$norskIdent"}""".toRequestBody(mediaTypeJson),
-			headers = mapOf("Authorization" to "Bearer ${oAuthServer.issueAzureAdM2MToken()}")
-		)
+		val response =
+			sendRequest(
+				method = "POST",
+				path = "/api/v1/rolle/tiltaksarrangor",
+				body = """{"personident": "$norskIdent"}""".toRequestBody(mediaTypeJson),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${oAuthServer.issueAzureAdM2MToken()}"),
+			)
 
 		response.code shouldBe 400
 	}
@@ -60,16 +65,18 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 
 		mockAltinnHttpClient.addAuthorizedPartiesResponse(norskIdent, listOf(RolleType.KOORDINATOR, RolleType.VEILEDER), listOf(orgnr))
 
-		val response = sendRequest(
-			method = "POST",
-			path = "/api/v1/rolle/tiltaksarrangor",
-			body = """{"personident": "$norskIdent"}""".toRequestBody(mediaTypeJson),
-			headers = mapOf("Authorization" to "Bearer ${oAuthServer.issueAzureAdM2MToken()}")
-		)
+		val response =
+			sendRequest(
+				method = "POST",
+				path = "/api/v1/rolle/tiltaksarrangor",
+				body = """{"personident": "$norskIdent"}""".toRequestBody(mediaTypeJson),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${oAuthServer.issueAzureAdM2MToken()}"),
+			)
 
-		val expectedJson = """
+		val expectedJson =
+			"""
 			{"roller":[{"organisasjonsnummer":"$orgnr","roller":["KOORDINATOR","VEILEDER"]}]}
-		""".trimIndent()
+			""".trimIndent()
 
 		response.code shouldBe 200
 		response.body.string() shouldBe expectedJson
@@ -84,23 +91,26 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 
 		mockAltinnHttpClient.addAuthorizedPartiesResponse(personIdent, listOf(RolleType.KOORDINATOR), listOf(orgnr))
 
-		val response1 = sendRequest(
-			method = "POST",
-			path = "/api/v1/rolle/tiltaksarrangor",
-			body = """{"personident": "$personIdent"}""".toRequestBody(mediaTypeJson),
-			headers = mapOf("Authorization" to "Bearer ${oAuthServer.issueAzureAdM2MToken()}")
-		)
+		val response1 =
+			sendRequest(
+				method = "POST",
+				path = "/api/v1/rolle/tiltaksarrangor",
+				body = """{"personident": "$personIdent"}""".toRequestBody(mediaTypeJson),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${oAuthServer.issueAzureAdM2MToken()}"),
+			)
 
-		val response2 = sendRequest(
-			method = "POST",
-			path = "/api/v1/rolle/tiltaksarrangor",
-			body = """{"personident": "$personIdent"}""".toRequestBody(mediaTypeJson),
-			headers = mapOf("Authorization" to "Bearer ${oAuthServer.issueAzureAdM2MToken()}")
-		)
+		val response2 =
+			sendRequest(
+				method = "POST",
+				path = "/api/v1/rolle/tiltaksarrangor",
+				body = """{"personident": "$personIdent"}""".toRequestBody(mediaTypeJson),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${oAuthServer.issueAzureAdM2MToken()}"),
+			)
 
-		val expectedJson = """
+		val expectedJson =
+			"""
 			{"roller":[{"organisasjonsnummer":"$orgnr","roller":["KOORDINATOR"]}]}
-		""".trimIndent()
+			""".trimIndent()
 
 		response1.code shouldBe 200
 		response1.body.string() shouldBe expectedJson
@@ -110,5 +120,4 @@ class RolleControllerIntegrationTest : IntegrationTest() {
 
 		mockAltinnHttpClient.requestCount() shouldBe 1
 	}
-
 }

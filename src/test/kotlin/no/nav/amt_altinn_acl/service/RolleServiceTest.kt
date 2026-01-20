@@ -9,7 +9,7 @@ import no.nav.amt_altinn_acl.domain.RolleType.VEILEDER
 import no.nav.amt_altinn_acl.domain.RollerIOrganisasjon
 import no.nav.amt_altinn_acl.repository.PersonRepository
 import no.nav.amt_altinn_acl.repository.RolleRepository
-import no.nav.amt_altinn_acl.test_util.IntegrationTest
+import no.nav.amt_altinn_acl.testutil.IntegrationTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.ZonedDateTime
@@ -19,9 +19,8 @@ import java.util.UUID
 class RolleServiceTest(
 	private val rolleService: RolleService,
 	private val personRepository: PersonRepository,
-	private val rolleRepository: RolleRepository
+	private val rolleRepository: RolleRepository,
 ) : IntegrationTest() {
-
 	@BeforeEach
 	internal fun setUp() {
 		mockMaskinportenHttpClient.enqueueTokenResponse()
@@ -36,7 +35,7 @@ class RolleServiceTest(
 		mockAltinnHttpClient.addAuthorizedPartiesResponse(
 			norskIdent,
 			listOf(KOORDINATOR, VEILEDER),
-			listOf(organisasjonsnummer)
+			listOf(organisasjonsnummer),
 		)
 
 		val roller = rolleService.getRollerForPerson(norskIdent)
@@ -80,7 +79,7 @@ class RolleServiceTest(
 		rolleRepository.createRolle(
 			personId = personDbo.id,
 			organisasjonsnummer = organisasjonsnummer,
-			rolleType = KOORDINATOR
+			rolleType = KOORDINATOR,
 		)
 
 		rolleService.getRollerForPerson(norskIdent)
@@ -98,7 +97,7 @@ class RolleServiceTest(
 		mockAltinnHttpClient.addAuthorizedPartiesResponse(
 			norskIdent,
 			listOf(KOORDINATOR, VEILEDER),
-			listOf(organisasjonsnummer)
+			listOf(organisasjonsnummer),
 		)
 
 		val roller = rolleService.getRollerForPerson(norskIdent)
@@ -141,7 +140,7 @@ class RolleServiceTest(
 		mockAltinnHttpClient.addAuthorizedPartiesResponse(
 			norskIdent,
 			listOf(KOORDINATOR, VEILEDER),
-			listOf(organisasjonsnummer)
+			listOf(organisasjonsnummer),
 		)
 
 		val roller = rolleService.getRollerForPerson(norskIdent)
@@ -171,11 +170,12 @@ class RolleServiceTest(
 
 		hasRolle(updatedRoller, organisasjonsnummer, KOORDINATOR) shouldBe true
 
-		val databaseRoller = rolleRepository.hentRollerForPerson(personDbo.id)
-			.filter { it.rolleType == KOORDINATOR }
+		val databaseRoller =
+			rolleRepository
+				.hentRollerForPerson(personDbo.id)
+				.filter { it.rolleType == KOORDINATOR }
 
 		databaseRoller.size shouldBe 2
-
 	}
 
 	@Test
@@ -200,18 +200,24 @@ class RolleServiceTest(
 	}
 
 	private fun hasRolleInDatabase(
-		personId: Long, organisasjonsnummerNumber: String, rolle: RolleType
+		personId: Long,
+		organisasjonsnummerNumber: String,
+		rolle: RolleType,
 	): Boolean =
-		rolleRepository.hentRollerForPerson(personId)
+		rolleRepository
+			.hentRollerForPerson(personId)
 			.filter { it.erGyldig() }
 			.find { it.organisasjonsnummer == organisasjonsnummerNumber && it.rolleType == rolle } != null
 
 	private fun hasRolle(
 		list: List<RollerIOrganisasjon>,
 		organisasjonsnummerNumber: String,
-		rolle: RolleType
-	): Boolean = list.find { it.organisasjonsnummer == organisasjonsnummerNumber }
-		?.roller?.find { it.rolleType == rolle } != null
+		rolle: RolleType,
+	): Boolean =
+		list
+			.find { it.organisasjonsnummer == organisasjonsnummerNumber }
+			?.roller
+			?.find { it.rolleType == rolle } != null
 
 	private fun ZonedDateTime.days(): ZonedDateTime = this.truncatedTo(ChronoUnit.DAYS)
 }

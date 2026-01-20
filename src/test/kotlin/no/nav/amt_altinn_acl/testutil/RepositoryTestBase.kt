@@ -1,14 +1,14 @@
-package no.nav.amt_altinn_acl.test_util
+package no.nav.amt_altinn_acl.testutil
 
-import no.nav.amt_altinn_acl.test_util.DbTestDataUtils.cleanDatabase
+import no.nav.amt_altinn_acl.testutil.DbTestDataUtils.cleanDatabase
 import org.junit.jupiter.api.AfterEach
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureJdbc
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureJdbc
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestConstructor
-import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import javax.sql.DataSource
 
@@ -26,14 +26,14 @@ abstract class RepositoryTestBase {
 		private const val POSTGRES_DOCKER_IMAGE_NAME = "postgres:17-alpine"
 
 		@ServiceConnection
-		@Suppress("unused")
-		private val postgres = PostgreSQLContainer<Nothing>(
-			DockerImageName
-				.parse(POSTGRES_DOCKER_IMAGE_NAME)
-				.asCompatibleSubstituteFor("postgres"),
-		).apply {
-			addEnv("TZ", "Europe/Oslo")
-			waitingFor(Wait.forListeningPort())
-		}
+		private val postgres =
+			PostgreSQLContainer(
+				DockerImageName
+					.parse(POSTGRES_DOCKER_IMAGE_NAME)
+					.asCompatibleSubstituteFor("postgres"),
+			).apply {
+				addEnv("TZ", "Europe/Oslo")
+				waitingFor(Wait.forListeningPort())
+			}
 	}
 }

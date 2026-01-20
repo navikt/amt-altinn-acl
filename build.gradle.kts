@@ -1,7 +1,7 @@
 plugins {
-    val kotlinVersion = "2.3.0"
+    val kotlinVersion = "2.2.21"
 
-    id("org.springframework.boot") version "3.5.7"
+    id("org.springframework.boot") version "4.0.1"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
@@ -15,23 +15,19 @@ repositories {
     maven { setUrl("https://github-package-registry-mirror.gc.nav.no/cached/maven-release") }
 }
 
-val commonVersion = "3.2025.08.18_11.44-04fe318bd185"
-val testcontainersVersion = "2.0.3"
+val commonVersion = "3.2025.11.10_14.07-a9f44944d7bc"
 val logstashEncoderVersion = "9.0"
 val shedlockVersion = "7.5.0"
-val tokenSupportVersion = "5.0.34"
+val tokenSupportVersion = "6.0.1"
 val okHttpVersion = "5.3.2"
 val mockkVersion = "1.14.7"
 val kotestVersion = "6.0.7"
 val mockOauth2ServerVersion = "3.0.1"
 val unleashVersion = "11.2.1"
 val springmockkVersion = "5.0.1"
+val jacksonModuleKotlinVersion = "3.0.3"
 
 dependencyManagement {
-    imports {
-        mavenBom("org.testcontainers:testcontainers-bom:$testcontainersVersion")
-    }
-
     dependencies {
         dependency("com.squareup.okhttp3:okhttp:$okHttpVersion")
         dependency("com.squareup.okhttp3:mockwebserver:$okHttpVersion")
@@ -39,15 +35,14 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-logging")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
-    implementation("org.springframework.boot:spring-boot-configuration-processor")
+    implementation("org.springframework.boot:spring-boot-flyway")
 
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("tools.jackson.module:jackson-module-kotlin:$jacksonModuleKotlinVersion")
 
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("org.flywaydb:flyway-core")
@@ -64,16 +59,18 @@ dependencies {
 
     implementation("io.getunleash:unleash-client-java:$unleashVersion")
 
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+    testImplementation("org.springframework.boot:spring-boot-resttestclient")
+    testImplementation("org.springframework.boot:spring-boot-data-jdbc-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:testcontainers-postgresql")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.mockk:mockk-jvm:$mockkVersion")
-    testImplementation("org.testcontainers:postgresql")
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
     testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
-    testImplementation("org.springframework.boot:spring-boot-starter-test") {
-        exclude("com.vaadin.external.google", "android-json")
-    }
-    testImplementation("com.ninja-squad:springmockk:${springmockkVersion}")
+    testImplementation("com.ninja-squad:springmockk:$springmockkVersion")
 }
 
 kotlin {
@@ -87,9 +84,11 @@ kotlin {
     }
 }
 
-tasks.jar { enabled = false }
+tasks.named<Jar>("jar") {
+    enabled = false
+}
 
-tasks.test {
+tasks.named<Test>("test") {
     useJUnitPlatform()
     jvmArgs(
         "-Xshare:off",

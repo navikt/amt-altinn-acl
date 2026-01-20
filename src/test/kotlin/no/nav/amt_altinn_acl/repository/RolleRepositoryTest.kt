@@ -3,7 +3,7 @@ package no.nav.amt_altinn_acl.repository
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.amt_altinn_acl.domain.RolleType
-import no.nav.amt_altinn_acl.test_util.RepositoryTestBase
+import no.nav.amt_altinn_acl.testutil.RepositoryTestBase
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
@@ -12,9 +12,8 @@ import java.util.UUID
 @SpringBootTest(classes = [RolleRepository::class, PersonRepository::class])
 class RolleRepositoryTest(
 	private val personRepository: PersonRepository,
-	private val rolleRepository: RolleRepository
+	private val rolleRepository: RolleRepository,
 ) : RepositoryTestBase() {
-
 	private var personId: Long = Long.MIN_VALUE
 
 	@BeforeEach
@@ -39,8 +38,10 @@ class RolleRepositoryTest(
 		val rolle = rolleRepository.createRolle(personId, organisasjonsnummer, RolleType.VEILEDER)
 		rolleRepository.invalidateRolle(rolle.id)
 
-		val gyldigeRoller = rolleRepository.hentRollerForPerson(personId)
-			.filter { it.erGyldig() }
+		val gyldigeRoller =
+			rolleRepository
+				.hentRollerForPerson(personId)
+				.filter { it.erGyldig() }
 
 		gyldigeRoller.isEmpty() shouldBe true
 
