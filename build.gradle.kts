@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    val kotlinVersion = "2.3.10"
+    val kotlinVersion = "2.3.20"
 
     id("org.springframework.boot") version "4.0.4"
     id("io.spring.dependency-management") version "1.1.7"
@@ -19,11 +19,11 @@ repositories {
 
 val commonVersion = "3.2026.03.03_07.58-86d37775258a"
 val logstashEncoderVersion = "9.0"
-val shedlockVersion = "7.6.0"
+val shedlockVersion = "7.7.0"
 val tokenSupportVersion = "6.0.1"
 val okHttpVersion = "5.3.2"
 val mockkVersion = "1.14.9"
-val kotestVersion = "6.1.6"
+val kotestVersion = "6.1.7"
 val mockOauth2ServerVersion = "3.0.1"
 val unleashVersion = "12.2.0"
 val springmockkVersion = "5.0.1"
