@@ -34,7 +34,13 @@ dependencyManagement {
         dependency("com.squareup.okhttp3:okhttp:$okHttpVersion")
         dependency("com.squareup.okhttp3:mockwebserver:$okHttpVersion")
     }
+
+    imports {
+        mavenBom("tools.jackson:jackson-bom:3.1.2")
+    }
 }
+
+extra["tomcat.version"] = "11.0.21"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
