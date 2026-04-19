@@ -27,7 +27,7 @@ val kotestVersion = "6.1.11"
 val mockOauth2ServerVersion = "3.0.1"
 val unleashVersion = "12.2.0"
 val springmockkVersion = "5.0.1"
-val jacksonModuleKotlinVersion = "3.1.1"
+val jacksonModuleKotlinVersion = "3.1.2"
 
 dependencyManagement {
     dependencies {
@@ -36,7 +36,7 @@ dependencyManagement {
     }
 
     imports {
-        mavenBom("tools.jackson:jackson-bom:3.1.2")
+        mavenBom("tools.jackson:jackson-bom:$jacksonModuleKotlinVersion")
     }
 }
 
