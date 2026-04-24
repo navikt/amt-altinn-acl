@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     val kotlinVersion = "2.3.20"
 
-    id("org.springframework.boot") version "4.0.5"
+    id("org.springframework.boot") version "4.0.6"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
@@ -34,13 +34,7 @@ dependencyManagement {
         dependency("com.squareup.okhttp3:okhttp:$okHttpVersion")
         dependency("com.squareup.okhttp3:mockwebserver:$okHttpVersion")
     }
-
-    imports {
-        mavenBom("tools.jackson:jackson-bom:$jacksonModuleKotlinVersion")
-    }
 }
-
-extra["tomcat.version"] = "11.0.21"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
