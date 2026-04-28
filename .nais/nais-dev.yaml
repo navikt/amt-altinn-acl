@@ -44,8 +44,6 @@ spec:
       value: https://platform.tt02.altinn.no
     - name: MASKINPORTEN_URL
       value: https://ver2.maskinporten.no
-  envFrom:
-    - secret: amt-altinn-acl-unleash-api-token
   azure:
     application:
       enabled: true
@@ -56,7 +54,6 @@ spec:
     outbound:
       external:
         - host: platform.tt02.altinn.no
-        - host: amt-unleash-api.nav.cloud.nais.io
   gcp:
     sqlInstances:
       - name: amt-altinn-acl-2
