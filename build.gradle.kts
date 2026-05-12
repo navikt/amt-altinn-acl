@@ -26,7 +26,7 @@ val mockkVersion = "1.14.9"
 val kotestVersion = "6.1.11"
 val mockOauth2ServerVersion = "3.0.1"
 val springmockkVersion = "5.0.1"
-val jacksonModuleKotlinVersion = "3.1.2"
+val jacksonModuleKotlinVersion = "3.1.3"
 
 dependencyManagement {
     dependencies {
