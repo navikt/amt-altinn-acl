@@ -22,11 +22,11 @@ val logstashEncoderVersion = "9.0"
 val shedlockVersion = "7.7.0"
 val tokenSupportVersion = "6.0.8"
 val okHttpVersion = "5.3.2"
-val mockkVersion = "1.14.9"
+val mockkVersion = "1.14.11"
 val kotestVersion = "6.1.11"
 val mockOauth2ServerVersion = "4.0.0"
 val springmockkVersion = "5.0.1"
-val jacksonModuleKotlinVersion = "3.1.3"
+val jacksonModuleKotlinVersion = "3.1.4"
 
 dependencyManagement {
     dependencies {
