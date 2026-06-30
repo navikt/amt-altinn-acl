@@ -24,7 +24,7 @@ val tokenSupportVersion = "6.0.8"
 val okHttpVersion = "5.4.0"
 val mockkVersion = "1.14.11"
 val kotestVersion = "6.1.11"
-val mockOauth2ServerVersion = "4.0.0"
+val mockOauth2ServerVersion = "4.0.1"
 val springmockkVersion = "5.0.1"
 val jacksonModuleKotlinVersion = "3.2.0"
 
