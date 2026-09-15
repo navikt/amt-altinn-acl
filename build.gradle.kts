@@ -17,7 +17,7 @@ repositories {
     maven { setUrl("https://github-package-registry-mirror.gc.nav.no/cached/maven-release") }
 }
 
-val commonVersion = "4.2026.09.01_09.49-e681e09ca089"
+val commonVersion = "4.2026.09.14_05.43-2bd32bda23c4"
 val logstashEncoderVersion = "9.0"
 val shedlockVersion = "7.10.0"
 val tokenSupportVersion = "6.0.12"
