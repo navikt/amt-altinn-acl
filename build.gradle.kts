@@ -18,8 +18,8 @@ repositories {
 }
 
 val commonVersion = "4.2026.09.14_05.43-2bd32bda23c4"
+val amtLibVersion = "1.2026.09.19_14.04-d95fadb1dbac"
 val logstashEncoderVersion = "9.0"
-val shedlockVersion = "7.10.1"
 val tokenSupportVersion = "6.0.12"
 val okHttpVersion = "5.5.0"
 val mockkVersion = "1.14.11"
@@ -54,15 +54,15 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-logging")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-flyway")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
     implementation("tools.jackson.module:jackson-module-kotlin:$jacksonModuleKotlinVersion")
 
+    implementation("no.nav.amt.deltakelser.lib:utils:$amtLibVersion")
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
-    implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
-
     implementation("no.nav.common:rest:$commonVersion")
     implementation("no.nav.common:token-client:$commonVersion")
     implementation("no.nav.common:job:$commonVersion")
@@ -78,6 +78,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.mockk:mockk-jvm:$mockkVersion")
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
     testImplementation("com.ninja-squad:springmockk:$springmockkVersion")
 }

@@ -1,7 +1,6 @@
 package no.nav.amt_altinn_acl.jobs
 
-import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
-import no.nav.amt_altinn_acl.jobs.leaderelection.LeaderElection
+import no.nav.amt.lib.utils.leaderelection.LeaderElectionClient
 import no.nav.amt_altinn_acl.service.RolleService
 import no.nav.common.job.JobRunner
 import org.springframework.scheduling.annotation.Scheduled
@@ -10,11 +9,10 @@ import org.springframework.stereotype.Component
 @Component
 class AltinnUpdater(
 	private val rolleService: RolleService,
-	private val leaderElection: LeaderElection,
+	private val leaderElection: LeaderElectionClient,
 ) {
 	@Scheduled(cron = "@hourly")
-	@SchedulerLock(name = "synkroniser_altinn_rettigheter", lockAtMostFor = "120m")
-	fun update() {
+	suspend fun update() {
 		if (leaderElection.isLeader()) {
 			JobRunner.run("synkroniser_altinn_rettigheter") {
 				rolleService.synchronizeUsers()
