@@ -2,14 +2,16 @@ package no.nav.amt_altinn_acl
 
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.matchers.shouldBe
+import io.mockk.coEvery
 import io.mockk.every
+import kotlinx.coroutines.test.runTest
+import no.nav.amt.lib.utils.leaderelection.LeaderElectionClient
 import no.nav.amt_altinn_acl.client.altinn.AltinnClient
 import no.nav.amt_altinn_acl.domain.RolleType
 import no.nav.amt_altinn_acl.domain.RolleType.KOORDINATOR
 import no.nav.amt_altinn_acl.domain.RolleType.VEILEDER
 import no.nav.amt_altinn_acl.domain.RollerIOrganisasjon
 import no.nav.amt_altinn_acl.jobs.AltinnUpdater
-import no.nav.amt_altinn_acl.jobs.leaderelection.LeaderElection
 import no.nav.amt_altinn_acl.repository.PersonRepository
 import no.nav.amt_altinn_acl.service.RolleService
 import no.nav.amt_altinn_acl.testutil.IntegrationTest
@@ -22,15 +24,15 @@ class AltinnUpdaterTests(
 	private val rolleService: RolleService,
 	private val altinnUpdater: AltinnUpdater,
 	@MockkBean private val altinnClient: AltinnClient,
-	@MockkBean private val leaderElection: LeaderElection,
+	@MockkBean private val leaderElection: LeaderElectionClient,
 ) : IntegrationTest() {
 	@BeforeEach
 	fun setup() {
-		every { leaderElection.isLeader() } returns true
+		coEvery { leaderElection.isLeader() } returns true
 	}
 
 	@Test
-	fun `update - utdatert bruker - skal synkronisere bruker`() {
+	fun `update - utdatert bruker - skal synkronisere bruker`() = runTest {
 		val organisasjonsnummer = "2131"
 		val personligIdent = Random.nextLong().toString()
 

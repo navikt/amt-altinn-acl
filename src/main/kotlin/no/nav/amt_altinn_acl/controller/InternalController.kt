@@ -14,7 +14,7 @@ class InternalController(
 ) {
 	@Unprotected
 	@GetMapping("/altinn/synkroniser")
-	fun synkroniserAltinnRettigheter(
+	suspend fun synkroniserAltinnRettigheter(
 		servlet: HttpServletRequest,
 	) = if (isInternal(servlet)) {
 		altinnUpdater.update()
