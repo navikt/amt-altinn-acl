@@ -10,6 +10,6 @@
         <appender-ref ref="consolePlain"/>
     </root>
 
-    <logger name="no.nav.amt_altinn_acl" level="DEBUG"/>
+    <logger name="no.nav.amt.altinn.acl" level="DEBUG"/>
 </configuration>
 
