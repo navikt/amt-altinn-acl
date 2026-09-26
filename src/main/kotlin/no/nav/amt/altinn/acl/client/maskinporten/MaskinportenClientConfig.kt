@@ -15,6 +15,13 @@ import org.springframework.security.oauth2.client.registration.InMemoryClientReg
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod
 import org.springframework.web.client.RestClient
 
+/**
+ * Kobler Maskinportens JWT-bearer-grant til Spring Security sin OAuth2-klientflyt.
+ *
+ * Maskinporten bruker en signert JWT-assertion i stedet for vanlig
+ * `client_secret`-autentisering eller `client_credentials`. Derfor registreres
+ * klienten og grant-provideren eksplisitt her.
+ */
 @Configuration(proxyBeanMethods = false)
 class MaskinportenClientConfig {
     @Value($$"${altinn3.url}")
@@ -35,9 +42,14 @@ class MaskinportenClientConfig {
     @Value($$"${maskinporten.client-jwk}")
     lateinit var maskinportenClientJwk: String
 
-    // Maskinporten sitt jwt-bearer-grant med selvsignert assertion er ikke et standard
-    // OAuth2 client_credentials-flow, så vi registrerer klienten selv i stedet for å
-    // bruke spring.security.oauth2.client.registration.* auto-konfigurasjon.
+    /**
+     * Registrerer Altinn-klienten med Maskinportens JWT-bearer-grant.
+     *
+     * Standardregistreringen for `client_credentials` kan ikke brukes fordi
+     * Maskinporten krever en signert assertion. `ClientAuthenticationMethod.NONE`
+     * betyr at klienten ikke autentiserer seg med client secret; assertionen
+     * sendes som del av grant-forespørselen.
+     */
     @Bean
     fun clientRegistrationRepository(): ClientRegistrationRepository {
         val registration = ClientRegistration
@@ -52,6 +64,11 @@ class MaskinportenClientConfig {
         return InMemoryClientRegistrationRepository(registration)
     }
 
+    /**
+     * Oppretter signeringskomponenten som lager en kortlivet assertion for hver
+     * tokenforespørsel. Assertionen identifiserer klienten overfor Maskinporten
+     * og angir Altinn 3 som ressursen tokenet skal brukes mot.
+     */
     @Bean
     fun maskinportenJwtAssertionBuilder(): MaskinportenJwtAssertionBuilder = MaskinportenJwtAssertionBuilder(
         clientId = maskinportenClientId,
@@ -67,6 +84,11 @@ class MaskinportenClientConfig {
      * Spring sin [OAuth2AuthorizedClientManager] håndterer caching og fornyelse av token.
      * Manageren pakkes med en fast principal fordi Maskinporten-tokenet tilhører applikasjonen,
      * ikke brukeren eller tjenesten som utløste Altinn-kallet.
+     *
+     * Den egendefinerte provideren utfører bare tokenutvekslingen. Den returnerer et nytt
+     * `OAuth2AuthorizedClient` når token mangler eller nærmer seg utløp; ellers lar den Spring
+     * beholde det eksisterende tokenet. `RestClient.Builder` er Boot-konfigurert og gir
+     * tokenkallet samme timeout- og observability-oppsett som øvrige HTTP-klienter.
      */
     @Bean
     fun authorizedClientManager(

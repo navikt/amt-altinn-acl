@@ -36,6 +36,14 @@ class MaskinportenAuthorizedClientProvider(
     private val assertionBuilder: MaskinportenJwtAssertionBuilder,
     private val restClient: RestClient,
 ) : OAuth2AuthorizedClientProvider {
+    /**
+     * Henter et nytt token bare for Maskinportens grant og bare når det trengs.
+     *
+     * Spring bruker `null` som signal om at provideren ikke har endret autoriseringen:
+     * enten fordi grant-typen tilhører en annen provider, eller fordi eksisterende token
+     * fortsatt er gyldig. Ved fornyelse kalles token-endepunktet. Feil fra dette
+     * endepunktet gir en exception uten rå responsbody, som kan inneholde sensitiv informasjon.
+     */
     override fun authorize(context: OAuth2AuthorizationContext): OAuth2AuthorizedClient? {
         // En provider skal returnere null for grant-typer den ikke støtter, slik at
         // Spring Security kan prøve neste provider i kjeden.
@@ -52,6 +60,13 @@ class MaskinportenAuthorizedClientProvider(
         return hentNyttToken(context)
     }
 
+    /**
+     * Bytter en signert klientassertion mot et Maskinporten access token.
+     *
+     * Assertionen og scope sendes som form-url-encoded data. Responsens utløpstid
+     * brukes til å opprette Spring sitt tokenobjekt, slik at manageren kan lagre
+     * tokenet og senere avgjøre når det må fornyes.
+     */
     private fun hentNyttToken(context: OAuth2AuthorizationContext): OAuth2AuthorizedClient {
         val formData = LinkedMultiValueMap<String, String>().apply {
             add("grant_type", MASKINPORTEN_JWT_BEARER_GRANT_TYPE.value)
@@ -89,12 +104,17 @@ class MaskinportenAuthorizedClientProvider(
         )
     }
 
+    /**
+     * Behandler tokenet som utløpt ti sekunder før faktisk utløp for å redusere
+     * risikoen for at det rekker å utløpe mens et Altinn-kall er underveis.
+     */
     private fun isExpired(authorizedClient: OAuth2AuthorizedClient): Boolean {
         val expiresAt = authorizedClient.accessToken.expiresAt ?: return true
         return Instant.now().isAfter(expiresAt.minusSeconds(EXPIRY_SKEW_SECONDS))
     }
 
     companion object {
+        // Brukes bare dersom tokenresponsen mangler expires_in eller oppgir en ugyldig verdi.
         private const val DEFAULT_LIFETIME_SECONDS = 120L
         private const val EXPIRY_SKEW_SECONDS = 10L
     }
