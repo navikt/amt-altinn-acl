@@ -12,6 +12,7 @@ import org.springframework.security.authentication.TestingAuthenticationToken
 import org.springframework.security.oauth2.client.OAuth2AuthorizationContext
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient
 import org.springframework.security.oauth2.client.registration.ClientRegistration
+import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod
 import org.springframework.security.oauth2.core.OAuth2AccessToken
 import org.springframework.web.client.RestClient
@@ -19,7 +20,7 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 
-class MaskinportenAuthorizedClientProviderTest {
+class MaskinportenJwtBearerProviderTest {
     private lateinit var mockServer: MockMaskinportenHttpClient
 
     private val assertionBuilder = MaskinportenJwtAssertionBuilder(
@@ -30,9 +31,9 @@ class MaskinportenAuthorizedClientProviderTest {
         privateJwk = TEST_JWK,
     )
 
-    private val provider = MaskinportenAuthorizedClientProvider(
-        assertionBuilder,
-        RestClient.builder().build(),
+    private val provider = maskinportenJwtBearerProvider(
+        assertionBuilder = assertionBuilder,
+        restClientBuilder = RestClient.builder(),
     )
     private val principal = TestingAuthenticationToken("system", "n/a")
 
@@ -49,7 +50,7 @@ class MaskinportenAuthorizedClientProviderTest {
         .withRegistrationId("altinn3")
         .clientId("client-id")
         .tokenUri(tokenUri)
-        .authorizationGrantType(MASKINPORTEN_JWT_BEARER_GRANT_TYPE)
+        .authorizationGrantType(AuthorizationGrantType.JWT_BEARER)
         .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
         .scope("scope1", "scope2")
         .build()
@@ -74,6 +75,7 @@ class MaskinportenAuthorizedClientProviderTest {
         request.path shouldBe "/token"
         request.method shouldBe "POST"
         formData["grant_type"] shouldBe "urn:ietf:params:oauth:grant-type:jwt-bearer"
+        formData["client_id"] shouldBe "client-id"
         formData["scope"] shouldBe "scope1 scope2"
         formData["assertion"].shouldNotBe(null)
     }
@@ -101,14 +103,14 @@ class MaskinportenAuthorizedClientProviderTest {
     }
 
     @Test
-    fun `authorize - token utløpt - henter nytt token`() {
+    fun `authorize - token nær utløp - henter nytt token med ti sekunders klokkeslakk`() {
         mockServer.enqueueTokenResponse()
 
         val utloptToken = OAuth2AccessToken(
             OAuth2AccessToken.TokenType.BEARER,
             "utlopt-token",
             Instant.now().minusSeconds(600),
-            Instant.now().minusSeconds(1),
+            Instant.now().plusSeconds(5),
         )
         val existing = OAuth2AuthorizedClient(registration(), "system", utloptToken)
 
@@ -121,6 +123,25 @@ class MaskinportenAuthorizedClientProviderTest {
 
         result.shouldNotBe(null)
         result!!.accessToken.tokenValue shouldNotBe "utlopt-token"
+    }
+
+    @Test
+    fun `authorize - tokenrespons mangler expires in - bruker standard levetid`() {
+        mockServer.enqueue(
+            headers = mapOf("Content-Type" to "application/json"),
+            body = """{ "token_type": "Bearer", "access_token": "token-without-expiration" }""",
+        )
+
+        val context = OAuth2AuthorizationContext
+            .withClientRegistration(registration())
+            .principal(principal)
+            .build()
+
+        val result = provider.authorize(context)
+
+        result.shouldNotBe(null)
+        val secondsUntilExpiry = result!!.accessToken.expiresAt!!.epochSecond - Instant.now().epochSecond
+        (secondsUntilExpiry in 119L..120L) shouldBe true
     }
 
     @Test
@@ -139,8 +160,12 @@ class MaskinportenAuthorizedClientProviderTest {
             provider.authorize(context)
         }
 
-        exception.message shouldBe "Klarte ikke hente Maskinporten-token code=400"
-        exception.cause shouldBe null
+        val exceptionMessages = generateSequence<Throwable>(exception) { it.cause }
+            .mapNotNull { it.message }
+            .joinToString(" ")
+
+        exceptionMessages.contains("code=400") shouldBe true
+        exceptionMessages.contains("assertion 12345678901 expired") shouldBe false
     }
 
     private fun parseFormData(formData: String): Map<String, String> = formData

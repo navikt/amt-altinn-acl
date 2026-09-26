@@ -2,14 +2,14 @@ package no.nav.amt.altinn.acl.client.maskinporten
 
 import com.nimbusds.jose.crypto.RSASSAVerifier
 import com.nimbusds.jose.jwk.RSAKey
+import com.nimbusds.jwt.SignedJWT
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.amt.altinn.acl.testutil.Constants.TEST_JWK
 import org.junit.jupiter.api.Test
 
 /**
- * Se MaskinportenAuthorizedClientProvider for den historiske bakgrunnen (regresjon mot
- * "******"-buggen i Authorization-header).
+ * Testene bekrefter at assertionen signeres riktig før Spring sender den til Maskinporten.
  */
 class MaskinportenJwtAssertionBuilderTest {
     private val rsaKey = RSAKey.parse(TEST_JWK)
@@ -42,6 +42,19 @@ class MaskinportenJwtAssertionBuilderTest {
         val jwt = builder.build()
 
         jwt.verify(RSASSAVerifier(rsaKey.toRSAPublicKey())) shouldBe true
+    }
+
+    @Test
+    fun `buildJwt - beholder signert assertion som tokenverdi for Spring`() {
+        val jwt = builder.buildJwt()
+
+        SignedJWT.parse(jwt.tokenValue).verify(RSASSAVerifier(rsaKey.toRSAPublicKey())) shouldBe true
+        jwt.subject shouldBe "client-id"
+        jwt.getClaimAsString("iss") shouldBe "client-id"
+        jwt.audience shouldBe listOf("https://issuer.example")
+        jwt.getClaimAsString("scope") shouldBe "scope1 scope2"
+        jwt.getClaimAsString("resource") shouldBe "https://platform.tt02.altinn.no"
+        jwt.headers["kid"] shouldBe rsaKey.keyID
     }
 
     @Test

@@ -4,16 +4,24 @@ import no.nav.amt.altinn.acl.client.altinn.ALTINN3_CLIENT_ID
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.converter.FormHttpMessageConverter
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService
+import org.springframework.security.oauth2.client.JwtBearerOAuth2AuthorizedClientProvider
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder
+import org.springframework.security.oauth2.client.endpoint.RestClientJwtBearerTokenResponseClient
 import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository
+import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod
+import org.springframework.security.oauth2.core.endpoint.DefaultMapOAuth2AccessTokenResponseConverter
+import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter
 import org.springframework.web.client.RestClient
+import org.springframework.web.client.RestClientException
+import java.time.Duration
 
 /**
  * Kobler Maskinportens JWT-bearer-grant til Spring Security sin OAuth2-klientflyt.
@@ -56,7 +64,7 @@ class MaskinportenClientConfig {
             .withRegistrationId(ALTINN3_CLIENT_ID)
             .clientId(maskinportenClientId)
             .tokenUri(maskinportenTokenEndpoint)
-            .authorizationGrantType(MASKINPORTEN_JWT_BEARER_GRANT_TYPE)
+            .authorizationGrantType(AuthorizationGrantType.JWT_BEARER)
             .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
             .scope(*maskinportenScopes.split(" ").toTypedArray())
             .build()
@@ -79,16 +87,15 @@ class MaskinportenClientConfig {
     )
 
     /**
-     * Konfigurerer Maskinporten som et egendefinert JWT-bearer-grant i Spring Security.
+     * Konfigurerer Maskinportens JWT-bearer-grant i Spring Security.
      *
      * Spring sin [OAuth2AuthorizedClientManager] håndterer caching og fornyelse av token.
      * Manageren pakkes med en fast principal fordi Maskinporten-tokenet tilhører applikasjonen,
      * ikke brukeren eller tjenesten som utløste Altinn-kallet.
      *
-     * Den egendefinerte provideren utfører bare tokenutvekslingen. Den returnerer et nytt
-     * `OAuth2AuthorizedClient` når token mangler eller nærmer seg utløp; ellers lar den Spring
-     * beholde det eksisterende tokenet. `RestClient.Builder` er Boot-konfigurert og gir
-     * tokenkallet samme timeout- og observability-oppsett som øvrige HTTP-klienter.
+     * Spring sin JWT-bearer-provider utfører tokenutvekslingen og håndterer utløp.
+     * Den egendefinerte assertionbyggeren leverer Maskinporten-assertionen, og tokenkallet
+     * bruker Boot-konfigurert `RestClient` for å dele timeout- og observability-oppsett.
      */
     @Bean
     fun authorizedClientManager(
@@ -99,9 +106,9 @@ class MaskinportenClientConfig {
         val authorizedClientProvider = OAuth2AuthorizedClientProviderBuilder
             .builder()
             .provider(
-                MaskinportenAuthorizedClientProvider(
-                    maskinportenJwtAssertionBuilder,
-                    restClientBuilder.build(),
+                maskinportenJwtBearerProvider(
+                    assertionBuilder = maskinportenJwtAssertionBuilder,
+                    restClientBuilder = restClientBuilder,
                 ),
             ).build()
 
@@ -114,6 +121,59 @@ class MaskinportenClientConfig {
         return fixedPrincipalManager(delegate)
     }
 }
+
+/**
+ * Lager Spring sin innebygde JWT-bearer-provider med Maskinportens assertion og token-endepunkt.
+ *
+ * Klokkeslakk på ti sekunder viderefører fornyelsesmarginen fra den tidligere provideren.
+ * Hvis tokenresponsen mangler en gyldig utløpstid, brukes samme standardlevetid som tidligere.
+ * Feilsvar fra token-endepunktet redigeres før Spring bygger OAuth2-feilen, slik at rå
+ * responsbody ikke blir del av feilmeldingen.
+ */
+internal fun maskinportenJwtBearerProvider(
+    assertionBuilder: MaskinportenJwtAssertionBuilder,
+    restClientBuilder: RestClient.Builder,
+): JwtBearerOAuth2AuthorizedClientProvider {
+    val restClientTokenResponseClient = RestClientJwtBearerTokenResponseClient().apply {
+        setRestClient(
+            restClientBuilder
+                .clone()
+                .configureMessageConverters { converters ->
+                    converters.addCustomConverter(FormHttpMessageConverter())
+                    converters.addCustomConverter(maskinportenTokenResponseConverter())
+                }.defaultStatusHandler({ status -> status.isError }) { _, response ->
+                    throw RestClientException("Klarte ikke hente Maskinporten-token code=${response.statusCode.value()}")
+                }.build(),
+        )
+    }
+
+    return JwtBearerOAuth2AuthorizedClientProvider().apply {
+        setJwtAssertionResolver { assertionBuilder.buildJwt() }
+        setAccessTokenResponseClient(restClientTokenResponseClient)
+        setClockSkew(Duration.ofSeconds(10))
+    }
+}
+
+/**
+ * Beholder Spring sin standardtolking av tokenresponsen, men setter en avgrenset
+ * standardlevetid når Maskinporten utelater `expires_in` eller oppgir en ugyldig verdi.
+ */
+private fun maskinportenTokenResponseConverter(): OAuth2AccessTokenResponseHttpMessageConverter {
+    val defaultConverter = DefaultMapOAuth2AccessTokenResponseConverter()
+
+    return OAuth2AccessTokenResponseHttpMessageConverter().apply {
+        setAccessTokenResponseConverter { parameters ->
+            val expiresIn = parameters["expires_in"]?.toString()?.toLongOrNull()
+            if (expiresIn == null || expiresIn <= 0) {
+                defaultConverter.convert(parameters + ("expires_in" to DEFAULT_TOKEN_LIFETIME_SECONDS))
+            } else {
+                defaultConverter.convert(parameters)
+            }
+        }
+    }
+}
+
+private const val DEFAULT_TOKEN_LIFETIME_SECONDS = 120L
 
 /**
  * Erstatter innkommende principal med en stabil applikasjonsprincipal.

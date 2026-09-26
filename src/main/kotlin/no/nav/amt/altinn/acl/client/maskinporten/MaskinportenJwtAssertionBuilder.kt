@@ -6,6 +6,7 @@ import com.nimbusds.jose.crypto.RSASSASigner
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jwt.JWTClaimsSet
 import com.nimbusds.jwt.SignedJWT
+import org.springframework.security.oauth2.jwt.Jwt
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
@@ -54,6 +55,24 @@ class MaskinportenJwtAssertionBuilder(
      */
     fun build(): SignedJWT = SignedJWT(assertionHeader(privateJwkKeyId), assertionClaims()).apply {
         sign(assertionSigner)
+    }
+
+    /**
+     * Tilpasser den signerte assertionen til Spring Securitys JWT-type, som den innebygde
+     * JWT-bearer-provideren bruker i grant-forespørselen. Tokenverdien er fortsatt den
+     * signerte JWT-en; claims og headers kopieres kun for Spring sin modell.
+     */
+    fun buildJwt(): Jwt {
+        val signedAssertion = build()
+        val claims = signedAssertion.jwtClaimsSet
+
+        return Jwt
+            .withTokenValue(signedAssertion.serialize())
+            .headers { it.putAll(signedAssertion.header.toJSONObject()) }
+            .claims { it.putAll(claims.claims) }
+            .issuedAt(claims.issueTime.toInstant())
+            .expiresAt(claims.expirationTime.toInstant())
+            .build()
     }
 
     /**

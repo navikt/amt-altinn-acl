@@ -28,7 +28,7 @@ abstract class IntegrationTest : RepositoryTestBase() {
     /**
      * Altinn-klienten mockes her i stedet for å kjøre en lokal HTTP-mockserver.
      * HTTP-kontrakten mot Altinn dekkes av AltinnApiTest (MockRestServiceServer) og
-     * Maskinporten-flyten av MaskinportenAuthorizedClientProviderTest, så integrasjonstestene
+     * Maskinporten-flyten av MaskinportenJwtBearerProviderTest, så integrasjonstestene
      * kan konsentrere seg om applikasjonens egen oppførsel.
      */
     @MockkBean

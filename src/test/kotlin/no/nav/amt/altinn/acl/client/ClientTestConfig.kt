@@ -18,7 +18,7 @@ import java.time.Instant
  * Testkonfigurasjon for deklarative HTTP-klienter (jf. amt-arrangor sitt RestClientTestBase-mønster).
  *
  * Binder hver http-klient-gruppe (definert via @ImportHttpServices) til sin egen MockRestServiceServer,
- * og erstatter den ekte Maskinporten-autoriseringen (MaskinportenAuthorizedClientProvider) med en enkel,
+ * og erstatter den ekte Maskinporten-autoriseringen (Spring sin JWT-bearer-provider) med en enkel,
  * deterministisk OAuth2AuthorizedClientManager - vi tester HTTP-kontrakten til klienten, ikke Maskinporten-flyten.
  */
 @TestConfiguration(proxyBeanMethods = false)
