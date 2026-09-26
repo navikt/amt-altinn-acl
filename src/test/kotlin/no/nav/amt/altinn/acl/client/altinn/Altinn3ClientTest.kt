@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatusCode
 import org.springframework.web.client.RestClientResponseException
 import java.nio.charset.StandardCharsets
 
-class Altinn3ClientImplTest {
+class Altinn3ClientTest {
     private val altinnApi = mockk<AltinnApi>()
     private val altinnClient = Altinn3Client(altinnApi)
 
