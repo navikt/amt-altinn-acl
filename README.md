@@ -9,8 +9,6 @@ I Altinn er det mulig for daglig leder eller andre med riktige rettigheter å gi
 ## Caching
 Roller caches ved å sjekke på når en person sist var oppdatert via `last_synchronized` feltet. Hvis det har gått en stund siden sist så spør vi Altinn om hvilke ressurser de har tilgang til.
 
-Tabellen `rettigheter_cache` er ikke i bruk, og inneholder en gammel og utdatert cache.
-
 ## Testmiljø
 
 Vi i Komet jobber med deltakere på tiltak, en deltaker deltar på en gjennomføring. Gjennomføringer i testmiljø (Q2) er koblet mot ekte organsiasjonser (typisk orgnr 9XX XXX XXX). Mens testmiljøet til Altinn bruker kun syntetiske organsiasjoner (typisk orgnr 3- eller 2XX XXX XXX). Dette gjør at vi ikke kan styre tilganger til koordinatorer og veiledere i Deltakeroversikten for gjennomføringer i testmiljø. Måten dette er omgått på er ved å manuelt inserte roller i `rolle` tabellen samt at man har satt `last_synchronized` til en gang langt frem i tid (slik at den er teknisk sett cachet for alltid). 
