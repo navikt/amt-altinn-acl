@@ -11,42 +11,41 @@ import java.util.UUID
 
 @SpringBootTest(classes = [RolleRepository::class, PersonRepository::class])
 class RolleRepositoryTest(
-	private val personRepository: PersonRepository,
-	private val rolleRepository: RolleRepository,
+    private val personRepository: PersonRepository,
+    private val rolleRepository: RolleRepository,
 ) : RepositoryTestBase() {
-	private var personId: Long = Long.MIN_VALUE
+    private var personId: Long = Long.MIN_VALUE
 
-	@BeforeEach
-	internal fun setUp() {
-		val person = personRepository.create("12345678")
-		personId = person.id
-	}
+    @BeforeEach
+    internal fun setUp() {
+        val person = personRepository.create("12345678")
+        personId = person.id
+    }
 
-	@Test
-	internal fun `createRolle - returns correct rolle`() {
-		val organisasjonsnummer = UUID.randomUUID().toString()
+    @Test
+    internal fun `createRolle - returns correct rolle`() {
+        val organisasjonsnummer = UUID.randomUUID().toString()
 
-		val rolle = rolleRepository.createRolle(personId, organisasjonsnummer, RolleType.VEILEDER)
+        val rolle = rolleRepository.createRolle(personId, organisasjonsnummer, RolleType.VEILEDER)
 
-		rolle.organisasjonsnummer shouldBe organisasjonsnummer
-	}
+        rolle.organisasjonsnummer shouldBe organisasjonsnummer
+    }
 
-	@Test
-	internal fun `invalidateRolle - Sets validTo to current timestamp - does not return from getValidRules`() {
-		val organisasjonsnummer = UUID.randomUUID().toString()
+    @Test
+    internal fun `invalidateRolle - Sets validTo to current timestamp - does not return from getValidRules`() {
+        val organisasjonsnummer = UUID.randomUUID().toString()
 
-		val rolle = rolleRepository.createRolle(personId, organisasjonsnummer, RolleType.VEILEDER)
-		rolleRepository.invalidateRolle(rolle.id)
+        val rolle = rolleRepository.createRolle(personId, organisasjonsnummer, RolleType.VEILEDER)
+        rolleRepository.invalidateRolle(rolle.id)
 
-		val gyldigeRoller =
-			rolleRepository
-				.hentRollerForPerson(personId)
-				.filter { it.erGyldig() }
+        val gyldigeRoller = rolleRepository
+            .hentRollerForPerson(personId)
+            .filter { it.erGyldig() }
 
-		gyldigeRoller.isEmpty() shouldBe true
+        gyldigeRoller.isEmpty() shouldBe true
 
-		val alleRoller = rolleRepository.hentRollerForPerson(personId)
-		alleRoller.size shouldBe 1
-		alleRoller.first().validTo shouldNotBe null
-	}
+        val alleRoller = rolleRepository.hentRollerForPerson(personId)
+        alleRoller.size shouldBe 1
+        alleRoller.first().validTo shouldNotBe null
+    }
 }

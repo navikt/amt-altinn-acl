@@ -1,75 +1,91 @@
 package no.nav.amt.altinn.acl.testutil
 
+import com.ninjasquad.springmockk.MockkBean
+import io.mockk.clearMocks
+import io.mockk.every
+import no.nav.amt.altinn.acl.client.altinn.Altinn3Client
+import no.nav.amt.altinn.acl.config.SecurityConfig
+import no.nav.amt.altinn.acl.domain.RolleType
 import no.nav.amt.altinn.acl.testutil.Constants.TEST_JWK
-import no.nav.amt.altinn.acl.testutil.mock_clients.MockAltinnHttpServer
-import no.nav.amt.altinn.acl.testutil.mock_clients.MockMaskinportenHttpClient
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody
-import okhttp3.Response
+import org.junit.jupiter.api.AfterEach
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.context.annotation.Import
+import org.springframework.security.oauth2.jwt.JwtClaimsSet
+import org.springframework.security.oauth2.jwt.JwtEncoder
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import java.time.Duration
+import java.time.Instant
+import java.util.UUID
 
-@Import(TestConfig::class)
+@Import(TestJwtConfig::class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 abstract class IntegrationTest : RepositoryTestBase() {
-	@LocalServerPort
-	private var port: Int = 0
+    @Autowired
+    private lateinit var jwtEncoder: JwtEncoder
 
-	private val client =
-		OkHttpClient
-			.Builder()
-			.callTimeout(Duration.ofMinutes(5))
-			.build()
+    /**
+     * Altinn-klienten mockes her i stedet for å kjøre en lokal HTTP-mockserver.
+     * HTTP-kontrakten mot Altinn dekkes av AltinnApiTest (MockRestServiceServer) og
+     * Maskinporten-flyten av MaskinportenAuthorizedClientProviderTest, så integrasjonstestene
+     * kan konsentrere seg om applikasjonens egen oppførsel.
+     */
+    @MockkBean
+    lateinit var altinnClient: Altinn3Client
 
-	companion object {
-		val oAuthServer = MockOAuthServer()
-		val mockAltinnHttpClient = MockAltinnHttpServer()
-		val mockMaskinportenHttpClient = MockMaskinportenHttpClient()
+    @AfterEach
+    fun clearClientMocks() = clearMocks(altinnClient)
 
-		@JvmStatic
-		@DynamicPropertySource
-		@Suppress("unused")
-		fun registerProperties(registry: DynamicPropertyRegistry) {
-			oAuthServer.start()
-			mockAltinnHttpClient.start()
-			mockMaskinportenHttpClient.start()
+    /**
+     * Speiler responsen fra Altinn3Client.hentRoller: alle forespurte rolletyper er med i mappet,
+     * men kun de rollene personen faktisk har peker på organisasjonsnumre.
+     */
+    protected fun mockAltinnRoller(
+        norskIdent: String,
+        roller: List<RolleType>,
+        organisasjonsnummer: List<String>,
+    ) {
+        every { altinnClient.hentRoller(norskIdent, RolleType.entries) } returns
+            RolleType.entries.associateWith { rolleType ->
+                if (rolleType in roller) organisasjonsnummer else emptyList()
+            }
+    }
 
-			registry.add("no.nav.security.jwt.issuer.azuread.discovery-url", oAuthServer::getDiscoveryUrl)
-			registry.add("no.nav.security.jwt.issuer.azuread.accepted-audience") { "test-aud" }
+    protected fun issueAzureAdM2MToken(): String = issueAzureAdToken(
+        roles = listOf(SecurityConfig.ACCESS_AS_APPLICATION_ROLE),
+    )
 
-			registry.add("altinn3.url", mockAltinnHttpClient::serverUrl)
+    protected fun issueAzureAdToken(
+        subject: UUID = UUID.randomUUID(),
+        audience: String = TEST_AUDIENCE,
+        roles: List<String> = emptyList(),
+    ): String {
+        val claims = JwtClaimsSet
+            .builder()
+            .issuer(TEST_ISSUER)
+            .subject(subject.toString())
+            .audience(listOf(audience))
+            .claim("oid", UUID.randomUUID().toString())
+            .claim("roles", roles)
+            .issuedAt(Instant.now())
+            .expiresAt(Instant.now().plusSeconds(3600))
+            .build()
 
-			registry.add("maskinporten.scopes") { "scope1 scope2" }
-			registry.add("maskinporten.client-id") { "abc123" }
-			registry.add("maskinporten.issuer") { "https://test-issuer" }
-			registry.add("maskinporten.token-endpoint") { mockMaskinportenHttpClient.serverUrl() }
-			registry.add("maskinporten.client-jwk") { TEST_JWK }
-		}
-	}
+        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).tokenValue
+    }
 
-	fun serverUrl() = "http://localhost:$port"
+    companion object {
+        // Må stemme med src/test/resources/application-test.yml
+        private const val TEST_ISSUER = "http://localhost:9999/azuread"
+        private const val TEST_AUDIENCE = "test-aud"
 
-	protected fun sendRequest(
-		method: String,
-		path: String,
-		body: RequestBody? = null,
-		headers: Map<String, String> = emptyMap(),
-	): Response {
-		val reqBuilder =
-			Request
-				.Builder()
-				.url("${serverUrl()}$path")
-				.method(method, body)
-
-		headers.forEach {
-			reqBuilder.addHeader(it.key, it.value)
-		}
-
-		return client.newCall(reqBuilder.build()).execute()
-	}
+        // Maskinporten-nøkkelen ligger i Constants for å unngå å duplisere den i konfigfilen
+        @JvmStatic
+        @DynamicPropertySource
+        @Suppress("unused")
+        fun registerProperties(registry: DynamicPropertyRegistry) {
+            registry.add("maskinporten.client-jwk") { TEST_JWK }
+        }
+    }
 }
