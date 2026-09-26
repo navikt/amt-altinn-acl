@@ -4,14 +4,6 @@ elector:
   path: dont_look_for_leader
 server:
   port: '8089'
-'no':
-  nav:
-    security:
-      jwt:
-        issuer:
-          azuread:
-            discovery-url: http://localhost:9000/azure/.well-known/openid-configuration
-            accepted-audience: amt-altinn
 altinn3:
   url: http://localhost:9002/altinn
 maskinporten:
@@ -29,6 +21,12 @@ maskinporten:
     "n": "pgLC3kZjI0bgHX1HBQalhv8AiOHbpHkliKYyG_FjFe4uTdu8Az3cjjA6Fy77oGbfso7BzbhiOCDhj4DZq01tpKqLB2FU9pUyRnDotMmd8C0aINERyUkZeYALjza6BBr5531XhUTPlAPPQgChPuxsRfBj25eaf9Ep6YOo-75m9KG6esdhCiYqk0zqQBtusVD7wlrNDsYvezTnBVEpAYX2-VeX3ZXRanmdkDHJEwihuHJGE60Nx8ivLuj63a7Ii_lRoH6q2ekHa9XYnOToQj2PqhP7rFPyIoM5s7ys1Gw5HAjYfUoHnBHkZdQiI8mJ8AngOX57FXf1q3hMsPuR6LdbaQ"
     }'
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9000/azure
+          audiences: amt-altinn
   datasource:
     url: jdbc:postgresql://localhost:5432/amt_altinn_db
     username: myuser

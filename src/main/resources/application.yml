@@ -11,6 +11,23 @@ spring:
     hikari:
       maximum-pool-size: 3
 
+  http:
+    clients:
+      connect-timeout: 5s
+      read-timeout: 20s
+    serviceclient:
+      altinn3:
+        base-url: ${altinn3.url}
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AZURE_OPENID_CONFIG_ISSUER}
+          audiences: ${AZURE_APP_CLIENT_ID}
+          authorities-claim-name: roles
+          authority-prefix: ROLE_
+
 server:
   shutdown: graceful
 
@@ -37,21 +54,12 @@ management:
       export:
         enabled: true
 
-"no":
-  nav:
-    security:
-      jwt:
-        issuer:
-          azuread:
-            discovery-url: ${AZURE_APP_WELL_KNOWN_URL:#{null}}
-            accepted-audience: ${AZURE_APP_CLIENT_ID:#{null}}
-
 altinn3:
-  url: ${ALTINN3_URL:#{null}}
+  url: ${ALTINN3_URL}
 
 maskinporten:
-  scopes: ${MASKINPORTEN_SCOPES:#{null}}
-  client-id: ${MASKINPORTEN_CLIENT_ID:#{null}}
-  issuer: ${MASKINPORTEN_ISSUER:#{null}}
-  token-endpoint: ${MASKINPORTEN_TOKEN_ENDPOINT:#{null}}
-  client-jwk: ${MASKINPORTEN_CLIENT_JWK:#{null}}
+  scopes: ${MASKINPORTEN_SCOPES}
+  client-id: ${MASKINPORTEN_CLIENT_ID}
+  issuer: ${MASKINPORTEN_ISSUER}
+  token-endpoint: ${MASKINPORTEN_TOKEN_ENDPOINT}
+  client-jwk: ${MASKINPORTEN_CLIENT_JWK}

@@ -16,24 +16,24 @@ import javax.sql.DataSource
 @AutoConfigureJdbc
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 abstract class RepositoryTestBase {
-	@Autowired
-	private lateinit var dataSource: DataSource
+    @Autowired
+    private lateinit var dataSource: DataSource
 
-	@AfterEach
-	fun cleanDatabase() = cleanDatabase(dataSource)
+    @AfterEach
+    fun cleanDatabase() = cleanDatabase(dataSource)
 
-	companion object {
-		private const val POSTGRES_DOCKER_IMAGE_NAME = "postgres:17-alpine"
+    companion object {
+        private const val POSTGRES_DOCKER_IMAGE_NAME = "postgres:17-alpine"
 
-		@ServiceConnection
-		private val postgres =
-			PostgreSQLContainer(
-				DockerImageName
-					.parse(POSTGRES_DOCKER_IMAGE_NAME)
-					.asCompatibleSubstituteFor("postgres"),
-			).apply {
-				addEnv("TZ", "Europe/Oslo")
-				waitingFor(Wait.forListeningPort())
-			}
-	}
+        @ServiceConnection
+        private val postgres =
+            PostgreSQLContainer(
+                DockerImageName
+                    .parse(POSTGRES_DOCKER_IMAGE_NAME)
+                    .asCompatibleSubstituteFor("postgres"),
+            ).apply {
+                addEnv("TZ", "Europe/Oslo")
+                waitingFor(Wait.forListeningPort())
+            }
+    }
 }
