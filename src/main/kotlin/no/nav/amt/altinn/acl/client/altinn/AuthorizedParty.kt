@@ -7,6 +7,10 @@ data class AuthorizedParty(
     val authorizedResources: Set<String>,
     val subunits: List<AuthorizedParty>,
 ) {
+    /**
+     * Finner tilganger for etterspurte ressurser i denne organisasjonen og alle underenhetene.
+     * Organisasjoner uten organisasjonsnummer gir ingen egne tilganger, men underenhetene behandles fortsatt.
+     */
     fun finnTilganger(resourceIds: Set<String>): List<Tilgang> {
         val tilganger = organizationNumber
             ?.let {

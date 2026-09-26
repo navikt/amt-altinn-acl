@@ -18,15 +18,14 @@ class RolleController(
     ): HentRollerResponse {
         hentRollerRequest.validatePersonident()
 
-        val tiltaksarrangorRoller =
-            rolleService
-                .getRollerForPerson(hentRollerRequest.personident)
-                .map { rolle ->
-                    HentRollerResponse.TiltaksarrangorRoller(
-                        rolle.organisasjonsnummer,
-                        rolle.roller.map { it.rolleType },
-                    )
-                }
+        val tiltaksarrangorRoller = rolleService
+            .getRollerForPerson(hentRollerRequest.personident)
+            .map { rolle ->
+                HentRollerResponse.TiltaksarrangorRoller(
+                    rolle.organisasjonsnummer,
+                    rolle.roller.map { it.rolleType },
+                )
+            }
 
         return HentRollerResponse(tiltaksarrangorRoller)
     }
