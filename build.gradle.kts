@@ -37,24 +37,25 @@ dependencies {
     }
 
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
+    runtimeOnly("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web") {
         exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
     }
-    implementation("org.springframework.boot:spring-boot-starter-jetty")
-    implementation("org.springframework.boot:spring-boot-starter-logging")
+    runtimeOnly("org.springframework.boot:spring-boot-starter-jetty")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
-    implementation("org.springframework.boot:spring-boot-flyway")
+    runtimeOnly("org.springframework.boot:spring-boot-flyway")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
     implementation("tools.jackson.module:jackson-module-kotlin:$jacksonModuleKotlinVersion")
 
     implementation("no.nav.amt.deltakelser.lib:utils:$amtLibVersion")
     implementation("no.nav.amt.deltakelser.lib:spring-boot:$amtLibVersion")
-    implementation("io.micrometer:micrometer-registry-prometheus")
-    implementation("org.flywaydb:flyway-core")
-    implementation("org.flywaydb:flyway-database-postgresql")
-    implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
+
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
+    runtimeOnly("org.flywaydb:flyway-core")
+    runtimeOnly("org.flywaydb:flyway-database-postgresql")
+    runtimeOnly("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
+
     implementation("no.nav.common:rest:$commonVersion")
     implementation("no.nav.common:job:$commonVersion")
 
