@@ -1,0 +1,57 @@
+spring:
+  main:
+    banner-mode: off
+  threads:
+    virtual:
+      enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 25s
+  datasource:
+    url: ${DB_JDBC_URL}
+    hikari:
+      maximum-pool-size: 3
+
+server:
+  shutdown: graceful
+
+management:
+  endpoint:
+    prometheus:
+      access: read_only
+    health:
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include:
+            - livenessState
+  endpoints:
+    web:
+      base-path: /internal
+      exposure:
+        include:
+          - prometheus
+          - health
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+"no":
+  nav:
+    security:
+      jwt:
+        issuer:
+          azuread:
+            discovery-url: ${AZURE_APP_WELL_KNOWN_URL:#{null}}
+            accepted-audience: ${AZURE_APP_CLIENT_ID:#{null}}
+
+altinn3:
+  url: ${ALTINN3_URL:#{null}}
+
+maskinporten:
+  scopes: ${MASKINPORTEN_SCOPES:#{null}}
+  client-id: ${MASKINPORTEN_CLIENT_ID:#{null}}
+  issuer: ${MASKINPORTEN_ISSUER:#{null}}
+  token-endpoint: ${MASKINPORTEN_TOKEN_ENDPOINT:#{null}}
+  client-jwk: ${MASKINPORTEN_CLIENT_JWK:#{null}}
