@@ -106,6 +106,24 @@ class RolleControllerTest(
     }
 
     @Test
+    fun `hentTiltaksarrangorRoller - trimmer personident før bruk`() {
+        val norskIdent = "12345678910"
+        mockAltinnRoller(norskIdent, emptyList(), emptyList())
+
+        mockMvc
+            .post(PATH) {
+                headers { setBearerAuth(issueAzureAdM2MToken()) }
+                contentType = MediaType.APPLICATION_JSON
+                content = """{"personident": " $norskIdent "}"""
+            }.andExpect {
+                status { isOk() }
+                content { json("""{"roller":[]}""", JsonCompareMode.STRICT) }
+            }
+
+        verify(exactly = 1) { altinnClient.hentRoller(norskIdent, RolleType.entries) }
+    }
+
+    @Test
     fun `hentTiltaksarrangorRoller - should return 200 with correct response`() {
         val norskIdent = "12345678910"
         val orgnr = "1234567"

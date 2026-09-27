@@ -16,10 +16,10 @@ class RolleController(
     fun hentTiltaksarrangorRoller(
         @RequestBody hentRollerRequest: HentRollerRequest,
     ): HentRollerResponse {
-        hentRollerRequest.validatePersonident()
+        val personident = hentRollerRequest.validatedPersonident()
 
         val tiltaksarrangorRoller = rolleService
-            .getRollerForPerson(hentRollerRequest.personident)
+            .getRollerForPerson(personident)
             .map { rolle ->
                 HentRollerResponse.TiltaksarrangorRoller(
                     rolle.organisasjonsnummer,
@@ -33,10 +33,14 @@ class RolleController(
     data class HentRollerRequest(
         val personident: String,
     ) {
-        fun validatePersonident() {
-            if (personident.trim().length != 11 || !personident.trim().matches("""\d{11}""".toRegex())) {
+        fun validatedPersonident(): String {
+            val normalizedPersonident = personident.trim()
+
+            if (normalizedPersonident.length != 11 || !normalizedPersonident.matches("""\d{11}""".toRegex())) {
                 throw IllegalArgumentException("Ugyldig personident")
             }
+
+            return normalizedPersonident
         }
     }
 
