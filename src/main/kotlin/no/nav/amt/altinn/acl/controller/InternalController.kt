@@ -1,6 +1,6 @@
 package no.nav.amt.altinn.acl.controller
 
-import no.nav.amt.altinn.acl.service.RolleService
+import no.nav.amt.altinn.acl.jobs.AltinnUpdater
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/internal")
 class InternalController(
-    private val rolleService: RolleService,
+    private val altinnUpdater: AltinnUpdater,
 ) {
     @GetMapping("/altinn/synkroniser")
-    fun synkroniserAltinnRettigheter() = rolleService.synchronizeUsers()
+    suspend fun synkroniserAltinnRettigheter() = altinnUpdater.update()
 }

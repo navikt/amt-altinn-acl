@@ -1,10 +1,10 @@
 package no.nav.amt.altinn.acl.controller
 
 import com.ninjasquad.springmockk.MockkBean
-import io.mockk.every
-import io.mockk.justRun
-import io.mockk.verify
-import no.nav.amt.altinn.acl.service.RolleService
+import io.mockk.coEvery
+import io.mockk.coJustRun
+import io.mockk.coVerify
+import no.nav.amt.altinn.acl.jobs.AltinnUpdater
 import no.nav.amt.altinn.acl.testutil.IntegrationTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -13,15 +13,18 @@ import org.springframework.test.json.JsonCompareMode
 import org.springframework.test.web.servlet.MockHttpServletRequestDsl
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @AutoConfigureMockMvc
 class InternalControllerTest(
     private val mockMvc: MockMvc,
-    @MockkBean private val rolleService: RolleService,
+    @MockkBean private val altinnUpdater: AltinnUpdater,
 ) : IntegrationTest() {
     @BeforeEach
     fun setup() {
-        justRun { rolleService.synchronizeUsers(25, any()) }
+        coJustRun { altinnUpdater.update() }
     }
 
     /**
@@ -37,30 +40,38 @@ class InternalControllerTest(
 
     @Test
     fun `synkroniserAltinnRettigheter - intern adresse - returnerer 200 og starter synkronisering`() {
-        mockMvc
+        val result = mockMvc
             .get(PATH)
-            .andExpect { status { isOk() } }
+            .andExpect { request { asyncStarted() } }
+            .andReturn()
 
-        verify(exactly = 1) { rolleService.synchronizeUsers(25, any()) }
+        mockMvc
+            .perform(asyncDispatch(result))
+            .andExpect(status().isOk)
+
+        coVerify(exactly = 1) { altinnUpdater.update() }
     }
 
     @Test
     fun `synkroniserAltinnRettigheter - intern feil gir 500 uten feildetaljer`() {
-        every { rolleService.synchronizeUsers(25, any()) } throws IllegalStateException("Intern feildetalj")
+        coEvery { altinnUpdater.update() } throws IllegalStateException("Intern feildetalj")
+
+        val result = mockMvc
+            .get(PATH)
+            .andExpect { request { asyncStarted() } }
+            .andReturn()
 
         mockMvc
-            .get(PATH)
-            .andExpect {
-                status { isInternalServerError() }
-                content {
-                    json(
-                        """{"status":500,"title":"500 INTERNAL_SERVER_ERROR","detail":"En uventet feil oppstod"}""",
-                        JsonCompareMode.STRICT,
-                    )
-                }
-            }
+            .perform(asyncDispatch(result))
+            .andExpect(status().isInternalServerError)
+            .andExpect(
+                content().json(
+                    """{"status":500,"title":"500 INTERNAL_SERVER_ERROR","detail":"En uventet feil oppstod"}""",
+                    JsonCompareMode.STRICT,
+                ),
+            )
 
-        verify(exactly = 1) { rolleService.synchronizeUsers(25, any()) }
+        coVerify(exactly = 1) { altinnUpdater.update() }
     }
 
     @Test
@@ -69,7 +80,7 @@ class InternalControllerTest(
             .get(PATH) { fraEksternAdresse() }
             .andExpect { status { isUnauthorized() } }
 
-        verify(exactly = 0) { rolleService.synchronizeUsers(25, any()) }
+        coVerify(exactly = 0) { altinnUpdater.update() }
     }
 
     companion object {
