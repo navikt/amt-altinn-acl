@@ -4,6 +4,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldNotContain
 import io.mockk.every
 import io.mockk.mockk
 import no.nav.amt.altinn.acl.domain.RolleType
@@ -85,11 +86,12 @@ class Altinn3ClientTest {
                 StandardCharsets.UTF_8,
             )
 
-        val exception = shouldThrow<RuntimeException> {
+        val exception = shouldThrow<Altinn3Client.AltinnClientException> {
             altinnClient.hentRoller(norskIdent, RolleType.entries)
         }
 
-        exception.message shouldBe "Klarte ikke å hente organisasjoner code=500"
+        exception.message shouldBe "Klarte ikke å hente organisasjoner fra Altinn, status=500"
+        exception.message.shouldNotBeNull() shouldNotContain norskIdent
         exception.cause shouldBe null
     }
 }

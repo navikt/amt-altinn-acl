@@ -32,11 +32,12 @@ class Altinn3Client(
     private fun hentAuthorizedParties(norskIdent: String): List<AuthorizedParty> = try {
         altinnApi.hentAuthorizedParties(AuthorizedPartiesRequest(norskIdent))
     } catch (e: RestClientResponseException) {
-        log.error(
-            "Klarte ikke hente organisasjoner ${e.statusCode.value()}, body=${e.responseBodyAsString.maskerFnr()}",
+        throw AltinnClientException(
+            "Klarte ikke å hente organisasjoner fra Altinn, status=${e.statusCode.value()}",
         )
-        throw RuntimeException("Klarte ikke å hente organisasjoner code=${e.statusCode.value()}")
     }
-}
 
-private fun String.maskerFnr() = this.replace(Regex("(?<!\\d)\\d{11}(?!\\d)"), "***********")
+    class AltinnClientException(
+        message: String,
+    ) : RuntimeException(message)
+}

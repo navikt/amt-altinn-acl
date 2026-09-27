@@ -56,13 +56,16 @@ class AltinnApiTest(
     }
 
     @Test
-    fun `hentRoller - feilrespons kaster RuntimeException`() {
+    fun `hentRoller - feilrespons kaster sanitert klientexception`() {
         server
             .expect(requestTo("http://altinn3/accessmanagement/api/v1/resourceowner/authorizedparties"))
             .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
 
-        shouldThrow<RuntimeException> {
+        val exception = shouldThrow<Altinn3Client.AltinnClientException> {
             sut.hentRoller("12345678910", listOf(RolleType.KOORDINATOR))
         }
+
+        exception.message shouldBe "Klarte ikke å hente organisasjoner fra Altinn, status=500"
+        exception.cause shouldBe null
     }
 }
