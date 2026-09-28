@@ -1,8 +1,6 @@
 package no.nav.amt.altinn.acl.controller
 
-import jakarta.servlet.http.HttpServletRequest
 import no.nav.amt.altinn.acl.jobs.AltinnUpdater
-import no.nav.security.token.support.core.api.Unprotected
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -10,18 +8,8 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/internal")
 class InternalController(
-	private val altinnUpdater: AltinnUpdater,
+    private val altinnUpdater: AltinnUpdater,
 ) {
-	@Unprotected
-	@GetMapping("/altinn/synkroniser")
-	suspend fun synkroniserAltinnRettigheter(servlet: HttpServletRequest) =
-		if (isInternal(servlet)) {
-			altinnUpdater.update()
-		} else {
-			throw RuntimeException("No access")
-		}
-
-	companion object {
-		private fun isInternal(servlet: HttpServletRequest): Boolean = servlet.remoteAddr == "127.0.0.1"
-	}
+    @GetMapping("/altinn/synkroniser")
+    suspend fun synkroniserAltinnRettigheter() = altinnUpdater.update()
 }

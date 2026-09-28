@@ -8,15 +8,15 @@ import org.springframework.stereotype.Component
 
 @Component
 class AltinnUpdater(
-	private val rolleService: RolleService,
-	private val leaderElection: LeaderElectionClient,
+    private val rolleService: RolleService,
+    private val leaderElection: LeaderElectionClient,
 ) {
-	@Scheduled(cron = "@hourly")
-	suspend fun update() {
-		if (leaderElection.isLeader()) {
-			JobRunner.run("synkroniser_altinn_rettigheter") {
-				rolleService.synchronizeUsers()
-			}
-		}
-	}
+    @Scheduled(cron = "@hourly")
+    suspend fun update() {
+        if (leaderElection.isLeader()) {
+            JobRunner.run("synkroniser_altinn_rettigheter") {
+                rolleService.synchronizeUsers()
+            }
+        }
+    }
 }

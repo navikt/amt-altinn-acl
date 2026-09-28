@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.every
 import kotlinx.coroutines.test.runTest
-import no.nav.amt.altinn.acl.client.altinn.AltinnClient
 import no.nav.amt.altinn.acl.domain.RolleType
 import no.nav.amt.altinn.acl.domain.RolleType.KOORDINATOR
 import no.nav.amt.altinn.acl.domain.RolleType.VEILEDER
@@ -20,42 +19,39 @@ import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
 class AltinnUpdaterTests(
-	private val personRepository: PersonRepository,
-	private val rolleService: RolleService,
-	private val altinnUpdater: AltinnUpdater,
-	@MockkBean private val altinnClient: AltinnClient,
-	@MockkBean private val leaderElection: LeaderElectionClient,
+    private val personRepository: PersonRepository,
+    private val rolleService: RolleService,
+    private val altinnUpdater: AltinnUpdater,
+    @MockkBean private val leaderElection: LeaderElectionClient,
 ) : IntegrationTest() {
-	@BeforeEach
-	fun setup() {
-		coEvery { leaderElection.isLeader() } returns true
-	}
+    @BeforeEach
+    fun setup() {
+        coEvery { leaderElection.isLeader() } returns true
+    }
 
-	@Test
-	fun `update - utdatert bruker - skal synkronisere bruker`() =
-		runTest {
-			val organisasjonsnummer = "2131"
-			val personligIdent = Random.nextLong().toString()
+    @Test
+    fun `update - utdatert bruker - skal synkronisere bruker`() = runTest {
+        val organisasjonsnummer = "2131"
+        val personligIdent = Random.nextLong().toString()
 
-			personRepository.create(personligIdent)
+        personRepository.create(personligIdent)
 
-			every {
-				altinnClient.hentRoller(personligIdent, RolleType.entries)
-			} returns mapOf(KOORDINATOR to listOf(organisasjonsnummer), VEILEDER to emptyList())
+        every {
+            altinnClient.hentRoller(personligIdent, RolleType.entries)
+        } returns mapOf(KOORDINATOR to listOf(organisasjonsnummer), VEILEDER to emptyList())
 
-			altinnUpdater.update()
+        altinnUpdater.update()
 
-			val oppdaterteRettigheter = rolleService.getRollerForPerson(personligIdent)
-			hasRolle(oppdaterteRettigheter, organisasjonsnummer, KOORDINATOR) shouldBe true
-		}
+        val oppdaterteRettigheter = rolleService.getRollerForPerson(personligIdent)
+        hasRolle(oppdaterteRettigheter, organisasjonsnummer, KOORDINATOR) shouldBe true
+    }
 
-	private fun hasRolle(
-		list: List<RollerIOrganisasjon>,
-		organizationNumber: String,
-		rolle: RolleType,
-	): Boolean =
-		list
-			.find { it.organisasjonsnummer == organizationNumber }
-			?.roller
-			?.find { it.rolleType == rolle } != null
+    private fun hasRolle(
+        list: List<RollerIOrganisasjon>,
+        organizationNumber: String,
+        rolle: RolleType,
+    ): Boolean = list
+        .find { it.organisasjonsnummer == organizationNumber }
+        ?.roller
+        ?.find { it.rolleType == rolle } != null
 }
