@@ -3,7 +3,8 @@ package no.nav.amt.altinn.acl.client
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
-import org.springframework.util.LinkedMultiValueMap
+import org.springframework.util.CollectionUtils
+import org.springframework.util.MultiValueMap
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
 import org.springframework.web.client.requiredBody
@@ -17,24 +18,30 @@ import tools.jackson.databind.annotation.JsonNaming
 @Service
 class MaskinportenTokenClient(
     restClientBuilder: RestClient.Builder,
-    // Alle tre leses direkte fra env-variablene Nais setter, ikke via egne property-navn
-    // i application.yml. Et navn som maskinporten.token-endpoint ville kollidert med
-    // digdirator sin MASKINPORTEN_TOKEN_ENDPOINT via Spring sin relaxed binding, og
-    // stille sendt token-kallet til Maskinporten i stedet for Texas.
+    // NAIS_TOKEN_ENDPOINT og ALTINN3_URL leses direkte fra env-variablene Nais setter, ikke via
+    // egne property-navn i application.yml. Et navn som maskinporten.token-endpoint ville kollidert
+    // med digdirator sin MASKINPORTEN_TOKEN_ENDPOINT via Spring sin relaxed binding, og stille
+    // sendt token-kallet til Maskinporten i stedet for Texas.
     @Value($$"${NAIS_TOKEN_ENDPOINT}")
     private val maskinportenTokenEndpoint: String,
-    @Value($$"${MASKINPORTEN_SCOPES}")
-    private val maskinportenScopes: String,
+    // Settes i nais-manifestet. Vi ber bevisst om ett scope om gangen, og bruker derfor ikke
+    // MASKINPORTEN_SCOPES - den inneholder alle scopes som er registrert på klienten.
+    @Value($$"${ALTINN_SCOPE}")
+    private val altinnScope: String,
     @Value($$"${ALTINN3_URL}")
     private val altinn3Url: String,
 ) {
     private val restClient = restClientBuilder.build()
 
-    private val request = LinkedMultiValueMap<String, String>().apply {
-        add("identity_provider", "maskinporten")
-        add("target", maskinportenScopes)
-        add("resource", altinn3Url)
-    }
+    private val request: MultiValueMap<String, String> = CollectionUtils.unmodifiableMultiValueMap(
+        CollectionUtils.toMultiValueMap(
+            mapOf(
+                "identity_provider" to listOf("maskinporten"),
+                "target" to listOf(altinnScope),
+                "resource" to listOf(altinn3Url),
+            ),
+        ),
+    )
 
     fun getAccessToken(): String = try {
         restClient
