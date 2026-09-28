@@ -19,18 +19,21 @@ class ExceptionHandler : ResponseEntityExceptionHandler() {
 
     @ExceptionHandler(NoSuchElementException::class)
     fun handleNotFound(): ProblemDetail = problemDetail(
-        HttpStatus.NOT_FOUND,
-        "Ressursen finnes ikke",
+        status = HttpStatus.NOT_FOUND,
+        detail = "Ressursen finnes ikke",
     )
 
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleBadRequest(): ProblemDetail = problemDetail(
-        HttpStatus.BAD_REQUEST,
-        "Forespørselen inneholder ugyldige data",
+        status = HttpStatus.BAD_REQUEST,
+        detail = "Forespørselen inneholder ugyldige data",
     )
 
     @ExceptionHandler(Exception::class)
-    fun handleUnexpectedException(e: Exception): ProblemDetail = internalServerError(e, HttpStatus.INTERNAL_SERVER_ERROR)
+    fun handleUnexpectedException(e: Exception): ProblemDetail = internalServerError(
+        e = e,
+        status = HttpStatus.INTERNAL_SERVER_ERROR,
+    )
 
     override fun handleExceptionInternal(
         ex: Exception,
@@ -40,11 +43,14 @@ class ExceptionHandler : ResponseEntityExceptionHandler() {
         request: WebRequest,
     ): ResponseEntity<Any>? {
         val sanitizedBody = if (statusCode.is5xxServerError) {
-            internalServerError(ex, statusCode)
+            internalServerError(
+                e = ex,
+                status = statusCode,
+            )
         } else {
             problemDetail(
-                statusCode,
-                when (HttpStatus.resolve(statusCode.value())) {
+                status = statusCode,
+                detail = when (HttpStatus.resolve(statusCode.value())) {
                     HttpStatus.BAD_REQUEST -> "Forespørselen inneholder ugyldige data"
                     HttpStatus.NOT_FOUND -> "Ressursen finnes ikke"
                     else -> "Forespørselen kunne ikke behandles"
@@ -68,8 +74,8 @@ class ExceptionHandler : ResponseEntityExceptionHandler() {
         )
 
         return problemDetail(
-            status,
-            "En uventet feil oppstod",
+            status = status,
+            detail = "En uventet feil oppstod",
         ).apply {
             setProperty("errorId", errorId)
         }
