@@ -8,17 +8,23 @@ metadata:
 spec:
   image: {{image}}
   port: 8080
+  terminationGracePeriodSeconds: 60
+
   prometheus:
     enabled: true
-    path: /internal/prometheus
-
+    port: "8081"
+    path: /actuator/prometheus
+  startup:
+    port: 8081
+    path: /actuator/health/liveness
+    initialDelay: 20
+    failureThreshold: 20
   readiness:
-    path: /internal/health/readiness
-    initialDelay: 30
+    port: 8081
+    path: /actuator/health/readiness
   liveness:
-    path: /internal/health/liveness
-    initialDelay: 30
-    timeout: 3
+    port: 8081
+    path: /actuator/health/liveness
 
   replicas:
     min: 2

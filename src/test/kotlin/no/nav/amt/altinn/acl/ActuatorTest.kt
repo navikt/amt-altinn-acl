@@ -22,7 +22,7 @@ class ActuatorTest(
     @ValueSource(strings = ["liveness", "readiness"])
     fun `probe skal returnere OK og status UP`(probeName: String) {
         val uri = UriComponentsBuilder
-            .fromUriString("http://localhost:{port}/internal/health/{probeName}")
+            .fromUriString("http://localhost:{port}/actuator/health/{probeName}")
             .buildAndExpand(managementPort, probeName)
             .toUri()
 
@@ -37,7 +37,7 @@ class ActuatorTest(
     @Test
     fun `Prometheus-endepunktet skal returnere OK`() {
         val uri = UriComponentsBuilder
-            .fromUriString("http://localhost:{port}/internal/prometheus")
+            .fromUriString("http://localhost:{port}/actuator/prometheus")
             .buildAndExpand(managementPort)
             .toUri()
 
