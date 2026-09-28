@@ -52,16 +52,34 @@ class MaskinportenTokenClientTest(
     }
 
     @Test
-    fun `feil fra Nais sitt token-endepunkt gir sanitert feil med statuskode`() {
+    fun `feil fra Nais sitt token-endepunkt gir statuskode og OAuth-feilkode`() {
         server
             .expect(requestTo("http://localhost/token"))
-            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR).body("""{"error":"token request failed"}"""))
+            .andRespond(
+                withStatus(HttpStatus.BAD_REQUEST)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body("""{"error":"invalid_target","error_description":"scope ikke registrert"}"""),
+            )
 
         val exception = shouldThrow<MaskinportenTokenClient.MaskinportenTokenException> {
             sut.getAccessToken()
         }
 
-        exception.message shouldBe "Klarte ikke å hente Maskinporten-token code=500"
+        exception.message shouldBe
+            "Klarte ikke å hente Maskinporten-token code=400 error=invalid_target error_description=scope ikke registrert"
         exception.cause shouldBe null
+    }
+
+    @Test
+    fun `feil uten lesbar OAuth-body gir statuskode og ukjent feilkode`() {
+        server
+            .expect(requestTo("http://localhost/token"))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR).body("ikke json"))
+
+        val exception = shouldThrow<MaskinportenTokenClient.MaskinportenTokenException> {
+            sut.getAccessToken()
+        }
+
+        exception.message shouldBe "Klarte ikke å hente Maskinporten-token code=500 error=<ukjent>"
     }
 }

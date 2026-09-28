@@ -42,13 +42,28 @@ class MaskinportenTokenClient(
             .requiredBody<MaskinportenTokenResponse>()
             .accessToken
     } catch (e: RestClientResponseException) {
-        // Unngå å logge response body fra token-endepunktet via exception cause.
-        throw MaskinportenTokenException("Klarte ikke å hente Maskinporten-token code=${e.statusCode.value()}")
+        // Response body fra token-endepunktet inneholder aldri token ved feil, kun en OAuth-feilkode
+        // (RFC 6749 §5.2). Vi plukker ut error/error_description og dropper resten av bodyen.
+        throw MaskinportenTokenException(
+            "Klarte ikke å hente Maskinporten-token code=${e.statusCode.value()} ${e.oauthError()}",
+        )
     }
+
+    private fun RestClientResponseException.oauthError(): String = runCatching {
+        getResponseBodyAs(OAuthErrorResponse::class.java)
+    }.getOrNull()
+        ?.let { "error=${it.error} error_description=${it.errorDescription}" }
+        ?: "error=<ukjent>"
 
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
     private data class MaskinportenTokenResponse(
         val accessToken: String,
+    )
+
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
+    private data class OAuthErrorResponse(
+        val error: String? = null,
+        val errorDescription: String? = null,
     )
 
     class MaskinportenTokenException(

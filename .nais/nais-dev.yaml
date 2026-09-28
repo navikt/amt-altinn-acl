@@ -42,8 +42,6 @@ spec:
       value: "-XX:MaxRAMPercentage=70.0"
     - name: ALTINN3_URL
       value: https://platform.tt02.altinn.no
-    - name: MASKINPORTEN_URL
-      value: https://ver2.maskinporten.no
   azure:
     application:
       enabled: true
