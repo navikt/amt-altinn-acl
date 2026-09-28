@@ -1,5 +1,6 @@
 package no.nav.amt.altinn.acl.service
 
+import no.nav.amt.altinn.acl.client.MaskinportenTokenClient
 import no.nav.amt.altinn.acl.client.altinn.Altinn3Client
 import no.nav.amt.altinn.acl.domain.Rolle
 import no.nav.amt.altinn.acl.domain.RolleType
@@ -73,8 +74,10 @@ class RolleService(
                 altinnClient.hentRoller(norskIdent, RolleType.entries).filterValues { it.isNotEmpty() }
             } catch (e: Exception) {
                 log.warn(
-                    "Klarte ikke hente roller for ny bruker, exceptionType={}, traceId={}",
+                    "Klarte ikke hente roller for ny bruker, exceptionType={}, statusCode={}, errorCode={}, traceId={}",
                     e.javaClass.name,
+                    e.safeStatusCode(),
+                    e.safeErrorCode(),
                     MDC.get("trace_id"),
                 )
                 // Feilen fanges her, så API-et svarer 200 med tom rolleliste; personen lagres ikke.
@@ -112,9 +115,11 @@ class RolleService(
         } catch (e: Exception) {
             log.warn(
                 "Klarte ikke oppdatere roller for brukerId={}, bruker lagrede roller om eksisterer, " +
-                    "exceptionType={}, traceId={}",
+                    "exceptionType={}, statusCode={}, errorCode={}, traceId={}",
                 id,
                 e.javaClass.name,
+                e.safeStatusCode(),
+                e.safeErrorCode(),
                 MDC.get("trace_id"),
             )
             return
@@ -146,6 +151,14 @@ class RolleService(
     private fun getGyldigeRoller(norskIdent: String) = rolleRepository
         .hentRollerForPerson(norskIdent)
         .filter { it.erGyldig() }
+
+    private fun Exception.safeStatusCode(): Int? = when (this) {
+        is MaskinportenTokenClient.MaskinportenTokenException -> statusCode
+        is Altinn3Client.AltinnClientException -> statusCode
+        else -> null
+    }
+
+    private fun Exception.safeErrorCode(): String? = (this as? MaskinportenTokenClient.MaskinportenTokenException)?.errorCode
 
     private fun map(roller: List<RolleDbo>): List<RollerIOrganisasjon> {
         val rollerPerOrganisasjon = roller.associateBy(

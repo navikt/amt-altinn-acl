@@ -33,11 +33,11 @@ class Altinn3Client(
         altinnApi.hentAuthorizedParties(AuthorizedPartiesRequest(norskIdent))
     } catch (e: RestClientResponseException) {
         throw AltinnClientException(
-            "Klarte ikke å hente organisasjoner fra Altinn, status=${e.statusCode.value()}",
+            statusCode = e.statusCode.value(),
         )
     }
 
     class AltinnClientException(
-        message: String,
-    ) : RuntimeException(message)
+        val statusCode: Int,
+    ) : RuntimeException("Klarte ikke å hente organisasjoner fra Altinn, status=$statusCode")
 }

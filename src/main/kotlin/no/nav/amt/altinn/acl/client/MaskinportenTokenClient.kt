@@ -92,7 +92,6 @@ class MaskinportenTokenClient(
             "invalid_scope",
             "invalid_target",
             "server_error",
-            "temporarily_unavailable",
         )
     }
 }
