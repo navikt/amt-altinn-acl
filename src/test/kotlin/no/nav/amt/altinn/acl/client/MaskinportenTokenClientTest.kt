@@ -22,7 +22,7 @@ import org.springframework.util.LinkedMultiValueMap
 @TestPropertySource(
     properties = [
         "NAIS_TOKEN_ENDPOINT=http://localhost/token",
-        "MASKINPORTEN_SCOPES=scope1 scope2",
+        "ALTINN_SCOPE=altinn:accessmanagement/authorizedparties.resourceowner",
         "ALTINN3_URL=http://altinn3",
     ],
 )
@@ -38,7 +38,7 @@ class MaskinportenTokenClientTest(
     fun `henter access token fra Nais med riktige skjemadata`() {
         val expectedForm = LinkedMultiValueMap<String, String>().apply {
             add("identity_provider", "maskinporten")
-            add("target", "scope1 scope2")
+            add("target", "altinn:accessmanagement/authorizedparties.resourceowner")
             add("resource", "http://altinn3")
         }
         server

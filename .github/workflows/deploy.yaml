@@ -66,6 +66,7 @@ jobs:
         env:
           CLUSTER: dev-gcp
           RESOURCE: .nais/nais-dev.yaml
+          VARS: .nais/vars.yaml
           VAR: image=${{ needs.test-build-and-push.outputs.image }}
           TELEMETRY: ${{ needs.test-build-and-push.outputs.telemetry }}
 
@@ -85,5 +86,6 @@ jobs:
         env:
           CLUSTER: prod-gcp
           RESOURCE: .nais/nais-prod.yaml
+          VARS: .nais/vars.yaml
           VAR: image=${{ needs.test-build-and-push.outputs.image }}
           TELEMETRY: ${{ needs.test-build-and-push.outputs.telemetry }}
