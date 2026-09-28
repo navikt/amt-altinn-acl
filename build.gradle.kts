@@ -1,13 +1,12 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    val kotlinVersion = "2.4.10"
+    val kotlinVersion = "2.4.20"
 
     id("org.springframework.boot") version "4.1.1"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
-    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
 }
 
 group = "no.nav.amt-altinn-acl"
@@ -21,10 +20,20 @@ repositories {
 val commonVersion = "4.2026.09.14_05.43-2bd32bda23c4"
 val amtLibVersion = "1.2026.09.19_14.04-d95fadb1dbac"
 val logstashEncoderVersion = "9.0"
+val tokenSupportVersion = "6.0.12"
+val okHttpVersion = "5.5.0"
 val mockkVersion = "1.14.11"
 val kotestVersion = "6.2.5"
+val mockOauth2ServerVersion = "6.0.2"
 val springmockkVersion = "5.0.1"
 val jacksonModuleKotlinVersion = "3.2.2"
+
+dependencyManagement {
+    dependencies {
+        dependency("com.squareup.okhttp3:okhttp:$okHttpVersion")
+        dependency("com.squareup.okhttp3:mockwebserver:$okHttpVersion")
+    }
+}
 
 dependencies {
     constraints {
@@ -37,36 +46,32 @@ dependencies {
     }
 
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    runtimeOnly("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web") {
         exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
     }
-    runtimeOnly("org.springframework.boot:spring-boot-starter-jetty")
+    implementation("org.springframework.boot:spring-boot-starter-jetty")
+    implementation("org.springframework.boot:spring-boot-starter-logging")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
-    runtimeOnly("org.springframework.boot:spring-boot-flyway")
+    implementation("org.springframework.boot:spring-boot-flyway")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
     implementation("tools.jackson.module:jackson-module-kotlin:$jacksonModuleKotlinVersion")
 
     implementation("no.nav.amt.deltakelser.lib:utils:$amtLibVersion")
-    implementation("no.nav.amt.deltakelser.lib:spring-boot:$amtLibVersion")
-
-    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
-    runtimeOnly("org.flywaydb:flyway-core")
-    runtimeOnly("org.flywaydb:flyway-database-postgresql")
-    runtimeOnly("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
-
+    implementation("io.micrometer:micrometer-registry-prometheus")
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
+    implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
     implementation("no.nav.common:rest:$commonVersion")
+    implementation("no.nav.common:token-client:$commonVersion")
     implementation("no.nav.common:job:$commonVersion")
 
-    implementation("org.springframework.boot:spring-boot-restclient")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+    implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-resttestclient")
-    testImplementation("org.springframework.boot:spring-boot-restclient-test")
     testImplementation("org.springframework.boot:spring-boot-data-jdbc-test")
-    testImplementation("org.springframework.boot:spring-boot-webmvc-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-postgresql")
 
@@ -74,6 +79,7 @@ dependencies {
     testImplementation("io.mockk:mockk-jvm:$mockkVersion")
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
+    testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
     testImplementation("com.ninja-squad:springmockk:$springmockkVersion")
 }
 
@@ -81,12 +87,12 @@ kotlin {
     jvmToolchain(25)
     compilerOptions {
         jvmTarget = JvmTarget.JVM_25
-        freeCompilerArgs.addAll("-Xjsr305=strict")
+        freeCompilerArgs.addAll(
+            "-Xjsr305=strict",
+            "-Xannotation-default-target=param-property",
+            "-Xmulti-dollar-interpolation",
+        )
     }
-}
-
-ktlint {
-    version = "1.8.0"
 }
 
 tasks.named<Jar>("jar") {
