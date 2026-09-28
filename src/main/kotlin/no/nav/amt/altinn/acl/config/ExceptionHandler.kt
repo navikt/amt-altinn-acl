@@ -81,7 +81,7 @@ class ExceptionHandler : ResponseEntityExceptionHandler() {
         }
     }
 
-    private fun sanitizedStackTrace(e: Exception): String = generateSequence(e as Throwable?) { it.cause }
+    private fun sanitizedStackTrace(e: Exception): String = generateSequence<Throwable>(e) { it.cause }
         .take(MAX_CAUSE_DEPTH)
         .joinToString(separator = "\nCaused by: ") { throwable ->
             buildString {
