@@ -8,6 +8,7 @@ import no.nav.amt.altinn.acl.repository.PersonRepository
 import no.nav.amt.altinn.acl.repository.RolleRepository
 import no.nav.amt.altinn.acl.repository.dbo.RolleDbo
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.Instant
@@ -71,7 +72,11 @@ class RolleService(
             try {
                 altinnClient.hentRoller(norskIdent, RolleType.entries).filterValues { it.isNotEmpty() }
             } catch (e: Exception) {
-                log.warn("Klarte ikke hente roller for ny bruker", e)
+                log.warn(
+                    "Klarte ikke hente roller for ny bruker, exceptionType={}, traceId={}",
+                    e.javaClass.name,
+                    MDC.get("trace_id"),
+                )
                 // Feilen fanges her, så API-et svarer 200 med tom rolleliste; personen lagres ikke.
                 return emptyList()
             }
@@ -105,7 +110,13 @@ class RolleService(
         val rolleMap: Map<RolleType, List<String>> = try {
             altinnClient.hentRoller(norskIdent, RolleType.entries)
         } catch (e: Exception) {
-            log.warn("Klarte ikke oppdatere roller for bruker $id, bruker lagrede roller om eksisterer", e)
+            log.warn(
+                "Klarte ikke oppdatere roller for brukerId={}, bruker lagrede roller om eksisterer, " +
+                    "exceptionType={}, traceId={}",
+                id,
+                e.javaClass.name,
+                MDC.get("trace_id"),
+            )
             return
         }
 

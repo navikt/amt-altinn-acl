@@ -66,7 +66,9 @@ class MaskinportenTokenClientTest(
         }
 
         exception.message shouldBe
-            "Klarte ikke å hente Maskinporten-token code=400 error=invalid_target error_description=scope ikke registrert"
+            "Klarte ikke å hente Maskinporten-token code=400 error=invalid_target"
+        exception.statusCode shouldBe 400
+        exception.errorCode shouldBe "invalid_target"
         exception.cause shouldBe null
     }
 
@@ -80,6 +82,27 @@ class MaskinportenTokenClientTest(
             sut.getAccessToken()
         }
 
-        exception.message shouldBe "Klarte ikke å hente Maskinporten-token code=500 error=<ukjent>"
+        exception.message shouldBe "Klarte ikke å hente Maskinporten-token code=500 error=unknown"
+        exception.statusCode shouldBe 500
+        exception.errorCode shouldBe "unknown"
+    }
+
+    @Test
+    fun `ukjent OAuth-feilkode og beskrivelse eksponeres ikke i exception`() {
+        server
+            .expect(requestTo("http://localhost/token"))
+            .andRespond(
+                withStatus(HttpStatus.BAD_REQUEST)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body("""{"error":"ukjent sensitiv verdi","error_description":"sensitiv diagnostikk"}"""),
+            )
+
+        val exception = shouldThrow<MaskinportenTokenClient.MaskinportenTokenException> {
+            sut.getAccessToken()
+        }
+
+        exception.message shouldBe "Klarte ikke å hente Maskinporten-token code=400 error=unknown"
+        exception.statusCode shouldBe 400
+        exception.errorCode shouldBe "unknown"
     }
 }
