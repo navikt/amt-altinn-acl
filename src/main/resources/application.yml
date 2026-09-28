@@ -17,7 +17,7 @@ spring:
       read-timeout: 20s
     serviceclient:
       altinn3:
-        base-url: ${altinn3.url}
+        base-url: ${ALTINN3_URL}
 
   security:
     oauth2:
@@ -53,10 +53,3 @@ management:
     metrics:
       export:
         enabled: true
-
-altinn3:
-  url: ${ALTINN3_URL}
-
-maskinporten:
-  scopes: ${MASKINPORTEN_SCOPES}
-  token-endpoint: ${NAIS_TOKEN_ENDPOINT}

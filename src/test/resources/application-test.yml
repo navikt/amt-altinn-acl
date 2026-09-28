@@ -4,18 +4,16 @@ elector:
 # Ingen av disse URL-ene blir kalt i integrasjonstestene - Altinn3Client er mocket med @MockkBean,
 # og JwtDecoder kommer fra TestJwtConfig. Verdiene må likevel være satt for at Spring-konteksten
 # skal kunne opprette klient- og sikkerhetsbønnene.
-altinn3:
-  url: http://localhost:9999/altinn
-
-maskinporten:
-  scopes: altinn
-  token-endpoint: http://localhost:9999/maskinporten/token
+# ALTINN3_URL, MASKINPORTEN_SCOPES og NAIS_TOKEN_ENDPOINT settes normalt av Nais.
+ALTINN3_URL: http://localhost:9999/altinn
+MASKINPORTEN_SCOPES: altinn
+NAIS_TOKEN_ENDPOINT: http://localhost:9999/maskinporten/token
 
 spring:
   http:
     serviceclient:
       altinn3:
-        base-url: ${altinn3.url}
+        base-url: ${ALTINN3_URL}
   security:
     oauth2:
       resourceserver:

@@ -4,11 +4,10 @@ elector:
   path: dont_look_for_leader
 server:
   port: '8089'
-altinn3:
-  url: http://localhost:9002/altinn
-maskinporten:
-  scopes: altinn
-  token-endpoint: http://localhost:9002/maskinporten/token
+# Settes normalt av Nais. Må defineres her for lokal kjøring.
+ALTINN3_URL: http://localhost:9002/altinn
+MASKINPORTEN_SCOPES: altinn
+NAIS_TOKEN_ENDPOINT: http://localhost:9002/maskinporten/token
 spring:
   security:
     oauth2:

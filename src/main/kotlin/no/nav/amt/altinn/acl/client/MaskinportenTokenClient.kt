@@ -17,11 +17,11 @@ import tools.jackson.databind.annotation.JsonNaming
 @Service
 class MaskinportenTokenClient(
     restClientBuilder: RestClient.Builder,
-    @Value($$"${maskinporten.token-endpoint}")
+    @Value($$"${NAIS_TOKEN_ENDPOINT}")
     private val maskinportenTokenEndpoint: String,
-    @Value($$"${maskinporten.scopes}")
+    @Value($$"${MASKINPORTEN_SCOPES}")
     private val maskinportenScopes: String,
-    @Value($$"${altinn3.url}")
+    @Value($$"${ALTINN3_URL}")
     private val altinn3Url: String,
 ) {
     private val restClient = restClientBuilder.build()

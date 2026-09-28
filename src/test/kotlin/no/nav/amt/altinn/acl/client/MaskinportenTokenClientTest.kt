@@ -21,9 +21,9 @@ import org.springframework.util.LinkedMultiValueMap
 @RestClientTest(MaskinportenTokenClient::class)
 @TestPropertySource(
     properties = [
-        "maskinporten.token-endpoint=http://localhost/token",
-        "maskinporten.scopes=scope1 scope2",
-        "altinn3.url=http://altinn3",
+        "NAIS_TOKEN_ENDPOINT=http://localhost/token",
+        "MASKINPORTEN_SCOPES=scope1 scope2",
+        "ALTINN3_URL=http://altinn3",
     ],
 )
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
