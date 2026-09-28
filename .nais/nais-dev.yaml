@@ -9,8 +9,6 @@ spec:
   image: {{image}}
   port: 8080
   terminationGracePeriodSeconds: 60
-  ingresses:
-    - https://amt-altinn-acl.intern.dev.nav.no
 
   prometheus:
     enabled: true

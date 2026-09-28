@@ -8,8 +8,6 @@ metadata:
 spec:
   image: {{image}}
   port: 8080
-  ingresses:
-    - https://amt-altinn-acl.intern.nav.no
   prometheus:
     enabled: true
     path: /internal/prometheus
