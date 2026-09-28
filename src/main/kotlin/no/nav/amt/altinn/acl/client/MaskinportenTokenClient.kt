@@ -17,6 +17,10 @@ import tools.jackson.databind.annotation.JsonNaming
 @Service
 class MaskinportenTokenClient(
     restClientBuilder: RestClient.Builder,
+    // Alle tre leses direkte fra env-variablene Nais setter, ikke via egne property-navn
+    // i application.yml. Et navn som maskinporten.token-endpoint ville kollidert med
+    // digdirator sin MASKINPORTEN_TOKEN_ENDPOINT via Spring sin relaxed binding, og
+    // stille sendt token-kallet til Maskinporten i stedet for Texas.
     @Value($$"${NAIS_TOKEN_ENDPOINT}")
     private val maskinportenTokenEndpoint: String,
     @Value($$"${MASKINPORTEN_SCOPES}")
