@@ -11,100 +11,96 @@ import java.time.ZonedDateTime
 
 @Repository
 class PersonRepository(
-	private val template: NamedParameterJdbcTemplate,
+    private val template: NamedParameterJdbcTemplate,
 ) {
-	private val rowMapper =
-		RowMapper { rs, _ ->
-			PersonDbo(
-				id = rs.getLong("id"),
-				norskIdent = rs.getString("norsk_ident"),
-				created = rs.getZonedDateTime("created"),
-				lastSynchronized = rs.getZonedDateTime("last_synchronized"),
-			)
-		}
+    private val rowMapper = RowMapper { rs, _ ->
+        PersonDbo(
+            id = rs.getLong("id"),
+            norskIdent = rs.getString("norsk_ident"),
+            created = rs.getZonedDateTime("created"),
+            lastSynchronized = rs.getZonedDateTime("last_synchronized"),
+        )
+    }
 
-	fun setSynchronized(
-		norskIdent: String,
-		lastSynchronized: ZonedDateTime = ZonedDateTime.now(),
-	) {
-		val sql =
-			"""
-			UPDATE person
-			SET last_synchronized = :last_synchronized
-			WHERE norsk_ident = :norsk_ident
-			""".trimIndent()
+    fun setSynchronized(
+        norskIdent: String,
+        lastSynchronized: ZonedDateTime = ZonedDateTime.now(),
+    ) {
+        val sql =
+            """
+            UPDATE person
+            SET last_synchronized = :last_synchronized
+            WHERE norsk_ident = :norsk_ident
+            """.trimIndent()
 
-		template.update(
-			sql,
-			sqlParameters(
-				"norsk_ident" to norskIdent,
-				"last_synchronized" to LocalDateTime.from(lastSynchronized),
-			),
-		)
-	}
+        template.update(
+            sql,
+            sqlParameters(
+                "norsk_ident" to norskIdent,
+                "last_synchronized" to LocalDateTime.from(lastSynchronized),
+            ),
+        )
+    }
 
-	fun getUnsynchronizedPersons(
-		maxSize: Int,
-		synchronizedBefore: LocalDateTime,
-	): List<PersonDbo> {
-		val sql =
-			"""
-			SELECT *
-			FROM person
-			WHERE last_synchronized < :synchronized_before
-			ORDER BY last_synchronized
-			limit :limit
-			""".trimIndent()
+    fun getUnsynchronizedPersons(
+        maxSize: Int,
+        synchronizedBefore: LocalDateTime,
+    ): List<PersonDbo> {
+        val sql =
+            """
+            SELECT *
+            FROM person
+            WHERE last_synchronized < :synchronized_before
+            ORDER BY last_synchronized
+            limit :limit
+            """.trimIndent()
 
-		val parameters =
-			sqlParameters(
-				"limit" to maxSize,
-				"synchronized_before" to synchronizedBefore,
-			)
+        val parameters = sqlParameters(
+            "limit" to maxSize,
+            "synchronized_before" to synchronizedBefore,
+        )
 
-		return template.query(sql, parameters, rowMapper)
-	}
+        return template.query(sql, parameters, rowMapper)
+    }
 
-	fun get(norskIdent: String): PersonDbo? =
-		template
-			.query(
-				"SELECT * FROM person WHERE norsk_ident = :norsk_ident",
-				sqlParameters("norsk_ident" to norskIdent),
-				rowMapper,
-			).firstOrNull()
+    fun get(norskIdent: String): PersonDbo? = template
+        .query(
+            "SELECT * FROM person WHERE norsk_ident = :norsk_ident",
+            sqlParameters("norsk_ident" to norskIdent),
+            rowMapper,
+        ).firstOrNull()
 
-	fun create(norskIdent: String): PersonDbo {
-		val sql =
-			"""
-			INSERT INTO person(norsk_ident)
-			VALUES (:norsk_ident)
-			""".trimIndent()
+    fun create(norskIdent: String): PersonDbo {
+        val sql =
+            """
+            INSERT INTO person(norsk_ident)
+            VALUES (:norsk_ident)
+            """.trimIndent()
 
-		val params = sqlParameters("norsk_ident" to norskIdent)
+        val params = sqlParameters("norsk_ident" to norskIdent)
 
-		template.update(sql, params)
+        template.update(sql, params)
 
-		return get(norskIdent) ?: throw NoSuchElementException("Person ikke funnet")
-	}
+        return get(norskIdent) ?: throw NoSuchElementException("Person ikke funnet")
+    }
 
-	fun createAndSetSynchronized(
-		norskIdent: String,
-		lastSynchronized: ZonedDateTime = ZonedDateTime.now(),
-	): PersonDbo {
-		val sql =
-			"""
-			INSERT INTO person(norsk_ident, last_synchronized)
-			VALUES (:norsk_ident, :last_synchronized)
-			""".trimIndent()
+    fun createAndSetSynchronized(
+        norskIdent: String,
+        lastSynchronized: ZonedDateTime = ZonedDateTime.now(),
+    ): PersonDbo {
+        val sql =
+            """
+            INSERT INTO person(norsk_ident, last_synchronized)
+            VALUES (:norsk_ident, :last_synchronized)
+            """.trimIndent()
 
-		val params =
-			sqlParameters(
-				"norsk_ident" to norskIdent,
-				"last_synchronized" to LocalDateTime.from(lastSynchronized),
-			)
+        val params = sqlParameters(
+            "norsk_ident" to norskIdent,
+            "last_synchronized" to LocalDateTime.from(lastSynchronized),
+        )
 
-		template.update(sql, params)
+        template.update(sql, params)
 
-		return get(norskIdent) ?: throw NoSuchElementException("Person ikke funnet")
-	}
+        return get(norskIdent) ?: throw NoSuchElementException("Person ikke funnet")
+    }
 }

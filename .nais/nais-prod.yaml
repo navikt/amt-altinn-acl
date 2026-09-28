@@ -58,8 +58,6 @@ spec:
       value: "-XX:MaxRAMPercentage=75.0 -Xshare:off --enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow"
     - name: ALTINN3_URL
       value: https://platform.altinn.no
-    - name: MASKINPORTEN_URL
-      value: https://maskinporten.no
   maskinporten:
     enabled: true
     scopes:
