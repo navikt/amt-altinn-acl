@@ -11,6 +11,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
 import org.springframework.test.json.JsonCompareMode
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 
 @AutoConfigureMockMvc
@@ -72,7 +73,47 @@ class RolleControllerTest(
                 headers { setBearerAuth(issueAzureAdM2MToken()) }
                 contentType = MediaType.APPLICATION_JSON
                 content = "{"
-            }.andExpect { status { isBadRequest() } }
+            }.andExpect {
+                status { isBadRequest() }
+                content { contentType("application/problem+json") }
+                content {
+                    json(
+                        """
+                        {
+                          "title": "Bad Request",
+                          "status": 400,
+                          "detail": "Forespørselen inneholder ugyldige data",
+                          "instance": "$PATH"
+                        }
+                        """.trimIndent(),
+                        JsonCompareMode.STRICT,
+                    )
+                }
+            }
+    }
+
+    @Test
+    fun `hentTiltaksarrangorRoller - ugyldig HTTP-metode gir sanitert 405`() {
+        mockMvc
+            .get(PATH) {
+                headers { setBearerAuth(issueAzureAdM2MToken()) }
+            }.andExpect {
+                status { isMethodNotAllowed() }
+                content { contentType("application/problem+json") }
+                content {
+                    json(
+                        """
+                        {
+                          "title": "Method Not Allowed",
+                          "status": 405,
+                          "detail": "Forespørselen kunne ikke behandles",
+                          "instance": "$PATH"
+                        }
+                        """.trimIndent(),
+                        JsonCompareMode.STRICT,
+                    )
+                }
+            }
     }
 
     @ParameterizedTest(name = "personident = \"{0}\" gir 400")
@@ -83,7 +124,23 @@ class RolleControllerTest(
                 headers { setBearerAuth(issueAzureAdM2MToken()) }
                 contentType = MediaType.APPLICATION_JSON
                 content = """{"personident": "$personident"}"""
-            }.andExpect { status { isBadRequest() } }
+            }.andExpect {
+                status { isBadRequest() }
+                content { contentType("application/problem+json") }
+                content {
+                    json(
+                        """
+                        {
+                          "title": "Bad Request",
+                          "status": 400,
+                          "detail": "Forespørselen inneholder ugyldige data",
+                          "instance": "$PATH"
+                        }
+                        """.trimIndent(),
+                        JsonCompareMode.STRICT,
+                    )
+                }
+            }
 
         verify(exactly = 0) { altinnClient.hentRoller(any(), any()) }
     }

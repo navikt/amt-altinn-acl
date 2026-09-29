@@ -53,18 +53,18 @@ class MaskinportenTokenClient(
             .requiredBody<MaskinportenTokenResponse>()
             .accessToken
     } catch (e: RestClientResponseException) {
-        // Response body fra token-endepunktet inneholder aldri token ved feil, kun en OAuth-feilkode
-        // (RFC 6749 §5.2). Vi plukker ut error/error_description og dropper resten av bodyen.
         throw MaskinportenTokenException(
-            "Klarte ikke å hente Maskinporten-token code=${e.statusCode.value()} ${e.oauthError()}",
+            statusCode = e.statusCode.value(),
+            errorCode = e.safeOAuthErrorCode(),
         )
     }
 
-    private fun RestClientResponseException.oauthError(): String = runCatching {
+    private fun RestClientResponseException.safeOAuthErrorCode(): String = runCatching {
         getResponseBodyAs(OAuthErrorResponse::class.java)
     }.getOrNull()
-        ?.let { "error=${it.error} error_description=${it.errorDescription}" }
-        ?: "error=<ukjent>"
+        ?.error
+        ?.takeIf { it in SAFE_OAUTH_ERROR_CODES }
+        ?: UNKNOWN_ERROR_CODE
 
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
     private data class MaskinportenTokenResponse(
@@ -74,10 +74,24 @@ class MaskinportenTokenClient(
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
     private data class OAuthErrorResponse(
         val error: String? = null,
-        val errorDescription: String? = null,
     )
 
     class MaskinportenTokenException(
-        message: String,
-    ) : RuntimeException(message)
+        val statusCode: Int,
+        val errorCode: String,
+    ) : RuntimeException("Klarte ikke å hente Maskinporten-token code=$statusCode error=$errorCode")
+
+    companion object {
+        private const val UNKNOWN_ERROR_CODE = "unknown"
+        private val SAFE_OAUTH_ERROR_CODES = setOf(
+            "invalid_request",
+            "invalid_client",
+            "invalid_grant",
+            "unauthorized_client",
+            "unsupported_grant_type",
+            "invalid_scope",
+            "invalid_target",
+            "server_error",
+        )
+    }
 }

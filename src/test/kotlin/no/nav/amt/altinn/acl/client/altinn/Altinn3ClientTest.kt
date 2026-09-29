@@ -91,6 +91,7 @@ class Altinn3ClientTest {
         }
 
         exception.message shouldBe "Klarte ikke å hente organisasjoner fra Altinn, status=500"
+        exception.statusCode shouldBe 500
         exception.message.shouldNotBeNull() shouldNotContain norskIdent
         exception.cause shouldBe null
     }

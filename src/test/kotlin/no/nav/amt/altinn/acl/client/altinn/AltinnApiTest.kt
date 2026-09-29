@@ -66,6 +66,7 @@ class AltinnApiTest(
         }
 
         exception.message shouldBe "Klarte ikke å hente organisasjoner fra Altinn, status=500"
+        exception.statusCode shouldBe 500
         exception.cause shouldBe null
     }
 }

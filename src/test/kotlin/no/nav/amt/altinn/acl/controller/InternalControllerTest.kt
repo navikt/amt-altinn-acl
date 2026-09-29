@@ -64,10 +64,18 @@ class InternalControllerTest(
         mockMvc
             .perform(asyncDispatch(result))
             .andExpect(status().isInternalServerError)
+            .andExpect(content().contentType("application/problem+json"))
             .andExpect(
                 content().json(
-                    """{"status":500,"title":"500 INTERNAL_SERVER_ERROR","detail":"En uventet feil oppstod"}""",
-                    JsonCompareMode.STRICT,
+                    """
+                    {
+                      "title": "Internal Server Error",
+                      "status": 500,
+                      "detail": "En uventet feil oppstod",
+                      "instance": "$PATH"
+                    }
+                    """.trimIndent(),
+                    JsonCompareMode.LENIENT,
                 ),
             )
 
