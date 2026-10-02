@@ -81,7 +81,7 @@ class RolleService(
     private fun getAndSaveRollerFromAltinn(norskIdent: String): List<RolleDbo> {
         val start = Instant.now()
 
-        val rolleMap: Map<RolleType, List<String>> = try {
+        val rolleMapFraAltinn: Map<RolleType, List<String>> = try {
             altinnClient.hentRoller(norskIdent, RolleType.entries).filterValues { it.isNotEmpty() }
         } catch (e: Exception) {
             log.warn(
@@ -95,12 +95,12 @@ class RolleService(
             return emptyList()
         }
 
-        if (rolleMap.isEmpty()) {
+        if (rolleMapFraAltinn.isEmpty()) {
             log.info("Bruker har ingen tilganger i Altinn")
             return emptyList()
         }
 
-        val rollerOgOrgnummreForLagring = rolleMap
+        val rollerOgOrganisasjonsnumreForLagring = rolleMapFraAltinn
             .flatMap { (rolleFraAltinn, organisasjonsnumre) ->
                 organisasjonsnumre.map { Pair(rolleFraAltinn, it) }
             }.toSet()
@@ -110,7 +110,7 @@ class RolleService(
 
             rolleRepository.createRoller(
                 personId = person.id,
-                rolleOgOrganisasjonsnummerSett = rollerOgOrgnummreForLagring,
+                rolleOgOrganisasjonsnummerSett = rollerOgOrganisasjonsnumreForLagring,
             )
 
             val duration = Duration.between(start, Instant.now())
@@ -162,13 +162,16 @@ class RolleService(
 
             val alleEksisterendeRollerForPersonFraDb =
                 rolleRepository.hentGyldigeRollerForPerson(norskIdent)
+
             val eksisterendeRoller = alleEksisterendeRollerForPersonFraDb
                 .map { it.rolleType to it.organisasjonsnummer }
                 .toSet()
+
             val rolleIderSomSkalFjernes = alleEksisterendeRollerForPersonFraDb
                 .filter { it.rolleType to it.organisasjonsnummer !in rollerFraAltinn }
                 .map { it.id }
                 .toSet()
+
             val nyeRoller = rollerFraAltinn
                 .filter { it !in eksisterendeRoller }
                 .toSet()
