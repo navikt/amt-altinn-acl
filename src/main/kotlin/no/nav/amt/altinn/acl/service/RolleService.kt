@@ -172,9 +172,7 @@ class RolleService(
                 .map { it.id }
                 .toSet()
 
-            val nyeRoller = rollerFraAltinn
-                .filter { it !in eksisterendeRoller }
-                .toSet()
+            val nyeRoller = rollerFraAltinn - eksisterendeRoller
 
             if (rolleIderSomSkalFjernes.isEmpty() && nyeRoller.isEmpty()) {
                 log.info("Ingen endring i roller for person id $personId")
