@@ -10,6 +10,4 @@ data class RolleDbo(
     val rolleType: RolleType,
     val validFrom: ZonedDateTime,
     val validTo: ZonedDateTime?,
-) {
-    fun erGyldig(): Boolean = validTo == null
-}
+)

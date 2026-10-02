@@ -13,46 +13,51 @@ import org.springframework.stereotype.Repository
 class RolleRepository(
     private val template: NamedParameterJdbcTemplate,
 ) {
-    fun createRolle(
+    fun createRoller(
         personId: Long,
-        organisasjonsnummer: String,
-        rolleType: RolleType,
-    ): RolleDbo {
+        rolleOgOrganisasjonsnummerSett: Set<Pair<RolleType, String>>,
+    ) {
+        if (rolleOgOrganisasjonsnummerSett.isEmpty()) {
+            return
+        }
+
         val sql =
             """
             INSERT INTO rolle(
-                person_id, 
-                organisasjonsnummer, 
-                rolle, 
+                person_id,
+                organisasjonsnummer,
+                rolle,
                 valid_from
             )
             VALUES (
-                :person_id, 
-                :organisasjonsnummer, 
-                :rolle, 
+                :person_id,
+                :organisasjonsnummer,
+                :rolle,
                 NOW()
             )
-            RETURNING *
             """.trimIndent()
 
-        val params = sqlParameters(
-            "person_id" to personId,
-            "organisasjonsnummer" to organisasjonsnummer,
-            "rolle" to rolleType.toString(),
-        )
+        val batchParams = rolleOgOrganisasjonsnummerSett
+            .map { (rolleType, organisasjonsnummer) ->
+                sqlParameters(
+                    "person_id" to personId,
+                    "rolle" to rolleType.toString(),
+                    "organisasjonsnummer" to organisasjonsnummer,
+                )
+            }.toTypedArray()
 
-        return template.queryForObject(sql, params, rowMapper)
+        template.batchUpdate(sql, batchParams)
     }
 
-    fun invalidateRolle(id: Long) {
+    fun fjernRoller(rolleIder: Set<Long>) {
         val sql =
             """
             UPDATE rolle
             SET valid_to = NOW()
-            WHERE id = :id
+            WHERE id IN (:rolleIder)
             """.trimIndent()
 
-        template.update(sql, sqlParameters("id" to id))
+        template.update(sql, sqlParameters("rolleIder" to rolleIder))
     }
 
     fun hentGyldigeRollerForPerson(norskIdent: String): List<RolleDbo> {

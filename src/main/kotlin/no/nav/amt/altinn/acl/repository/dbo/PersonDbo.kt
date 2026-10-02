@@ -7,4 +7,6 @@ data class PersonDbo(
     val norskIdent: String,
     val created: ZonedDateTime,
     val lastSynchronized: ZonedDateTime,
+    val synchronizationAttempt: Long,
+    val appliedSynchronizationAttempt: Long,
 )

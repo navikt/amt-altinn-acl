@@ -37,7 +37,6 @@ class ApplicationConfig(
 
     @Bean
     fun logFilterRegistrationBean(): FilterRegistrationBean<LogRequestFilter> = FilterRegistrationBean<LogRequestFilter>().apply {
-        @Suppress("UsePropertyAccessSyntax")
         setFilter(LogRequestFilter("amt-altinn-acl", false))
         order = 1
         addUrlPatterns("/*")

@@ -9,6 +9,7 @@ import no.nav.amt.altinn.acl.repository.dbo.RolleDbo
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.stereotype.Service
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.Duration
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -19,6 +20,7 @@ class RolleService(
     private val personRepository: PersonRepository,
     private val rolleRepository: RolleRepository,
     private val altinnClient: Altinn3Client,
+    private val transactionTemplate: TransactionTemplate,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -32,7 +34,10 @@ class RolleService(
             }
 
             person.lastSynchronized.isBefore(ZonedDateTime.now().minusHours(1)) -> {
-                updateRollerFromAltinn(person.id, norskIdent)
+                updateRollerFromAltinn(
+                    personId = person.id,
+                    norskIdent = norskIdent,
+                )
                 rolleRepository.hentGyldigeRollerForPerson(norskIdent).mapToRollerIOrganisasjon()
             }
 
@@ -41,7 +46,7 @@ class RolleService(
 
                 if (roller.isEmpty()) {
                     updateRollerFromAltinn(
-                        id = person.id,
+                        personId = person.id,
                         norskIdent = norskIdent,
                     )
                     rolleRepository.hentGyldigeRollerForPerson(norskIdent).mapToRollerIOrganisasjon()
@@ -56,12 +61,18 @@ class RolleService(
         max: Int = 25,
         synchronizedBefore: OffsetDateTime = OffsetDateTime.now().minusWeeks(1),
     ) {
-        val personsToSynchronize = personRepository.getUnsynchronizedPersons(max, synchronizedBefore)
+        val personsToSynchronize = personRepository.getUnsynchronizedPersons(
+            maxSize = max,
+            synchronizedBefore = synchronizedBefore,
+        )
 
         log.info("Starter synkronisering av ${personsToSynchronize.size} brukere med utgått tilgang")
 
         personsToSynchronize.forEach { personDbo ->
-            updateRollerFromAltinn(personDbo.id, personDbo.norskIdent)
+            updateRollerFromAltinn(
+                personId = personDbo.id,
+                norskIdent = personDbo.norskIdent,
+            )
         }
 
         log.info("Fullført synkronisering av ${personsToSynchronize.size} brukere med utgått tilgang")
@@ -89,34 +100,43 @@ class RolleService(
             return emptyList()
         }
 
-        val person = personRepository.createAndSetSynchronized(norskIdent)
+        val rollerOgOrgnummreForLagring = rolleMap
+            .flatMap { (rolleFraAltinn, organisasjonsnumre) ->
+                organisasjonsnumre.map { Pair(rolleFraAltinn, it) }
+            }.toSet()
 
-        rolleMap.forEach {
-            it.value.forEach { orgnummer ->
-                rolleRepository.createRolle(person.id, orgnummer, it.key)
-            }
+        transactionTemplate.executeWithoutResult {
+            val person = personRepository.createAndSetSynchronized(norskIdent)
+
+            rolleRepository.createRoller(
+                personId = person.id,
+                rolleOgOrganisasjonsnummerSett = rollerOgOrgnummreForLagring,
+            )
+
+            val duration = Duration.between(start, Instant.now())
+            log.info("Saved roller for person with id ${person.id} in ${duration.toMillis()} ms")
         }
-
-        val duration = Duration.between(start, Instant.now())
-        log.info("Saved roller for person with id ${person.id} in ${duration.toMillis()} ms")
 
         return rolleRepository.hentGyldigeRollerForPerson(norskIdent)
     }
 
-    private fun updateRollerFromAltinn(
-        id: Long,
+    fun updateRollerFromAltinn(
+        personId: Long,
         norskIdent: String,
     ) {
         val start = Instant.now()
-        val allOldRoller = rolleRepository.hentGyldigeRollerForPerson(norskIdent)
+        val synchronizationAttempt = personRepository.reserveSynchronizationAttempt(personId, norskIdent)
 
-        val rolleMap: Map<RolleType, List<String>> = try {
-            altinnClient.hentRoller(norskIdent, RolleType.entries)
+        val rolleMapForPersonFraAltinn: Map<RolleType, List<String>> = try {
+            altinnClient.hentRoller(
+                norskIdent = norskIdent,
+                roller = RolleType.entries,
+            )
         } catch (e: Exception) {
             log.warn(
                 "Klarte ikke oppdatere roller for brukerId={}, bruker lagrede roller om eksisterer, " +
                     "exceptionType={}, statusCode={}, errorCode={}, traceId={}",
-                id,
+                personId,
                 e.javaClass.name,
                 e.safeStatusCode(),
                 e.safeErrorCode(),
@@ -125,26 +145,71 @@ class RolleService(
             return
         }
 
-        rolleMap.forEach { (rolle, organisasjonerMedRolle) ->
-            val oldRoller = allOldRoller.filter { it.rolleType == rolle }
+        val rollerFraAltinn = rolleMapForPersonFraAltinn
+            .flatMap { (rolle, organisasjonsnumre) -> organisasjonsnumre.map { rolle to it } }
+            .toSet()
 
-            oldRoller.forEach { oldRolle ->
-                if (!organisasjonerMedRolle.contains(oldRolle.organisasjonsnummer)) {
-                    log.debug("User {} lost {} on {}", id, rolle, oldRolle.organisasjonsnummer)
-                    rolleRepository.invalidateRolle(oldRolle.id)
-                }
+        val synchronized = transactionTemplate.execute {
+            val person = personRepository.lockForUpdate(personId, norskIdent)
+            if (person.appliedSynchronizationAttempt >= synchronizationAttempt) {
+                log.info(
+                    "Ignorerer utdatert synkroniseringsforsøk {} for person id {}",
+                    synchronizationAttempt,
+                    personId,
+                )
+                return@execute false
             }
 
-            organisasjonerMedRolle.forEach { orgRolle ->
-                if (oldRoller.none { it.organisasjonsnummer == orgRolle && it.erGyldig() }) {
-                    log.debug("User {} got {} on {}", id, rolle, orgRolle)
-                    rolleRepository.createRolle(id, orgRolle, rolle)
-                }
+            val alleEksisterendeRollerForPersonFraDb =
+                rolleRepository.hentGyldigeRollerForPerson(norskIdent)
+            val eksisterendeRoller = alleEksisterendeRollerForPersonFraDb
+                .map { it.rolleType to it.organisasjonsnummer }
+                .toSet()
+            val rolleIderSomSkalFjernes = alleEksisterendeRollerForPersonFraDb
+                .filter { it.rolleType to it.organisasjonsnummer !in rollerFraAltinn }
+                .map { it.id }
+                .toSet()
+            val nyeRoller = rollerFraAltinn
+                .filter { it !in eksisterendeRoller }
+                .toSet()
+
+            if (rolleIderSomSkalFjernes.isEmpty() && nyeRoller.isEmpty()) {
+                log.info("Ingen endring i roller for person id $personId")
             }
+
+            if (rolleIderSomSkalFjernes.isNotEmpty()) {
+                // invalider roller person ikke lenger har
+                rolleRepository.fjernRoller(rolleIderSomSkalFjernes)
+                log.debug(
+                    "User {} lost roles {}",
+                    personId,
+                    rolleIderSomSkalFjernes,
+                )
+            }
+
+            if (nyeRoller.isNotEmpty()) {
+                rolleRepository.createRoller(
+                    personId = personId,
+                    rolleOgOrganisasjonsnummerSett = nyeRoller,
+                )
+                log.debug(
+                    "User {} got {}",
+                    personId,
+                    nyeRoller,
+                )
+            }
+
+            personRepository.completeSynchronization(
+                personId = personId,
+                norskIdent = norskIdent,
+                synchronizationAttempt = synchronizationAttempt,
+            )
+            true
         }
 
-        personRepository.setSynchronized(norskIdent)
+        if (!synchronized) return
+
         val duration = Duration.between(start, Instant.now())
-        log.info("Updated roller for person with id $id in ${duration.toMillis()} ms")
+        log.info("Updated roller for person with id $personId in ${duration.toMillis()} ms")
     }
 }
