@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotContain
 import io.mockk.every
 import io.mockk.mockk
+import no.nav.amt.altinn.acl.client.MaskinportenTokenClient
 import no.nav.amt.altinn.acl.domain.RolleType
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatusCode
@@ -93,6 +94,23 @@ class Altinn3ClientTest {
         exception.message shouldBe "Klarte ikke å hente organisasjoner fra Altinn, status=500"
         exception.statusCode shouldBe 500
         exception.message.shouldNotBeNull() shouldNotContain norskIdent
+        exception.cause shouldBe null
+    }
+
+    @Test
+    fun `hentRoller - Maskinporten kaster feil - kaster Altinn-feil med feildetaljer`() {
+        every { altinnApi.hentAuthorizedParties(any()) } throws
+            MaskinportenTokenClient.MaskinportenTokenException(
+                statusCode = 401,
+                errorCode = "invalid_client",
+            )
+
+        val exception = shouldThrow<Altinn3Client.AltinnClientException> {
+            altinnClient.hentRoller("12345678901", RolleType.entries)
+        }
+
+        exception.statusCode shouldBe 401
+        exception.errorCode shouldBe "invalid_client"
         exception.cause shouldBe null
     }
 }

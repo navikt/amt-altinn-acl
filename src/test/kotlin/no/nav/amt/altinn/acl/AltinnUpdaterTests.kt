@@ -16,6 +16,8 @@ import no.nav.amt.altinn.acl.testutil.IntegrationTest
 import no.nav.amt.lib.utils.leaderelection.LeaderElectionClient
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.Instant
+import java.time.ZoneOffset
 import kotlin.random.Random
 
 class AltinnUpdaterTests(
@@ -34,7 +36,7 @@ class AltinnUpdaterTests(
         val organisasjonsnummer = "2131"
         val personligIdent = Random.nextLong().toString()
 
-        personRepository.create(personligIdent)
+        personRepository.createAndSetSynchronized(personligIdent, Instant.EPOCH.atZone(ZoneOffset.UTC))
 
         every {
             altinnClient.hentRoller(personligIdent, RolleType.entries)

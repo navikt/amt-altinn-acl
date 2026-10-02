@@ -12,7 +12,11 @@ import no.nav.amt.altinn.acl.domain.RollerIOrganisasjon
 import no.nav.amt.altinn.acl.repository.PersonRepository
 import no.nav.amt.altinn.acl.repository.RolleRepository
 import no.nav.amt.altinn.acl.testutil.IntegrationTest
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.jdbc.core.JdbcTemplate
+import java.time.Instant
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.UUID
@@ -21,174 +25,199 @@ class RolleServiceTest(
     private val rolleService: RolleService,
     private val personRepository: PersonRepository,
     private val rolleRepository: RolleRepository,
+    private val jdbcTemplate: JdbcTemplate,
 ) : IntegrationTest() {
-    @Test
-    internal fun `getRollerForPerson - not exist - create person and get roller from altinn`() {
-        val norskIdent = UUID.randomUUID().toString()
-        val organisasjonsnummer = UUID.randomUUID().toString()
+    @Nested
+    inner class HentRollerForPerson {
+        @Test
+        fun `oppretter person og henter roller fra Altinn når personen ikke finnes`() {
+            // Arrange
+            val norskIdent = UUID.randomUUID().toString()
+            val organisasjonsnummer = UUID.randomUUID().toString()
+            mockAltinnRoller(norskIdent, listOf(KOORDINATOR, VEILEDER), listOf(organisasjonsnummer))
 
-        mockAltinnRoller(norskIdent, listOf(KOORDINATOR, VEILEDER), listOf(organisasjonsnummer))
+            // Act
+            val roller = rolleService.getRollerForPerson(norskIdent)
 
-        val roller = rolleService.getRollerForPerson(norskIdent)
+            // Assert
+            verify(exactly = 1) { altinnClient.hentRoller(norskIdent, RolleType.entries) }
+            roller.size shouldBe 1
+            hasRolle(roller, organisasjonsnummer, VEILEDER) shouldBe true
+            hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
 
-        verify(exactly = 1) { altinnClient.hentRoller(norskIdent, RolleType.entries) }
+            val databasePerson = personRepository.get(norskIdent)
+            databasePerson.shouldNotBeNull()
+            databasePerson.lastSynchronized.days() shouldBe ZonedDateTime.now().days()
 
-        roller.size shouldBe 1
+            hasRolleInDatabase(norskIdent, organisasjonsnummer, VEILEDER) shouldBe true
+            hasRolleInDatabase(norskIdent, organisasjonsnummer, KOORDINATOR) shouldBe true
+        }
 
-        hasRolle(roller, organisasjonsnummer, VEILEDER) shouldBe true
-        hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
+        @Test
+        fun `lagrer ikke personen når Altinn ikke returnerer roller`() {
+            // Arrange
+            val norskIdent = UUID.randomUUID().toString()
+            mockAltinnRoller(norskIdent, listOf(VEILEDER), emptyList())
 
-        val databasePerson = personRepository.get(norskIdent)
-        databasePerson.shouldNotBeNull()
-        databasePerson.lastSynchronized.days() shouldBe ZonedDateTime.now().days()
+            // Act
+            val roller = rolleService.getRollerForPerson(norskIdent)
 
-        hasRolleInDatabase(databasePerson.id, organisasjonsnummer, VEILEDER) shouldBe true
-        hasRolleInDatabase(databasePerson.id, organisasjonsnummer, KOORDINATOR) shouldBe true
-    }
+            // Assert
+            verify(exactly = 1) { altinnClient.hentRoller(norskIdent, RolleType.entries) }
+            roller.size shouldBe 0
+            personRepository.get(norskIdent) shouldBe null
+        }
 
-    @Test
-    internal fun `getRollerForPerson - not exist and no roller in Altinn - don't save person`() {
-        val norskIdent = UUID.randomUUID().toString()
+        @Test
+        fun `returnerer lagrede roller uten å kontakte Altinn ved fersk synkronisering`() {
+            // Arrange
+            val norskIdent = UUID.randomUUID().toString()
+            val organisasjonsnummer = UUID.randomUUID().toString()
+            val personDbo = personRepository.createAndSetSynchronized(norskIdent)
+            rolleRepository.createRolle(
+                personId = personDbo.id,
+                organisasjonsnummer = organisasjonsnummer,
+                rolleType = KOORDINATOR,
+            )
 
-        mockAltinnRoller(norskIdent, listOf(VEILEDER), emptyList())
+            // Act
+            rolleService.getRollerForPerson(norskIdent)
 
-        val roller = rolleService.getRollerForPerson(norskIdent)
+            // Assert
+            verify(exactly = 0) { altinnClient.hentRoller(any(), any()) }
+        }
 
-        verify(exactly = 1) { altinnClient.hentRoller(norskIdent, RolleType.entries) }
-        roller.size shouldBe 0
-        personRepository.get(norskIdent) shouldBe null
-    }
+        @Test
+        fun `henter roller fra Altinn når personen ikke har lagrede roller`() {
+            // Arrange
+            val norskIdent = UUID.randomUUID().toString()
+            val organisasjonsnummer = UUID.randomUUID().toString()
+            personRepository.createAndSetSynchronized(norskIdent)
+            mockAltinnRoller(norskIdent, listOf(KOORDINATOR, VEILEDER), listOf(organisasjonsnummer))
 
-    @Test
-    internal fun `getRollerForPerson - exists - has rolle - return cached rolle if under cacheTime`() {
-        val norskIdent = UUID.randomUUID().toString()
-        val organisasjonsnummer = UUID.randomUUID().toString()
+            // Act
+            val roller = rolleService.getRollerForPerson(norskIdent)
 
-        val personDbo = personRepository.create(norskIdent)
-        personRepository.setSynchronized(norskIdent)
+            // Assert
+            hasRolle(roller, organisasjonsnummer, VEILEDER) shouldBe true
+            hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
+            verify(exactly = 1) { altinnClient.hentRoller(norskIdent, RolleType.entries) }
+        }
 
-        rolleRepository.createRolle(
-            personId = personDbo.id,
-            organisasjonsnummer = organisasjonsnummer,
-            rolleType = KOORDINATOR,
-        )
+        @Test
+        fun `ugyldiggjør roller som er fjernet i Altinn`() {
+            // Arrange
+            val norskIdent = UUID.randomUUID().toString()
+            val organisasjonsnummer = UUID.randomUUID().toString()
+            val personDbo = opprettUsynkronisertPerson(norskIdent)
+            rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
+            val veilederRolle = rolleRepository.createRolle(personDbo.id, organisasjonsnummer, VEILEDER)
+            mockAltinnRoller(norskIdent, listOf(KOORDINATOR), listOf(organisasjonsnummer))
 
-        rolleService.getRollerForPerson(norskIdent)
+            // Act
+            val roller = rolleService.getRollerForPerson(norskIdent)
 
-        verify(exactly = 0) { altinnClient.hentRoller(any(), any()) }
-    }
+            // Assert
+            hasRolle(roller, organisasjonsnummer, VEILEDER) shouldBe false
+            hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
+            isRolleGyldig(veilederRolle.id) shouldBe false
+        }
 
-    @Test
-    internal fun `getRollerForPerson - exists - has no roller - should check altinn`() {
-        val norskIdent = UUID.randomUUID().toString()
-        val organisasjonsnummer = UUID.randomUUID().toString()
+        @Test
+        fun `legger til roller som er gitt i Altinn`() {
+            // Arrange
+            val norskIdent = UUID.randomUUID().toString()
+            val organisasjonsnummer = UUID.randomUUID().toString()
+            val personDbo = opprettUsynkronisertPerson(norskIdent)
+            rolleRepository.createRolle(personDbo.id, organisasjonsnummer, VEILEDER)
+            mockAltinnRoller(norskIdent, listOf(KOORDINATOR, VEILEDER), listOf(organisasjonsnummer))
 
-        personRepository.create(norskIdent)
-        personRepository.setSynchronized(norskIdent)
+            // Act
+            val roller = rolleService.getRollerForPerson(norskIdent)
 
-        mockAltinnRoller(norskIdent, listOf(KOORDINATOR, VEILEDER), listOf(organisasjonsnummer))
+            // Assert
+            hasRolle(roller, organisasjonsnummer, VEILEDER) shouldBe true
+            hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
+        }
 
-        val roller = rolleService.getRollerForPerson(norskIdent)
+        @Test
+        fun `oppretter ny historikkrad når tilgangen gis på nytt`() {
+            // Arrange
+            val norskIdent = UUID.randomUUID().toString()
+            val organisasjonsnummer = UUID.randomUUID().toString()
+            val personDbo = opprettUsynkronisertPerson(norskIdent)
+            rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
+            mockAltinnRoller(norskIdent, listOf(KOORDINATOR, VEILEDER), emptyList())
 
-        hasRolle(roller, organisasjonsnummer, VEILEDER) shouldBe true
-        hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
+            // Act
+            val rollerUtenTilgang = rolleService.getRollerForPerson(norskIdent)
 
-        verify(exactly = 1) { altinnClient.hentRoller(norskIdent, RolleType.entries) }
-    }
+            // Assert
+            rollerUtenTilgang.isEmpty() shouldBe true
 
-    @Test
-    internal fun `getRollerForPerson - exists - has lost roller in altinn`() {
-        val norskIdent = UUID.randomUUID().toString()
-        val organisasjonsnummer = UUID.randomUUID().toString()
+            // Arrange
+            mockAltinnRoller(norskIdent, listOf(KOORDINATOR), listOf(organisasjonsnummer))
 
-        val personDbo = personRepository.create(norskIdent)
-        rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
-        rolleRepository.createRolle(personDbo.id, organisasjonsnummer, VEILEDER)
+            // Act
+            val rollerEtterGjenoppretting = rolleService.getRollerForPerson(norskIdent)
 
-        mockAltinnRoller(norskIdent, listOf(KOORDINATOR), listOf(organisasjonsnummer))
+            // Assert
+            hasRolle(rollerEtterGjenoppretting, organisasjonsnummer, KOORDINATOR) shouldBe true
+            val databaseRoller = jdbcTemplate.query(
+                """
+                SELECT valid_to IS NULL
+                FROM rolle
+                WHERE person_id = ? AND rolle = ?
+                ORDER BY id
+                """.trimIndent(),
+                { rs, _ -> rs.getBoolean(1) },
+                personDbo.id,
+                KOORDINATOR.toString(),
+            )
+            databaseRoller shouldBe listOf(false, true)
+        }
 
-        val roller = rolleService.getRollerForPerson(norskIdent)
+        @Test
+        fun `beholder lagrede roller når Altinn ikke er tilgjengelig`() {
+            // Arrange
+            val norskIdent = UUID.randomUUID().toString()
+            val organisasjonsnummer = UUID.randomUUID().toString()
+            val personDbo = opprettUsynkronisertPerson(norskIdent)
+            rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
+            every { altinnClient.hentRoller(norskIdent, RolleType.entries) } throws
+                RuntimeException("Klarte ikke å hente organisasjoner code=500")
 
-        hasRolle(roller, organisasjonsnummer, VEILEDER) shouldBe false
-        hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
+            // Act
+            val roller = rolleService.getRollerForPerson(norskIdent)
+            val updatedPerson = personRepository.get(norskIdent)
 
-        val invalidVeileder = rolleRepository.hentRollerForPerson(personDbo.id).first { it.rolleType == VEILEDER }
-
-        invalidVeileder.validTo shouldNotBe null
-    }
-
-    @Test
-    internal fun `getRollerForPerson - exists - has gained rolle in altinn`() {
-        val norskIdent = UUID.randomUUID().toString()
-        val organisasjonsnummer = UUID.randomUUID().toString()
-
-        val personDbo = personRepository.create(norskIdent)
-        rolleRepository.createRolle(personDbo.id, organisasjonsnummer, VEILEDER)
-
-        mockAltinnRoller(norskIdent, listOf(KOORDINATOR, VEILEDER), listOf(organisasjonsnummer))
-
-        val roller = rolleService.getRollerForPerson(norskIdent)
-
-        hasRolle(roller, organisasjonsnummer, VEILEDER) shouldBe true
-        hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
-    }
-
-    @Test
-    internal fun `getRollerForPerson - exists - has regained rolle in altinn`() {
-        val norskIdent = UUID.randomUUID().toString()
-        val organisasjonsnummer = UUID.randomUUID().toString()
-
-        val personDbo = personRepository.create(norskIdent)
-        rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
-
-        mockAltinnRoller(norskIdent, listOf(KOORDINATOR, VEILEDER), emptyList())
-
-        val roller = rolleService.getRollerForPerson(norskIdent)
-
-        roller.isEmpty() shouldBe true
-
-        mockAltinnRoller(norskIdent, listOf(KOORDINATOR), listOf(organisasjonsnummer))
-
-        val updatedRoller = rolleService.getRollerForPerson(norskIdent)
-
-        hasRolle(updatedRoller, organisasjonsnummer, KOORDINATOR) shouldBe true
-
-        val databaseRoller = rolleRepository
-            .hentRollerForPerson(personDbo.id)
-            .filter { it.rolleType == KOORDINATOR }
-
-        databaseRoller.size shouldBe 2
-    }
-
-    @Test
-    internal fun `getRollerForPerson - Altinn down - returns cached roller`() {
-        val norskIdent = UUID.randomUUID().toString()
-        val organisasjonsnummer = UUID.randomUUID().toString()
-        val personDbo = personRepository.create(norskIdent)
-
-        rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
-
-        every { altinnClient.hentRoller(norskIdent, RolleType.entries) } throws
-            RuntimeException("Klarte ikke å hente organisasjoner code=500")
-
-        val roller = rolleService.getRollerForPerson(norskIdent)
-
-        verify(exactly = 1) { altinnClient.hentRoller(norskIdent, RolleType.entries) }
-        hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
-
-        val updatedPersonDbo = personRepository.get(norskIdent)
-        updatedPersonDbo.shouldNotBeNull()
-        updatedPersonDbo.lastSynchronized.days() shouldNotBe ZonedDateTime.now().days()
+            // Assert
+            verify(exactly = 1) { altinnClient.hentRoller(norskIdent, RolleType.entries) }
+            hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
+            val synchronizedPerson = updatedPerson.shouldNotBeNull()
+            synchronizedPerson.lastSynchronized.days() shouldNotBe ZonedDateTime.now().days()
+        }
     }
 
     private fun hasRolleInDatabase(
-        personId: Long,
+        norskIdent: String,
         organisasjonsnummerNumber: String,
         rolle: RolleType,
     ): Boolean = rolleRepository
-        .hentRollerForPerson(personId)
-        .filter { it.erGyldig() }
-        .find { it.organisasjonsnummer == organisasjonsnummerNumber && it.rolleType == rolle } != null
+        .hentGyldigeRollerForPerson(norskIdent)
+        .any { it.organisasjonsnummer == organisasjonsnummerNumber && it.rolleType == rolle }
+
+    private fun opprettUsynkronisertPerson(norskIdent: String) = personRepository.createAndSetSynchronized(
+        norskIdent,
+        Instant.EPOCH.atZone(ZoneOffset.UTC),
+    )
+
+    private fun isRolleGyldig(rolleId: Long): Boolean = jdbcTemplate
+        .query(
+            "SELECT valid_to IS NULL FROM rolle WHERE id = ?",
+            { rs, _ -> rs.getBoolean(1) },
+            rolleId,
+        ).single()
 
     private fun hasRolle(
         list: List<RollerIOrganisasjon>,
