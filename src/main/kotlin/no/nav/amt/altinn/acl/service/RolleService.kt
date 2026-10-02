@@ -125,7 +125,7 @@ class RolleService(
         norskIdent: String,
     ) {
         val start = Instant.now()
-        val synchronizationAttempt = personRepository.reserveSynchronizationAttempt(personId, norskIdent)
+        val synchronizationAttempt = personRepository.reserveSynchronizationAttempt(personId)
 
         val rolleMapForPersonFraAltinn: Map<RolleType, List<String>> = try {
             altinnClient.hentRoller(

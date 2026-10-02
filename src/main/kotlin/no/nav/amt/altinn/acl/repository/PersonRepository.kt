@@ -77,22 +77,14 @@ class PersonRepository(
             rowMapper,
         ).firstOrNull()
 
-    fun reserveSynchronizationAttempt(
-        personId: Long,
-        norskIdent: String,
-    ): Long = template.queryForObject(
+    fun reserveSynchronizationAttempt(personId: Long): Long = template.queryForObject(
         """
         UPDATE person
         SET synchronization_attempt = synchronization_attempt + 1
-        WHERE 
-            id = :person_id
-            AND norsk_ident = :norsk_ident
+        WHERE id = :person_id
         RETURNING synchronization_attempt
         """.trimIndent(),
-        sqlParameters(
-            "person_id" to personId,
-            "norsk_ident" to norskIdent,
-        ),
+        sqlParameters("person_id" to personId),
         Long::class.java,
     ) ?: error("Fant ikke synchronization attempt")
 
