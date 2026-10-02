@@ -1,5 +1,6 @@
 package no.nav.amt.altinn.acl.client.altinn
 
+import no.nav.amt.altinn.acl.client.MaskinportenTokenClient
 import no.nav.amt.altinn.acl.domain.RolleType
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -35,9 +36,15 @@ class Altinn3Client(
         throw AltinnClientException(
             statusCode = e.statusCode.value(),
         )
+    } catch (e: MaskinportenTokenClient.MaskinportenTokenException) {
+        throw AltinnClientException(
+            statusCode = e.statusCode,
+            errorCode = e.errorCode,
+        )
     }
 
     class AltinnClientException(
         val statusCode: Int,
+        val errorCode: String? = null,
     ) : RuntimeException("Klarte ikke å hente organisasjoner fra Altinn, status=$statusCode")
 }

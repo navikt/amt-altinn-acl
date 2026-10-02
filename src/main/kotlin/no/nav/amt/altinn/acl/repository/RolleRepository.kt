@@ -7,13 +7,75 @@ import no.nav.amt.altinn.acl.utils.getNullableZonedDateTime
 import no.nav.amt.altinn.acl.utils.getZonedDateTime
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
-import org.springframework.jdbc.support.GeneratedKeyHolder
 import org.springframework.stereotype.Repository
 
 @Repository
 class RolleRepository(
     private val template: NamedParameterJdbcTemplate,
 ) {
+    fun createRolle(
+        personId: Long,
+        organisasjonsnummer: String,
+        rolleType: RolleType,
+    ): RolleDbo {
+        val sql =
+            """
+            INSERT INTO rolle(
+                person_id, 
+                organisasjonsnummer, 
+                rolle, 
+                valid_from
+            )
+            VALUES (
+                :person_id, 
+                :organisasjonsnummer, 
+                :rolle, 
+                NOW()
+            )
+            RETURNING *
+            """.trimIndent()
+
+        val params = sqlParameters(
+            "person_id" to personId,
+            "organisasjonsnummer" to organisasjonsnummer,
+            "rolle" to rolleType.toString(),
+        )
+
+        return template.queryForObject(sql, params, rowMapper)
+    }
+
+    fun invalidateRolle(id: Long) {
+        val sql =
+            """
+            UPDATE rolle
+            SET valid_to = NOW()
+            WHERE id = :id
+            """.trimIndent()
+
+        template.update(sql, sqlParameters("id" to id))
+    }
+
+    fun hentGyldigeRollerForPerson(norskIdent: String): List<RolleDbo> {
+        val sql =
+            """
+            SELECT 
+                rolle.id,
+                rolle.person_id,       
+                rolle.organisasjonsnummer,                         
+                rolle.rolle,
+                rolle.valid_from,
+                rolle.valid_to
+            FROM 
+                rolle
+                JOIN person ON person.id = rolle.person_id
+            WHERE 
+                person.norsk_ident = :norsk_ident
+                AND rolle.valid_to IS NULL
+            """.trimIndent()
+
+        return template.query(sql, sqlParameters("norsk_ident" to norskIdent), rowMapper)
+    }
+
     private val rowMapper = RowMapper { rs, _ ->
         RolleDbo(
             id = rs.getLong("id"),
@@ -24,70 +86,4 @@ class RolleRepository(
             validTo = rs.getNullableZonedDateTime("valid_to"),
         )
     }
-
-    fun createRolle(
-        personId: Long,
-        organisasjonsnummer: String,
-        rolleType: RolleType,
-    ): RolleDbo {
-        val sql =
-            """
-            INSERT INTO rolle(person_id, organisasjonsnummer, rolle, valid_from)
-            VALUES (:person_id, :organisasjonsnummer, :rolle, current_timestamp)
-            """.trimIndent()
-
-        val params = sqlParameters(
-            "person_id" to personId,
-            "organisasjonsnummer" to organisasjonsnummer,
-            "rolle" to rolleType.toString(),
-        )
-
-        val keyHolder = GeneratedKeyHolder()
-        template.update(sql, params, keyHolder)
-
-        val id: Long = keyHolder.keys?.get("id") as Long?
-            ?: throw IllegalStateException("Expected key 'id' to be part of keyset")
-
-        return get(id)
-    }
-
-    fun invalidateRolle(id: Long) {
-        val sql =
-            """
-            UPDATE rolle
-            SET valid_to = current_timestamp
-            WHERE id = :id
-            """.trimIndent()
-
-        template.update(sql, sqlParameters("id" to id))
-    }
-
-    fun hentRollerForPerson(personId: Long): List<RolleDbo> {
-        val sql =
-            """
-            SELECT * from rolle
-            WHERE person_id = :person_id
-            """.trimIndent()
-
-        return template.query(sql, sqlParameters("person_id" to personId), rowMapper)
-    }
-
-    fun hentRollerForPerson(norskIdent: String): List<RolleDbo> {
-        val sql =
-            """
-            SELECT *
-            FROM rolle r
-            		 INNER JOIN person p ON p.id = r.person_id
-            WHERE norsk_ident = :norsk_ident;
-            """.trimIndent()
-
-        return template.query(sql, sqlParameters("norsk_ident" to norskIdent), rowMapper)
-    }
-
-    private fun get(id: Long): RolleDbo = template
-        .query(
-            "SELECT * FROM rolle WHERE id = :id",
-            sqlParameters("id" to id),
-            rowMapper,
-        ).first()
 }

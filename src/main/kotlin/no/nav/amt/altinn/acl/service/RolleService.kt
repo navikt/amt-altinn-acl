@@ -1,8 +1,6 @@
 package no.nav.amt.altinn.acl.service
 
-import no.nav.amt.altinn.acl.client.MaskinportenTokenClient
 import no.nav.amt.altinn.acl.client.altinn.Altinn3Client
-import no.nav.amt.altinn.acl.domain.Rolle
 import no.nav.amt.altinn.acl.domain.RolleType
 import no.nav.amt.altinn.acl.domain.RollerIOrganisasjon
 import no.nav.amt.altinn.acl.repository.PersonRepository
@@ -13,7 +11,7 @@ import org.slf4j.MDC
 import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.Instant
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZonedDateTime
 
 @Service
@@ -30,22 +28,25 @@ class RolleService(
         return when {
             person == null -> {
                 val roller = getAndSaveRollerFromAltinn(norskIdent)
-                map(roller)
+                roller.mapToRollerIOrganisasjon()
             }
 
             person.lastSynchronized.isBefore(ZonedDateTime.now().minusHours(1)) -> {
                 updateRollerFromAltinn(person.id, norskIdent)
-                map(getGyldigeRoller(norskIdent))
+                rolleRepository.hentGyldigeRollerForPerson(norskIdent).mapToRollerIOrganisasjon()
             }
 
             else -> {
-                val roller = getGyldigeRoller(norskIdent)
+                val roller = rolleRepository.hentGyldigeRollerForPerson(norskIdent)
 
                 if (roller.isEmpty()) {
-                    updateRollerFromAltinn(person.id, norskIdent)
-                    map(getGyldigeRoller(norskIdent))
+                    updateRollerFromAltinn(
+                        id = person.id,
+                        norskIdent = norskIdent,
+                    )
+                    rolleRepository.hentGyldigeRollerForPerson(norskIdent).mapToRollerIOrganisasjon()
                 } else {
-                    map(roller)
+                    roller.mapToRollerIOrganisasjon()
                 }
             }
         }
@@ -53,7 +54,7 @@ class RolleService(
 
     fun synchronizeUsers(
         max: Int = 25,
-        synchronizedBefore: LocalDateTime = LocalDateTime.now().minusWeeks(1),
+        synchronizedBefore: OffsetDateTime = OffsetDateTime.now().minusWeeks(1),
     ) {
         val personsToSynchronize = personRepository.getUnsynchronizedPersons(max, synchronizedBefore)
 
@@ -69,20 +70,19 @@ class RolleService(
     private fun getAndSaveRollerFromAltinn(norskIdent: String): List<RolleDbo> {
         val start = Instant.now()
 
-        val rolleMap: Map<RolleType, List<String>> =
-            try {
-                altinnClient.hentRoller(norskIdent, RolleType.entries).filterValues { it.isNotEmpty() }
-            } catch (e: Exception) {
-                log.warn(
-                    "Klarte ikke hente roller for ny bruker, exceptionType={}, statusCode={}, errorCode={}, traceId={}",
-                    e.javaClass.name,
-                    e.safeStatusCode(),
-                    e.safeErrorCode(),
-                    MDC.get("trace_id"),
-                )
-                // Feilen fanges her, så API-et svarer 200 med tom rolleliste; personen lagres ikke.
-                return emptyList()
-            }
+        val rolleMap: Map<RolleType, List<String>> = try {
+            altinnClient.hentRoller(norskIdent, RolleType.entries).filterValues { it.isNotEmpty() }
+        } catch (e: Exception) {
+            log.warn(
+                "Klarte ikke hente roller for ny bruker, exceptionType={}, statusCode={}, errorCode={}, traceId={}",
+                e.javaClass.name,
+                e.safeStatusCode(),
+                e.safeErrorCode(),
+                MDC.get("trace_id"),
+            )
+            // Feilen fanges her, så API-et svarer 200 med tom rolleliste; personen lagres ikke.
+            return emptyList()
+        }
 
         if (rolleMap.isEmpty()) {
             log.info("Bruker har ingen tilganger i Altinn")
@@ -100,7 +100,7 @@ class RolleService(
         val duration = Duration.between(start, Instant.now())
         log.info("Saved roller for person with id ${person.id} in ${duration.toMillis()} ms")
 
-        return getGyldigeRoller(norskIdent)
+        return rolleRepository.hentGyldigeRollerForPerson(norskIdent)
     }
 
     private fun updateRollerFromAltinn(
@@ -108,7 +108,7 @@ class RolleService(
         norskIdent: String,
     ) {
         val start = Instant.now()
-        val allOldRoller = getGyldigeRoller(norskIdent)
+        val allOldRoller = rolleRepository.hentGyldigeRollerForPerson(norskIdent)
 
         val rolleMap: Map<RolleType, List<String>> = try {
             altinnClient.hentRoller(norskIdent, RolleType.entries)
@@ -146,38 +146,5 @@ class RolleService(
         personRepository.setSynchronized(norskIdent)
         val duration = Duration.between(start, Instant.now())
         log.info("Updated roller for person with id $id in ${duration.toMillis()} ms")
-    }
-
-    private fun getGyldigeRoller(norskIdent: String) = rolleRepository
-        .hentRollerForPerson(norskIdent)
-        .filter { it.erGyldig() }
-
-    private fun Exception.safeStatusCode(): Int? = when (this) {
-        is MaskinportenTokenClient.MaskinportenTokenException -> statusCode
-        is Altinn3Client.AltinnClientException -> statusCode
-        else -> null
-    }
-
-    private fun Exception.safeErrorCode(): String? = (this as? MaskinportenTokenClient.MaskinportenTokenException)?.errorCode
-
-    private fun map(roller: List<RolleDbo>): List<RollerIOrganisasjon> {
-        val rollerPerOrganisasjon = roller.associateBy(
-            { it.organisasjonsnummer },
-            { roller.filter { r -> r.organisasjonsnummer == it.organisasjonsnummer } },
-        )
-
-        return rollerPerOrganisasjon.map { org ->
-            RollerIOrganisasjon(
-                organisasjonsnummer = org.key,
-                roller = org.value.map { rolle ->
-                    Rolle(
-                        id = rolle.id,
-                        rolleType = rolle.rolleType,
-                        validFrom = rolle.validFrom,
-                        validTo = rolle.validTo,
-                    )
-                },
-            )
-        }
     }
 }

@@ -6,22 +6,13 @@ import no.nav.amt.altinn.acl.utils.getZonedDateTime
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZonedDateTime
 
 @Repository
 class PersonRepository(
     private val template: NamedParameterJdbcTemplate,
 ) {
-    private val rowMapper = RowMapper { rs, _ ->
-        PersonDbo(
-            id = rs.getLong("id"),
-            norskIdent = rs.getString("norsk_ident"),
-            created = rs.getZonedDateTime("created"),
-            lastSynchronized = rs.getZonedDateTime("last_synchronized"),
-        )
-    }
-
     fun setSynchronized(
         norskIdent: String,
         lastSynchronized: ZonedDateTime = ZonedDateTime.now(),
@@ -37,18 +28,22 @@ class PersonRepository(
             sql,
             sqlParameters(
                 "norsk_ident" to norskIdent,
-                "last_synchronized" to LocalDateTime.from(lastSynchronized),
+                "last_synchronized" to lastSynchronized.toOffsetDateTime(),
             ),
         )
     }
 
     fun getUnsynchronizedPersons(
         maxSize: Int,
-        synchronizedBefore: LocalDateTime,
+        synchronizedBefore: OffsetDateTime,
     ): List<PersonDbo> {
         val sql =
             """
-            SELECT *
+            SELECT 
+                id,
+                norsk_ident,
+                created,
+                last_synchronized
             FROM person
             WHERE last_synchronized < :synchronized_before
             ORDER BY last_synchronized
@@ -65,24 +60,18 @@ class PersonRepository(
 
     fun get(norskIdent: String): PersonDbo? = template
         .query(
-            "SELECT * FROM person WHERE norsk_ident = :norsk_ident",
+            """
+            SELECT 
+                id,
+                norsk_ident,
+                created,
+                last_synchronized
+            FROM person
+            WHERE norsk_ident = :norsk_ident
+            """.trimIndent(),
             sqlParameters("norsk_ident" to norskIdent),
             rowMapper,
         ).firstOrNull()
-
-    fun create(norskIdent: String): PersonDbo {
-        val sql =
-            """
-            INSERT INTO person(norsk_ident)
-            VALUES (:norsk_ident)
-            """.trimIndent()
-
-        val params = sqlParameters("norsk_ident" to norskIdent)
-
-        template.update(sql, params)
-
-        return get(norskIdent) ?: throw NoSuchElementException("Person ikke funnet")
-    }
 
     fun createAndSetSynchronized(
         norskIdent: String,
@@ -90,17 +79,31 @@ class PersonRepository(
     ): PersonDbo {
         val sql =
             """
-            INSERT INTO person(norsk_ident, last_synchronized)
-            VALUES (:norsk_ident, :last_synchronized)
+            INSERT INTO person(
+                norsk_ident, 
+                last_synchronized
+            )
+            VALUES (
+                :norsk_ident, 
+                :last_synchronized
+            )
+            RETURNING *
             """.trimIndent()
 
         val params = sqlParameters(
             "norsk_ident" to norskIdent,
-            "last_synchronized" to LocalDateTime.from(lastSynchronized),
+            "last_synchronized" to lastSynchronized.toOffsetDateTime(),
         )
 
-        template.update(sql, params)
+        return template.queryForObject(sql, params, rowMapper)
+    }
 
-        return get(norskIdent) ?: throw NoSuchElementException("Person ikke funnet")
+    private val rowMapper = RowMapper { rs, _ ->
+        PersonDbo(
+            id = rs.getLong("id"),
+            norskIdent = rs.getString("norsk_ident"),
+            created = rs.getZonedDateTime("created"),
+            lastSynchronized = rs.getZonedDateTime("last_synchronized"),
+        )
     }
 }
