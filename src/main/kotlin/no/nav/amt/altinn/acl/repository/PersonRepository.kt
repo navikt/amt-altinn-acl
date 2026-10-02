@@ -43,7 +43,9 @@ class PersonRepository(
                 id,
                 norsk_ident,
                 created,
-                last_synchronized
+                last_synchronized,
+                synchronization_attempt,
+                applied_synchronization_attempt
             FROM person
             WHERE last_synchronized < :synchronized_before
             ORDER BY last_synchronized
@@ -65,13 +67,87 @@ class PersonRepository(
                 id,
                 norsk_ident,
                 created,
-                last_synchronized
+                last_synchronized,
+                synchronization_attempt,
+                applied_synchronization_attempt
             FROM person
             WHERE norsk_ident = :norsk_ident
             """.trimIndent(),
             sqlParameters("norsk_ident" to norskIdent),
             rowMapper,
         ).firstOrNull()
+
+    fun reserveSynchronizationAttempt(
+        personId: Long,
+        norskIdent: String,
+    ): Long = template.queryForObject(
+        """
+        UPDATE person
+        SET synchronization_attempt = synchronization_attempt + 1
+        WHERE 
+            id = :person_id
+            AND norsk_ident = :norsk_ident
+        RETURNING synchronization_attempt
+        """.trimIndent(),
+        sqlParameters(
+            "person_id" to personId,
+            "norsk_ident" to norskIdent,
+        ),
+        Long::class.java,
+    ) ?: error("Fant ikke synchronization attempt")
+
+    fun lockForUpdate(
+        personId: Long,
+        norskIdent: String,
+    ): PersonDbo = template.queryForObject(
+        """
+        SELECT
+            id,
+            norsk_ident,
+            created,
+            last_synchronized,
+            synchronization_attempt,
+            applied_synchronization_attempt
+        FROM person
+        WHERE id = :person_id
+            AND norsk_ident = :norsk_ident
+        FOR UPDATE
+        """.trimIndent(),
+        sqlParameters(
+            "person_id" to personId,
+            "norsk_ident" to norskIdent,
+        ),
+        rowMapper,
+    )
+
+    fun completeSynchronization(
+        personId: Long,
+        norskIdent: String,
+        synchronizationAttempt: Long,
+        lastSynchronized: ZonedDateTime = ZonedDateTime.now(),
+    ) {
+        val updatedRows = template.update(
+            """
+            UPDATE person
+            SET
+                last_synchronized = :last_synchronized,
+                applied_synchronization_attempt = :synchronization_attempt
+            WHERE id = :person_id
+                AND norsk_ident = :norsk_ident
+                AND applied_synchronization_attempt < :synchronization_attempt
+            """.trimIndent(),
+            sqlParameters(
+                "person_id" to personId,
+                "norsk_ident" to norskIdent,
+                "synchronization_attempt" to synchronizationAttempt,
+                "last_synchronized" to lastSynchronized.toOffsetDateTime(),
+            ),
+        )
+
+        check(updatedRows == 1) {
+            "Kunne ikke fullføre synkroniseringsforsøk $synchronizationAttempt for person $personId"
+        }
+    }
 
     fun createAndSetSynchronized(
         norskIdent: String,
@@ -104,6 +180,8 @@ class PersonRepository(
             norskIdent = rs.getString("norsk_ident"),
             created = rs.getZonedDateTime("created"),
             lastSynchronized = rs.getZonedDateTime("last_synchronized"),
+            synchronizationAttempt = rs.getLong("synchronization_attempt"),
+            appliedSynchronizationAttempt = rs.getLong("applied_synchronization_attempt"),
         )
     }
 }

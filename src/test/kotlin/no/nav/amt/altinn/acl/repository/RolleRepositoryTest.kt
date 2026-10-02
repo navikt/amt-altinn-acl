@@ -1,7 +1,5 @@
 package no.nav.amt.altinn.acl.repository
 
-import io.kotest.assertions.assertSoftly
-import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import no.nav.amt.altinn.acl.domain.RolleType
 import no.nav.amt.altinn.acl.repository.dbo.PersonDbo
@@ -20,48 +18,80 @@ class RolleRepositoryTest(
     private val jdbcTemplate: JdbcTemplate,
 ) : RepositoryTestBase() {
     @Nested
-    inner class OpprettRolle {
+    inner class OpprettRoller {
         @Test
-        fun `oppretter rolle med riktige verdier`() {
+        fun `oppretter flere roller for personen`() {
             // Arrange
             val person = opprettPerson()
-            val organisasjonsnummer = nyttOrganisasjonsnummer()
+            val roller = setOf(
+                RolleType.VEILEDER to nyttOrganisasjonsnummer(),
+                RolleType.KOORDINATOR to nyttOrganisasjonsnummer(),
+            )
 
             // Act
-            val rolle = rolleRepository.createRolle(person.id, organisasjonsnummer, RolleType.VEILEDER)
+            rolleRepository.createRoller(
+                personId = person.id,
+                rolleOgOrganisasjonsnummerSett = roller,
+            )
 
             // Assert
-            assertSoftly(rolle) {
-                id shouldBeGreaterThan 0L
-                personId shouldBe person.id
-                this.organisasjonsnummer shouldBe organisasjonsnummer
-                rolleType shouldBe RolleType.VEILEDER
-                validTo shouldBe null
-                erGyldig() shouldBe true
-            }
+            val opprettedeRoller = jdbcTemplate.query(
+                "SELECT rolle, organisasjonsnummer FROM rolle WHERE person_id = ? AND valid_to IS NULL",
+                { rs, _ ->
+                    RolleType.valueOf(rs.getString("rolle")) to rs.getString("organisasjonsnummer")
+                },
+                person.id,
+            )
+
+            opprettedeRoller.size shouldBe roller.size
+            opprettedeRoller.toSet() shouldBe roller.toSet()
+        }
+
+        @Test
+        fun `oppretter ingen roller når lista er tom`() {
+            // Arrange
+            val person = opprettPerson()
+
+            // Act
+            rolleRepository.createRoller(
+                personId = person.id,
+                rolleOgOrganisasjonsnummerSett = emptySet(),
+            )
+
+            // Assert
+            jdbcTemplate.query(
+                "SELECT id FROM rolle WHERE person_id = ?",
+                { rs, _ -> rs.getLong("id") },
+                person.id,
+            ) shouldBe emptyList()
         }
     }
 
     @Nested
-    inner class UgyldiggjørRolle {
+    inner class FjernRoller {
         @Test
-        fun `setter tidspunkt for ugyldiggjøring og beholder historikken`() {
+        fun `ugyldiggjør bare roller med oppgitte ider`() {
             // Arrange
             val person = opprettPerson()
-            val rolle = opprettRolle(person)
+            val roller = List(3) { opprettRolle(person) }
+            val rolleIderSomSkalFjernes = setOf(roller[0].id, roller[1].id)
 
             // Act
-            rolleRepository.invalidateRolle(rolle.id)
+            rolleRepository.fjernRoller(rolleIderSomSkalFjernes)
 
             // Assert
-            val isValid = jdbcTemplate
+            val gyldighetPerRolleId = jdbcTemplate
                 .query(
-                    "SELECT valid_to IS NULL FROM rolle WHERE id = ?",
-                    { rs, _ -> rs.getBoolean(1) },
-                    rolle.id,
-                ).single()
+                    "SELECT id, valid_to IS NULL AS is_valid FROM rolle WHERE person_id = ?",
+                    { rs, _ -> rs.getLong("id") to rs.getBoolean("is_valid") },
+                    person.id,
+                ).toMap()
 
-            isValid shouldBe false
+            gyldighetPerRolleId shouldBe mapOf(
+                roller[0].id to false,
+                roller[1].id to false,
+                roller[2].id to true,
+            )
         }
     }
 
@@ -73,7 +103,7 @@ class RolleRepositoryTest(
             val person = opprettPerson()
             val gyldigRolle = opprettRolle(person, RolleType.VEILEDER)
             val ugyldigRolle = opprettRolle(person, RolleType.KOORDINATOR)
-            rolleRepository.invalidateRolle(ugyldigRolle.id)
+            rolleRepository.fjernRoller(setOf(ugyldigRolle.id))
             opprettRolle(opprettPerson(), RolleType.KOORDINATOR)
 
             // Act
@@ -81,7 +111,6 @@ class RolleRepositoryTest(
 
             // Assert
             roller.map { it.id } shouldBe listOf(gyldigRolle.id)
-            roller.all { it.erGyldig() } shouldBe true
         }
     }
 
@@ -90,11 +119,17 @@ class RolleRepositoryTest(
     private fun opprettRolle(
         person: PersonDbo,
         rolleType: RolleType = RolleType.VEILEDER,
-    ): RolleDbo = rolleRepository.createRolle(
-        personId = person.id,
-        organisasjonsnummer = nyttOrganisasjonsnummer(),
-        rolleType = rolleType,
-    )
+    ): RolleDbo {
+        val organisasjonsnummer = nyttOrganisasjonsnummer()
+        rolleRepository.createRoller(
+            personId = person.id,
+            setOf(Pair(rolleType, organisasjonsnummer)),
+        )
+
+        return rolleRepository
+            .hentGyldigeRollerForPerson(person.norskIdent)
+            .single { it.rolleType == rolleType && it.organisasjonsnummer == organisasjonsnummer }
+    }
 
     private fun nyttOrganisasjonsnummer(): String = UUID.randomUUID().toString()
 }

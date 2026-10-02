@@ -1,5 +1,7 @@
 package no.nav.amt.altinn.acl.service
 
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -14,12 +16,17 @@ import no.nav.amt.altinn.acl.repository.RolleRepository
 import no.nav.amt.altinn.acl.testutil.IntegrationTest
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.jdbc.core.JdbcTemplate
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 class RolleServiceTest(
     private val rolleService: RolleService,
@@ -74,10 +81,9 @@ class RolleServiceTest(
             val norskIdent = UUID.randomUUID().toString()
             val organisasjonsnummer = UUID.randomUUID().toString()
             val personDbo = personRepository.createAndSetSynchronized(norskIdent)
-            rolleRepository.createRolle(
+            rolleRepository.createRoller(
                 personId = personDbo.id,
-                organisasjonsnummer = organisasjonsnummer,
-                rolleType = KOORDINATOR,
+                rolleOgOrganisasjonsnummerSett = setOf(Pair(VEILEDER, organisasjonsnummer)),
             )
 
             // Act
@@ -110,8 +116,16 @@ class RolleServiceTest(
             val norskIdent = UUID.randomUUID().toString()
             val organisasjonsnummer = UUID.randomUUID().toString()
             val personDbo = opprettUsynkronisertPerson(norskIdent)
-            rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
-            val veilederRolle = rolleRepository.createRolle(personDbo.id, organisasjonsnummer, VEILEDER)
+            rolleRepository.createRoller(
+                personId = personDbo.id,
+                rolleOgOrganisasjonsnummerSett = setOf(Pair(KOORDINATOR, organisasjonsnummer)),
+            )
+
+            rolleRepository.createRoller(
+                personId = personDbo.id,
+                rolleOgOrganisasjonsnummerSett = setOf(Pair(VEILEDER, organisasjonsnummer)),
+            )
+
             mockAltinnRoller(norskIdent, listOf(KOORDINATOR), listOf(organisasjonsnummer))
 
             // Act
@@ -120,7 +134,8 @@ class RolleServiceTest(
             // Assert
             hasRolle(roller, organisasjonsnummer, VEILEDER) shouldBe false
             hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
-            isRolleGyldig(veilederRolle.id) shouldBe false
+
+            isRolleGyldig(personDbo.id, organisasjonsnummer, VEILEDER) shouldBe false
         }
 
         @Test
@@ -129,7 +144,10 @@ class RolleServiceTest(
             val norskIdent = UUID.randomUUID().toString()
             val organisasjonsnummer = UUID.randomUUID().toString()
             val personDbo = opprettUsynkronisertPerson(norskIdent)
-            rolleRepository.createRolle(personDbo.id, organisasjonsnummer, VEILEDER)
+            rolleRepository.createRoller(
+                personId = personDbo.id,
+                rolleOgOrganisasjonsnummerSett = setOf(Pair(VEILEDER, organisasjonsnummer)),
+            )
             mockAltinnRoller(norskIdent, listOf(KOORDINATOR, VEILEDER), listOf(organisasjonsnummer))
 
             // Act
@@ -146,7 +164,10 @@ class RolleServiceTest(
             val norskIdent = UUID.randomUUID().toString()
             val organisasjonsnummer = UUID.randomUUID().toString()
             val personDbo = opprettUsynkronisertPerson(norskIdent)
-            rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
+            rolleRepository.createRoller(
+                personId = personDbo.id,
+                rolleOgOrganisasjonsnummerSett = setOf(Pair(KOORDINATOR, organisasjonsnummer)),
+            )
             mockAltinnRoller(norskIdent, listOf(KOORDINATOR, VEILEDER), emptyList())
 
             // Act
@@ -183,7 +204,10 @@ class RolleServiceTest(
             val norskIdent = UUID.randomUUID().toString()
             val organisasjonsnummer = UUID.randomUUID().toString()
             val personDbo = opprettUsynkronisertPerson(norskIdent)
-            rolleRepository.createRolle(personDbo.id, organisasjonsnummer, KOORDINATOR)
+            rolleRepository.createRoller(
+                personId = personDbo.id,
+                rolleOgOrganisasjonsnummerSett = setOf(Pair(KOORDINATOR, organisasjonsnummer)),
+            )
             every { altinnClient.hentRoller(norskIdent, RolleType.entries) } throws
                 RuntimeException("Klarte ikke å hente organisasjoner code=500")
 
@@ -196,6 +220,215 @@ class RolleServiceTest(
             hasRolle(roller, organisasjonsnummer, KOORDINATOR) shouldBe true
             val synchronizedPerson = updatedPerson.shouldNotBeNull()
             synchronizedPerson.lastSynchronized.days() shouldNotBe ZonedDateTime.now().days()
+        }
+    }
+
+    @Nested
+    inner class SynkroniserRoller {
+        @Test
+        fun `beholder nyeste vellykkede resultat ved samtidige synkroniseringer`() {
+            // Arrange
+            val norskIdent = UUID.randomUUID().toString()
+            val organisasjonsnummerA = UUID.randomUUID().toString()
+            val organisasjonsnummerB = UUID.randomUUID().toString()
+            val person = opprettUsynkronisertPerson(norskIdent)
+            val firstCallStarted = CountDownLatch(1)
+            val releaseFirstCall = CountDownLatch(1)
+            val secondCallStarted = CountDownLatch(1)
+            val callNumber = AtomicInteger()
+            val executor = Executors.newFixedThreadPool(2)
+
+            every { altinnClient.hentRoller(norskIdent, RolleType.entries) } answers {
+                val organisasjonsnummer = when (callNumber.incrementAndGet()) {
+                    1 -> {
+                        firstCallStarted.countDown()
+                        releaseFirstCall.await(5, TimeUnit.SECONDS) shouldBe true
+                        organisasjonsnummerA
+                    }
+
+                    2 -> {
+                        secondCallStarted.countDown()
+                        organisasjonsnummerB
+                    }
+
+                    else -> error("Forventet bare to Altinn-kall")
+                }
+
+                RolleType.entries.associateWith { rolleType ->
+                    if (rolleType == VEILEDER) listOf(organisasjonsnummer) else emptyList()
+                }
+            }
+
+            try {
+                // Act
+                val firstSynchronization = executor.submit {
+                    rolleService.updateRollerFromAltinn(person.id, norskIdent)
+                }
+                firstCallStarted.await(5, TimeUnit.SECONDS) shouldBe true
+
+                val secondSynchronization = executor.submit {
+                    rolleService.updateRollerFromAltinn(person.id, norskIdent)
+                }
+
+                // Assert
+                secondCallStarted.await(5, TimeUnit.SECONDS) shouldBe true
+                secondSynchronization.get(5, TimeUnit.SECONDS)
+                releaseFirstCall.countDown()
+                firstSynchronization.get(5, TimeUnit.SECONDS)
+
+                hentAktiveOrganisasjonsnumre(person.id, VEILEDER) shouldBe listOf(organisasjonsnummerB)
+                personRepository.get(norskIdent).shouldNotBeNull().appliedSynchronizationAttempt shouldBe 2
+            } finally {
+                releaseFirstCall.countDown()
+                executor.shutdownNow()
+            }
+        }
+
+        @Test
+        fun `bruker eldre vellykket resultat når nyere synkronisering feiler`() {
+            // Arrange
+            val norskIdent = UUID.randomUUID().toString()
+            val organisasjonsnummer = UUID.randomUUID().toString()
+            val person = opprettUsynkronisertPerson(norskIdent)
+            val firstCallStarted = CountDownLatch(1)
+            val releaseFirstCall = CountDownLatch(1)
+            val secondCallStarted = CountDownLatch(1)
+            val callNumber = AtomicInteger()
+            val executor = Executors.newFixedThreadPool(2)
+
+            every { altinnClient.hentRoller(norskIdent, RolleType.entries) } answers {
+                when (callNumber.incrementAndGet()) {
+                    1 -> {
+                        firstCallStarted.countDown()
+                        releaseFirstCall.await(5, TimeUnit.SECONDS) shouldBe true
+                        RolleType.entries.associateWith { rolleType ->
+                            if (rolleType == VEILEDER) listOf(organisasjonsnummer) else emptyList()
+                        }
+                    }
+
+                    2 -> {
+                        secondCallStarted.countDown()
+                        throw RuntimeException("Altinn er utilgjengelig")
+                    }
+
+                    else -> error("Forventet bare to Altinn-kall")
+                }
+            }
+
+            try {
+                // Act
+                val firstSynchronization = executor.submit {
+                    rolleService.updateRollerFromAltinn(person.id, norskIdent)
+                }
+                firstCallStarted.await(5, TimeUnit.SECONDS) shouldBe true
+
+                val secondSynchronization = executor.submit {
+                    rolleService.updateRollerFromAltinn(person.id, norskIdent)
+                }
+                secondCallStarted.await(5, TimeUnit.SECONDS) shouldBe true
+                secondSynchronization.get(5, TimeUnit.SECONDS)
+                releaseFirstCall.countDown()
+                firstSynchronization.get(5, TimeUnit.SECONDS)
+
+                // Assert
+                hentAktiveOrganisasjonsnumre(person.id, VEILEDER) shouldBe listOf(organisasjonsnummer)
+                assertSoftly(personRepository.get(norskIdent).shouldNotBeNull()) {
+                    synchronizationAttempt shouldBe 2
+                    appliedSynchronizationAttempt shouldBe 1
+                }
+            } finally {
+                releaseFirstCall.countDown()
+                executor.shutdownNow()
+            }
+        }
+
+        @Test
+        fun `ruller tilbake ugyldiggjøring og synkroniseringstidspunkt når innsetting av rolle feiler`() {
+            // Arrange
+            val norskIdent = UUID.randomUUID().toString()
+            val gammelOrganisasjon = UUID.randomUUID().toString()
+            val nyOrganisasjon = UUID.randomUUID().toString()
+            val person = opprettUsynkronisertPerson(norskIdent)
+            val lastSynchronized = personRepository.get(norskIdent).shouldNotBeNull().lastSynchronized
+            rolleRepository.createRoller(
+                personId = person.id,
+                rolleOgOrganisasjonsnummerSett = setOf(KOORDINATOR to gammelOrganisasjon),
+            )
+            mockAltinnRoller(norskIdent, listOf(VEILEDER), listOf(nyOrganisasjon))
+            jdbcTemplate.execute(
+                "ALTER TABLE rolle ADD CONSTRAINT test_reject_role_insert CHECK (organisasjonsnummer <> '$nyOrganisasjon')",
+            )
+
+            try {
+                // Act
+                shouldThrow<DataIntegrityViolationException> {
+                    rolleService.updateRollerFromAltinn(person.id, norskIdent)
+                }
+
+                // Assert
+                isRolleGyldig(person.id, gammelOrganisasjon, KOORDINATOR) shouldBe true
+                hentAktiveOrganisasjonsnumre(person.id, VEILEDER) shouldBe emptyList()
+                personRepository.get(norskIdent).shouldNotBeNull().lastSynchronized shouldBe lastSynchronized
+            } finally {
+                jdbcTemplate.execute("ALTER TABLE rolle DROP CONSTRAINT test_reject_role_insert")
+            }
+        }
+
+        @Test
+        fun `legger til nye organisasjoner og fjerner utdaterte for samme rolle`() {
+            // Arrange
+            val norskIdent = UUID.randomUUID().toString()
+            val organisasjonsnummerA = UUID.randomUUID().toString()
+            val organisasjonsnummerB = UUID.randomUUID().toString()
+            val organisasjonsnummerC = UUID.randomUUID().toString()
+            val person = opprettUsynkronisertPerson(norskIdent)
+            rolleRepository.createRoller(
+                personId = person.id,
+                rolleOgOrganisasjonsnummerSett = setOf(
+                    VEILEDER to organisasjonsnummerA,
+                    VEILEDER to organisasjonsnummerC,
+                ),
+            )
+            mockAltinnRoller(
+                norskIdent,
+                listOf(VEILEDER),
+                listOf(organisasjonsnummerA, organisasjonsnummerB),
+            )
+
+            // Act
+            rolleService.getRollerForPerson(norskIdent)
+
+            // Assert
+            val aktiveOrgnr = hentAktiveOrganisasjonsnumre(person.id, VEILEDER)
+            aktiveOrgnr.size shouldBe 2
+            aktiveOrgnr.toSet() shouldBe setOf(organisasjonsnummerA, organisasjonsnummerB)
+            isRolleGyldig(person.id, organisasjonsnummerC, VEILEDER) shouldBe false
+        }
+
+        @Test
+        fun `legger ikke til organisasjoner som allerede har aktiv rolle`() {
+            // Arrange
+            val norskIdent = UUID.randomUUID().toString()
+            val organisasjonsnummerA = UUID.randomUUID().toString()
+            val organisasjonsnummerB = UUID.randomUUID().toString()
+            val person = opprettUsynkronisertPerson(norskIdent)
+            rolleRepository.createRoller(
+                personId = person.id,
+                rolleOgOrganisasjonsnummerSett = setOf(VEILEDER to organisasjonsnummerA),
+            )
+            mockAltinnRoller(
+                norskIdent,
+                listOf(VEILEDER),
+                listOf(organisasjonsnummerA, organisasjonsnummerB),
+            )
+
+            // Act
+            rolleService.getRollerForPerson(norskIdent)
+
+            // Assert
+            val aktiveOrgnr = hentAktiveOrganisasjonsnumre(person.id, VEILEDER)
+            aktiveOrgnr.size shouldBe 2
+            aktiveOrgnr.toSet() shouldBe setOf(organisasjonsnummerA, organisasjonsnummerB)
         }
     }
 
@@ -212,11 +445,35 @@ class RolleServiceTest(
         Instant.EPOCH.atZone(ZoneOffset.UTC),
     )
 
-    private fun isRolleGyldig(rolleId: Long): Boolean = jdbcTemplate
+    private fun hentAktiveOrganisasjonsnumre(
+        personId: Long,
+        rolle: RolleType,
+    ): List<String> = jdbcTemplate.query(
+        """
+        SELECT organisasjonsnummer
+        FROM rolle
+        WHERE person_id = ? AND rolle = ? AND valid_to IS NULL
+        """.trimIndent(),
+        { rs, _ -> rs.getString("organisasjonsnummer") },
+        personId,
+        rolle.toString(),
+    )
+
+    private fun isRolleGyldig(
+        personId: Long,
+        organisasjonsnummer: String,
+        rolle: RolleType,
+    ): Boolean = jdbcTemplate
         .query(
-            "SELECT valid_to IS NULL FROM rolle WHERE id = ?",
+            """
+            SELECT valid_to IS NULL
+            FROM rolle
+            WHERE person_id = ? AND organisasjonsnummer = ? AND rolle = ?
+            """.trimIndent(),
             { rs, _ -> rs.getBoolean(1) },
-            rolleId,
+            personId,
+            organisasjonsnummer,
+            rolle.toString(),
         ).single()
 
     private fun hasRolle(
