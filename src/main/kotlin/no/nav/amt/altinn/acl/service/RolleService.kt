@@ -150,7 +150,7 @@ class RolleService(
             .toSet()
 
         val synchronized = transactionTemplate.execute {
-            val person = personRepository.lockForUpdate(personId, norskIdent)
+            val person = personRepository.lockForUpdate(personId)
             if (person.appliedSynchronizationAttempt >= synchronizationAttempt) {
                 log.info(
                     "Ignorerer utdatert synkroniseringsforsøk {} for person id {}",

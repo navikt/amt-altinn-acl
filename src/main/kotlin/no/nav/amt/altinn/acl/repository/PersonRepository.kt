@@ -96,10 +96,7 @@ class PersonRepository(
         Long::class.java,
     ) ?: error("Fant ikke synchronization attempt")
 
-    fun lockForUpdate(
-        personId: Long,
-        norskIdent: String,
-    ): PersonDbo = template.queryForObject(
+    fun lockForUpdate(personId: Long): PersonDbo = template.queryForObject(
         """
         SELECT
             id,
@@ -110,13 +107,9 @@ class PersonRepository(
             applied_synchronization_attempt
         FROM person
         WHERE id = :person_id
-            AND norsk_ident = :norsk_ident
         FOR UPDATE
         """.trimIndent(),
-        sqlParameters(
-            "person_id" to personId,
-            "norsk_ident" to norskIdent,
-        ),
+        sqlParameters("person_id" to personId),
         rowMapper,
     )
 
