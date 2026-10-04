@@ -1,7 +1,11 @@
 package no.nav.amt.altinn.acl.client.altinn
 
-import no.nav.amt.altinn.acl.client.MaskinportenTokenClient
+import no.nav.amt.altinn.acl.client.exception.AltinnClientException
+import no.nav.amt.altinn.acl.client.exception.MaskinportenTokenException
+import no.nav.amt.altinn.acl.config.ALTINN3_CLIENT_ID
 import no.nav.amt.altinn.acl.domain.RolleType
+import no.nav.amt.lib.spring.boot.client.exception.UpstreamServiceException
+import no.nav.amt.lib.spring.boot.client.executeUpstreamCallWithRequiredBody
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClientResponseException
@@ -31,20 +35,24 @@ class Altinn3Client(
     }
 
     private fun hentAuthorizedParties(norskIdent: String): List<AuthorizedParty> = try {
-        altinnApi.hentAuthorizedParties(AuthorizedPartiesRequest(norskIdent))
-    } catch (e: RestClientResponseException) {
-        throw AltinnClientException(
-            statusCode = e.statusCode.value(),
-        )
-    } catch (e: MaskinportenTokenClient.MaskinportenTokenException) {
+        executeUpstreamCallWithRequiredBody(
+            ALTINN3_CLIENT_ID,
+            "hentAuthorizedParties",
+        ) {
+            altinnApi.hentAuthorizedParties(AuthorizedPartiesRequest(norskIdent))
+        }
+    } catch (e: MaskinportenTokenException) {
         throw AltinnClientException(
             statusCode = e.statusCode,
             errorCode = e.errorCode,
         )
-    }
+    } catch (e: UpstreamServiceException) {
+        when (val cause = e.cause) {
+            is RestClientResponseException -> throw AltinnClientException(
+                statusCode = cause.statusCode.value(),
+            )
 
-    class AltinnClientException(
-        val statusCode: Int,
-        val errorCode: String? = null,
-    ) : RuntimeException("Klarte ikke å hente organisasjoner fra Altinn, status=$statusCode")
+            else -> throw e
+        }
+    }
 }

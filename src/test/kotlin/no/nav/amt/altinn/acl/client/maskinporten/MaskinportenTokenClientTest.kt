@@ -1,48 +1,39 @@
-package no.nav.amt.altinn.acl.client
+package no.nav.amt.altinn.acl.client.maskinporten
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
-import org.junit.jupiter.api.AfterEach
+import no.nav.amt.altinn.acl.client.RestClientTestBase
+import no.nav.amt.altinn.acl.client.exception.MaskinportenTokenException
+import no.nav.amt.altinn.acl.config.MASKINPORTEN_CLIENT_ID
 import org.junit.jupiter.api.Test
 import org.springframework.boot.restclient.test.autoconfigure.RestClientTest
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.test.context.TestConstructor
-import org.springframework.test.context.TestPropertySource
-import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.match.MockRestRequestMatchers.content
 import org.springframework.test.web.client.match.MockRestRequestMatchers.method
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
 import org.springframework.test.web.client.response.MockRestResponseCreators.withStatus
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.util.LinkedMultiValueMap
+import org.springframework.util.MultiValueMap
 
-@RestClientTest(MaskinportenTokenClient::class)
-@TestPropertySource(
-    properties = [
-        "NAIS_TOKEN_ENDPOINT=http://localhost/token",
-        "ALTINN_SCOPE=altinn:accessmanagement/authorizedparties.resourceowner",
-        "ALTINN3_URL=http://altinn3",
-    ],
-)
-@TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
+@RestClientTest(MaskinportenTokenApi::class)
 class MaskinportenTokenClientTest(
-    private val sut: MaskinportenTokenClient,
-    private val server: MockRestServiceServer,
-) {
-    @AfterEach
-    fun verifyServer() = server.verify()
+    maskinportenTokenRequest: MultiValueMap<String, String>,
+    maskinportenTokenApi: MaskinportenTokenApi,
+) : RestClientTestBase(MASKINPORTEN_CLIENT_ID) {
+    private val sut = MaskinportenTokenClient(maskinportenTokenRequest, maskinportenTokenApi)
 
     @Test
     fun `henter access token fra Nais med riktige skjemadata`() {
         val expectedForm = LinkedMultiValueMap<String, String>().apply {
             add("identity_provider", "maskinporten")
             add("target", "altinn:accessmanagement/authorizedparties.resourceowner")
-            add("resource", "http://altinn3")
+            add("resource", "http://localhost:9999/altinn")
         }
         server
-            .expect(requestTo("http://localhost/token"))
+            .expect(requestTo("http://localhost:9999/maskinporten/token"))
             .andExpect(method(HttpMethod.POST))
             .andExpect(content().contentType(MediaType.APPLICATION_FORM_URLENCODED))
             .andExpect(content().formData(expectedForm))
@@ -54,14 +45,14 @@ class MaskinportenTokenClientTest(
     @Test
     fun `feil fra Nais sitt token-endepunkt gir statuskode og OAuth-feilkode`() {
         server
-            .expect(requestTo("http://localhost/token"))
+            .expect(requestTo("http://localhost:9999/maskinporten/token"))
             .andRespond(
                 withStatus(HttpStatus.BAD_REQUEST)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("""{"error":"invalid_target","error_description":"scope ikke registrert"}"""),
             )
 
-        val exception = shouldThrow<MaskinportenTokenClient.MaskinportenTokenException> {
+        val exception = shouldThrow<MaskinportenTokenException> {
             sut.getAccessToken()
         }
 
@@ -75,10 +66,10 @@ class MaskinportenTokenClientTest(
     @Test
     fun `feil uten lesbar OAuth-body gir statuskode og ukjent feilkode`() {
         server
-            .expect(requestTo("http://localhost/token"))
+            .expect(requestTo("http://localhost:9999/maskinporten/token"))
             .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR).body("ikke json"))
 
-        val exception = shouldThrow<MaskinportenTokenClient.MaskinportenTokenException> {
+        val exception = shouldThrow<MaskinportenTokenException> {
             sut.getAccessToken()
         }
 
@@ -90,14 +81,14 @@ class MaskinportenTokenClientTest(
     @Test
     fun `ukjent OAuth-feilkode og beskrivelse eksponeres ikke i exception`() {
         server
-            .expect(requestTo("http://localhost/token"))
+            .expect(requestTo("http://localhost:9999/maskinporten/token"))
             .andRespond(
                 withStatus(HttpStatus.BAD_REQUEST)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("""{"error":"ukjent sensitiv verdi","error_description":"sensitiv diagnostikk"}"""),
             )
 
-        val exception = shouldThrow<MaskinportenTokenClient.MaskinportenTokenException> {
+        val exception = shouldThrow<MaskinportenTokenException> {
             sut.getAccessToken()
         }
 

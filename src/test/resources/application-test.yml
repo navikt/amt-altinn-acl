@@ -12,6 +12,8 @@ NAIS_TOKEN_ENDPOINT: http://localhost:9999/maskinporten/token
 spring:
   http:
     serviceclient:
+      maskinporten:
+        base-url: ${NAIS_TOKEN_ENDPOINT}
       altinn3:
         base-url: ${ALTINN3_URL}
   security:
