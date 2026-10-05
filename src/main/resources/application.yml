@@ -16,6 +16,8 @@ spring:
       connect-timeout: 5s
       read-timeout: 20s
     serviceclient:
+      maskinporten:
+        base-url: ${NAIS_TOKEN_ENDPOINT}
       altinn3:
         base-url: ${ALTINN3_URL}
 

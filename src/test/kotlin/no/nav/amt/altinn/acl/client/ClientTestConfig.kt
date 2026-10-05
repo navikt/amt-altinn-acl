@@ -2,6 +2,7 @@ package no.nav.amt.altinn.acl.client
 
 import io.mockk.every
 import io.mockk.mockk
+import no.nav.amt.altinn.acl.client.maskinporten.MaskinportenTokenClient
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary

@@ -204,7 +204,7 @@ class RolleControllerTest(
     }
 
     @Test
-    fun `hentTiltaksarrangorRoller - should return cached response from altinn`() {
+    fun `hentTiltaksarrangorRoller - returnerer lagrede roller uten nytt Altinn-kall ved gjentatt forespørsel`() {
         val personIdent = "12345678910"
         val orgnr = "1234567"
         val forventetJson = """{"roller":[{"organisasjonsnummer":"$orgnr","roller":["KOORDINATOR"]}]}"""

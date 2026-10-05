@@ -15,11 +15,11 @@ version = "0.0.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
-    maven { setUrl("https://github-package-registry-mirror.gc.nav.no/cached/maven-release") }
+    maven("https://github-package-registry-mirror.gc.nav.no/cached/maven-release")
 }
 
 val commonVersion = "4.2026.09.24_06.17-80dfc0eacb29"
-val amtLibVersion = "1.2026.09.28_05.44-15fb3d33d2d7"
+val amtLibVersion = "1.2026.10.03_18.27-25a0e2530cba"
 val logstashEncoderVersion = "9.0"
 val mockkVersion = "1.14.11"
 val kotestVersion = "6.2.5"
@@ -36,41 +36,49 @@ dependencies {
         }
     }
 
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    runtimeOnly("org.springframework.boot:spring-boot-starter-validation")
+    // Spring Boot, HTTP-klient og sikkerhet
     implementation("org.springframework.boot:spring-boot-starter-web") {
         exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
     }
     runtimeOnly("org.springframework.boot:spring-boot-starter-jetty")
-    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
-    runtimeOnly("org.springframework.boot:spring-boot-flyway")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+    implementation("org.springframework.boot:spring-boot-restclient")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 
+    // Applikasjonsfunksjoner og serialisering
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    runtimeOnly("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("tools.jackson.module:jackson-module-kotlin:$jacksonModuleKotlinVersion")
 
-    implementation("no.nav.amt.deltakelser.lib:utils:$amtLibVersion")
-    implementation("no.nav.amt.deltakelser.lib:spring-boot:$amtLibVersion")
-
-    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
+    // Database og migreringer
+    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
+    runtimeOnly("org.springframework.boot:spring-boot-flyway")
     runtimeOnly("org.flywaydb:flyway-core")
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
-    runtimeOnly("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
+    runtimeOnly("org.postgresql:postgresql")
 
+    // Nav-biblioteker
+    implementation("no.nav.amt.deltakelser.lib:utils:$amtLibVersion")
+    implementation("no.nav.amt.deltakelser.lib:spring-boot:$amtLibVersion")
     implementation("no.nav.common:rest:$commonVersion")
     implementation("no.nav.common:job:$commonVersion")
 
-    implementation("org.springframework.boot:spring-boot-restclient")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
-    runtimeOnly("org.postgresql:postgresql")
+    // Metrikker og strukturert logging
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
+    runtimeOnly("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
+    // Spring Boot-teststøtte
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-resttestclient")
     testImplementation("org.springframework.boot:spring-boot-restclient-test")
     testImplementation("org.springframework.boot:spring-boot-data-jdbc-test")
     testImplementation("org.springframework.boot:spring-boot-webmvc-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
+
+    // Testcontainers
     testImplementation("org.testcontainers:testcontainers-postgresql")
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    // Assertions, mocking og coroutines i tester
     testImplementation("io.mockk:mockk-jvm:$mockkVersion")
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")

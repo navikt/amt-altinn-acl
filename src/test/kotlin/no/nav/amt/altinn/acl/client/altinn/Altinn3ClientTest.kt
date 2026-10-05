@@ -1,116 +1,122 @@
 package no.nav.amt.altinn.acl.client.altinn
 
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotContain
-import io.mockk.every
-import io.mockk.mockk
-import no.nav.amt.altinn.acl.client.MaskinportenTokenClient
+import no.nav.amt.altinn.acl.client.RestClientTestBase
+import no.nav.amt.altinn.acl.client.exception.AltinnClientException
+import no.nav.amt.altinn.acl.config.ALTINN3_CLIENT_ID
 import no.nav.amt.altinn.acl.domain.RolleType
 import org.junit.jupiter.api.Test
-import org.springframework.http.HttpStatusCode
-import org.springframework.web.client.RestClientResponseException
-import java.nio.charset.StandardCharsets
+import org.springframework.boot.restclient.test.autoconfigure.RestClientTest
+import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.test.web.client.match.MockRestRequestMatchers.content
+import org.springframework.test.web.client.match.MockRestRequestMatchers.method
+import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
+import org.springframework.test.web.client.response.MockRestResponseCreators.withStatus
+import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 
-class Altinn3ClientTest {
-    private val altinnApi = mockk<AltinnApi>()
-    private val altinnClient = Altinn3Client(altinnApi)
-
+@RestClientTest(Altinn3Client::class)
+class Altinn3ClientTest(
+    private val sut: Altinn3Client,
+) : RestClientTestBase(ALTINN3_CLIENT_ID) {
     @Test
     fun `hentRoller - flere tilganger - parser response riktig`() {
-        val resourceIds = listOf(RolleType.KOORDINATOR.resourceId, RolleType.VEILEDER.resourceId, "resource3")
+        // Arrange
+        server
+            .expect(requestTo(AUTHORIZED_PARTIES_URL))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().json("""{"value":"123456","type":"urn:altinn:person:identifier-no"}"""))
+            .andRespond(
+                withSuccess(
+                    """
+                    [
+                      {
+                        "organizationNumber": "123456789",
+                        "authorizedResources": [
+                          "${RolleType.KOORDINATOR.resourceId}",
+                          "${RolleType.VEILEDER.resourceId}"
+                        ],
+                        "subunits": []
+                      },
+                      {
+                        "organizationNumber": "987654321",
+                        "authorizedResources": [],
+                        "subunits": [
+                          {
+                            "organizationNumber": "111222333",
+                            "authorizedResources": ["${RolleType.VEILEDER.resourceId}"],
+                            "subunits": []
+                          }
+                        ]
+                      },
+                      {
+                        "organizationNumber": "456789012",
+                        "authorizedResources": ["${RolleType.KOORDINATOR.resourceId}"],
+                        "subunits": [
+                          {
+                            "organizationNumber": "333444555",
+                            "authorizedResources": ["${RolleType.VEILEDER.resourceId}"],
+                            "subunits": [
+                              {
+                                "organizationNumber": "666777888",
+                                "authorizedResources": ["${RolleType.KOORDINATOR.resourceId}"],
+                                "subunits": []
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                    """.trimIndent(),
+                    MediaType.APPLICATION_JSON,
+                ),
+            )
 
-        val parties = listOf(
-            AuthorizedParty(
-                organizationNumber = "123456789",
-                authorizedResources = setOf(resourceIds[0], resourceIds[1]),
-                subunits = emptyList(),
-            ),
-            AuthorizedParty(
-                organizationNumber = "987654321",
-                authorizedResources = setOf(resourceIds[2]),
-                subunits =
-                    listOf(
-                        AuthorizedParty(
-                            organizationNumber = "111222333",
-                            authorizedResources = setOf(resourceIds[1]),
-                            subunits = emptyList(),
-                        ),
-                    ),
-            ),
-            AuthorizedParty(
-                organizationNumber = "456789012",
-                authorizedResources = setOf(resourceIds[0], resourceIds[2]),
-                subunits =
-                    listOf(
-                        AuthorizedParty(
-                            organizationNumber = "333444555",
-                            authorizedResources = setOf(resourceIds[1]),
-                            subunits =
-                                listOf(
-                                    AuthorizedParty(
-                                        organizationNumber = "666777888",
-                                        authorizedResources = setOf(resourceIds[0]),
-                                        subunits = emptyList(),
-                                    ),
-                                ),
-                        ),
-                    ),
-            ),
-        )
+        // Act
+        val organisasjoner = sut.hentRoller("123456", RolleType.entries)
 
-        every { altinnApi.hentAuthorizedParties(any()) } returns parties
+        // Assert
+        organisasjoner[RolleType.KOORDINATOR].shouldNotBeNull() shouldBe
+            listOf("123456789", "456789012", "666777888")
 
-        val organisasjoner = altinnClient.hentRoller("123456", RolleType.entries)
-
-        val koordinatorRoller = organisasjoner[RolleType.KOORDINATOR]
-        koordinatorRoller.shouldNotBeNull()
-        koordinatorRoller shouldHaveSize 3
-
-        val veilederRoller = organisasjoner[RolleType.VEILEDER]
-        veilederRoller.shouldNotBeNull()
-        veilederRoller shouldHaveSize 3
+        organisasjoner[RolleType.VEILEDER].shouldNotBeNull() shouldBe
+            listOf("123456789", "111222333", "333444555")
     }
 
     @Test
-    fun `hentRoller - AltinnApi kaster feil - kaster sanitert feil uten response body`() {
+    fun `hentRoller - Altinn svarer med feil - kaster sanitert feil`() {
+        // Arrange
         val norskIdent = "12345678901"
-        every { altinnApi.hentAuthorizedParties(any()) } throws
-            RestClientResponseException(
-                "feil",
-                HttpStatusCode.valueOf(500),
-                "Internal Server Error",
-                null,
-                """{"norskIdent":"$norskIdent"}""".toByteArray(),
-                StandardCharsets.UTF_8,
+        server
+            .expect(requestTo(AUTHORIZED_PARTIES_URL))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(
+                withStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body("""{"norskIdent":"$norskIdent"}"""),
             )
 
-        val exception = shouldThrow<Altinn3Client.AltinnClientException> {
-            altinnClient.hentRoller(norskIdent, RolleType.entries)
+        // Act
+        val exception = shouldThrow<AltinnClientException> {
+            sut.hentRoller(norskIdent, RolleType.entries)
         }
 
-        exception.message shouldBe "Klarte ikke å hente organisasjoner fra Altinn, status=500"
-        exception.statusCode shouldBe 500
-        exception.message.shouldNotBeNull() shouldNotContain norskIdent
-        exception.cause shouldBe null
+        // Assert
+        assertSoftly(exception) {
+            message shouldBe "Klarte ikke å hente organisasjoner fra Altinn, status=500"
+            statusCode shouldBe 500
+            message.shouldNotBeNull() shouldNotContain norskIdent
+            cause shouldBe null
+        }
     }
 
-    @Test
-    fun `hentRoller - Maskinporten kaster feil - kaster Altinn-feil med feildetaljer`() {
-        every { altinnApi.hentAuthorizedParties(any()) } throws
-            MaskinportenTokenClient.MaskinportenTokenException(
-                statusCode = 401,
-                errorCode = "invalid_client",
-            )
-
-        val exception = shouldThrow<Altinn3Client.AltinnClientException> {
-            altinnClient.hentRoller("12345678901", RolleType.entries)
-        }
-
-        exception.statusCode shouldBe 401
-        exception.errorCode shouldBe "invalid_client"
-        exception.cause shouldBe null
+    private companion object {
+        const val AUTHORIZED_PARTIES_URL =
+            "http://localhost:9999/altinn/accessmanagement/api/v1/resourceowner/authorizedparties"
     }
 }

@@ -13,7 +13,10 @@ import org.springframework.test.web.client.MockRestServiceServer
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 @TestPropertySource(
     properties = [
-        "spring.http.serviceclient.altinn3.base-url=http://altinn3",
+        "ALTINN_SCOPE=altinn:accessmanagement/authorizedparties.resourceowner",
+        "ALTINN3_URL=http://localhost:9999/altinn",
+        "spring.http.serviceclient.maskinporten.base-url=http://localhost:9999/maskinporten/token",
+        "spring.http.serviceclient.altinn3.base-url=http://localhost:9999/altinn",
         "spring.test.restclient.mockrestserviceserver.enabled=false",
     ],
 )
