@@ -28,10 +28,12 @@ val jacksonModuleKotlinVersion = "3.2.2"
 
 dependencies {
     constraints {
+        implementation("tools.jackson.core:jackson-core") {
+            version { strictly("3.1.7") }
+            because("Fixes CVE-2026-89425")
+        }
         implementation("at.yawk.lz4:lz4-java") {
-            version {
-                strictly("1.11.2")
-            }
+            version { strictly("1.11.2") }
             because("Fixes CVE-2026-59949")
         }
     }
