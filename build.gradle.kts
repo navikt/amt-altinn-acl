@@ -26,12 +26,15 @@ val kotestVersion = "6.2.5"
 val springmockkVersion = "5.0.1"
 val jacksonModuleKotlinVersion = "3.2.2"
 
+// Override Spring Boot's managed version to remediate CVE-2026-89425.
+dependencyManagement {
+    dependencies {
+        dependency("tools.jackson.core:jackson-core:3.1.7")
+    }
+}
+
 dependencies {
     constraints {
-        implementation("tools.jackson.core:jackson-core") {
-            version { strictly("3.1.7") }
-            because("Fixes CVE-2026-89425")
-        }
         implementation("at.yawk.lz4:lz4-java") {
             version { strictly("1.11.2") }
             because("Fixes CVE-2026-59949")
