@@ -24,12 +24,13 @@ val logstashEncoderVersion = "9.0"
 val mockkVersion = "1.14.11"
 val kotestVersion = "6.2.5"
 val springmockkVersion = "5.0.1"
-val jacksonModuleKotlinVersion = "3.2.2"
+val jacksonVersion = "3.1.7"
 
-// Override Spring Boot's managed version to remediate CVE-2026-89425.
+// Override Spring Boot's managed Jackson versions to apply the security fixes in 3.1.7.
 dependencyManagement {
     dependencies {
-        dependency("tools.jackson.core:jackson-core:3.1.7")
+        dependency("tools.jackson.core:jackson-core:$jacksonVersion")
+        dependency("tools.jackson.core:jackson-databind:$jacksonVersion")
     }
 }
 
@@ -53,7 +54,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     runtimeOnly("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-    implementation("tools.jackson.module:jackson-module-kotlin:$jacksonModuleKotlinVersion")
+    implementation("tools.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
     // Database og migreringer
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
