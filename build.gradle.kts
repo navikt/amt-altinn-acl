@@ -19,7 +19,7 @@ repositories {
 }
 
 val commonVersion = "4.2026.09.24_06.17-80dfc0eacb29"
-val amtLibVersion = "1.2026.10.03_18.27-25a0e2530cba"
+val amtLibVersion = "1.2026.10.05_12.51-509ff28b4464"
 val logstashEncoderVersion = "9.0"
 val mockkVersion = "1.14.11"
 val kotestVersion = "6.2.5"
