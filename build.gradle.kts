@@ -24,7 +24,7 @@ val logstashEncoderVersion = "9.0"
 val mockkVersion = "1.14.11"
 val kotestVersion = "6.2.5"
 val springmockkVersion = "5.0.1"
-val jacksonVersion = "3.2.3"
+val jacksonVersion = "3.1.7"
 
 // Override Spring Boot's managed Jackson versions to apply the security fixes in 3.1.7.
 dependencyManagement {
