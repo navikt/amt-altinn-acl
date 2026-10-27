@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     val kotlinVersion = "2.4.21"
 
-    id("org.springframework.boot") version "4.1.1"
+    id("org.springframework.boot") version "4.1.2"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
@@ -24,15 +24,6 @@ val logstashEncoderVersion = "9.0"
 val mockkVersion = "1.14.11"
 val kotestVersion = "6.2.6"
 val springmockkVersion = "5.0.1"
-val jacksonVersion = "3.1.7"
-
-// Override Spring Boot's managed Jackson versions to apply the security fixes in 3.1.7.
-dependencyManagement {
-    dependencies {
-        dependency("tools.jackson.core:jackson-core:$jacksonVersion")
-        dependency("tools.jackson.core:jackson-databind:$jacksonVersion")
-    }
-}
 
 dependencies {
     constraints {
