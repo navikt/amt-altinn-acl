@@ -1,9 +1,9 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    val kotlinVersion = "2.4.10"
+    val kotlinVersion = "2.4.21"
 
-    id("org.springframework.boot") version "4.1.1"
+    id("org.springframework.boot") version "4.1.2"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
@@ -22,26 +22,11 @@ val commonVersion = "4.2026.09.24_06.17-80dfc0eacb29"
 val amtLibVersion = "1.2026.10.20_09.19-755cf2186842"
 val logstashEncoderVersion = "9.0"
 val mockkVersion = "1.14.11"
-val kotestVersion = "6.2.5"
+val kotestVersion = "6.2.6"
 val springmockkVersion = "5.0.1"
-val jacksonVersion = "3.1.7"
-
-// Override Spring Boot's managed Jackson versions to apply the security fixes in 3.1.7.
-dependencyManagement {
-    dependencies {
-        dependency("tools.jackson.core:jackson-core:$jacksonVersion")
-        dependency("tools.jackson.core:jackson-databind:$jacksonVersion")
-    }
-}
+val toolsJacksonVersion = "3.2.4"
 
 dependencies {
-    constraints {
-        implementation("at.yawk.lz4:lz4-java") {
-            version { strictly("1.11.4") }
-            because("Fixes CVE-2026-59949")
-        }
-    }
-
     // Spring Boot, HTTP-klient og sikkerhet
     implementation("org.springframework.boot:spring-boot-starter-web") {
         exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
@@ -54,7 +39,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     runtimeOnly("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-    implementation("tools.jackson.module:jackson-module-kotlin:$jacksonVersion")
+    implementation("tools.jackson.module:jackson-module-kotlin:$toolsJacksonVersion")
 
     // Database og migreringer
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
@@ -101,6 +86,17 @@ kotlin {
 
 ktlint {
     version = "1.8.0"
+}
+
+configurations.named("ktlint") {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin") {
+            requested.version?.let {
+                useVersion(it)
+                because("ktlint must use the Kotlin versions it was compiled against")
+            }
+        }
+    }
 }
 
 tasks.named<Jar>("jar") {
