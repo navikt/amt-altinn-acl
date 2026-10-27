@@ -27,6 +27,13 @@ val springmockkVersion = "5.0.1"
 val toolsJacksonVersion = "3.2.4"
 
 dependencies {
+    constraints {
+        implementation("at.yawk.lz4:lz4-java") {
+            version { strictly("1.11.4") }
+            because("Fixes CVE-2026-59949")
+        }
+    }
+
     // Spring Boot, HTTP-klient og sikkerhet
     implementation("org.springframework.boot:spring-boot-starter-web") {
         exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
