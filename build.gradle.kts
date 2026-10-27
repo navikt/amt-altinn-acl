@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    val kotlinVersion = "2.4.10"
+    val kotlinVersion = "2.4.21"
 
     id("org.springframework.boot") version "4.1.2"
     id("io.spring.dependency-management") version "1.1.7"
@@ -24,6 +24,7 @@ val logstashEncoderVersion = "9.0"
 val mockkVersion = "1.14.11"
 val kotestVersion = "6.2.6"
 val springmockkVersion = "5.0.1"
+val toolsJacksonVersion = "3.2.4"
 
 dependencies {
     constraints {
@@ -45,7 +46,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     runtimeOnly("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-    implementation("tools.jackson.module:jackson-module-kotlin:$jacksonVersion")
+    implementation("tools.jackson.module:jackson-module-kotlin:$toolsJacksonVersion")
 
     // Database og migreringer
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
